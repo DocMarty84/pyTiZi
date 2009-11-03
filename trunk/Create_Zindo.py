@@ -6,7 +6,7 @@ import time
 import copy
 
 sys.path.append("lib")
-import input_reading_MD, molecular_system, list_manipulation, cluster_file_creation
+import read_input_MD, molecular_system, list_manipulation, write_cluster_files
 from data_input import *
 			
 if __name__ == '__main__':
@@ -363,7 +363,7 @@ if __name__ == '__main__':
 			file_arc = "%s%s%s.arc" % (project.input_dir, os.sep, filename_base)
 			
 			# Getting informations about the size of the system and cell parameters
-			(n_frame, n_mol, n_atom, a, b, c, alpha, beta, gamma) = input_reading_MD.Read_TINKER_add_File(file_add, verb)
+			(n_frame, n_mol, n_atom, a, b, c, alpha, beta, gamma) = read_input_MD.Read_TINKER_add_File(file_add, verb)
 			if verb > 2:
 				print "[INFO] %s file read!" % (file_add)
 			
@@ -376,7 +376,7 @@ if __name__ == '__main__':
 				print "[INFO] Generation of molecular system done!"
 
 			# Reading Tinker file .arc
-			input_reading_MD.Read_TINKER_arc_File(file_arc, qs, verb)
+			read_input_MD.Read_TINKER_arc_File(file_arc, qs, verb)
 			if verb > 2:
 				print "[INFO] %s file read!" % (file_arc)
 			
@@ -427,18 +427,18 @@ if __name__ == '__main__':
 		
 		if verb>2:
 			print "[INFO] Writing output files. This may take some time..."
-		cluster_file_creation.CreateXYZ(data, cell, project, filename_base, verb)
-		cluster_file_creation.CreateCELL(data, cell, project, filename_base)
-		cluster_file_creation.CreateCM(data, project, filename_base)
+		write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
+		write_cluster_files.CreateCELL(data, cell, project, filename_base)
+		write_cluster_files.CreateCM(data, project, filename_base)
 		
 	# =====================
 	# Script files creation
 	# =====================
 	
-	cluster_file_creation.ScriptFileCreation(project)
-	cluster_file_creation.ScriptFileCreationDirect(project)
-	cluster_file_creation.ScriptFileCreationPBS(project)
-	cluster_file_creation.ScriptZINDOLaunch(project)
+	write_cluster_files.ScriptFileCreation(project)
+	write_cluster_files.ScriptFileCreationDirect(project)
+	write_cluster_files.ScriptFileCreationPBS(project)
+	write_cluster_files.ScriptZINDOLaunch(project)
 
 	try:
 		import tarfile
