@@ -26,14 +26,19 @@ if __name__ == '__main__':
 	
 	verb = 3
 
-	try:
-		import Tkinter
-		import tkFileDialog
-		input_instructions = tkFileDialog.askopenfilename(filetypes = [("All", "*")], title='Please select an instruction file')
-	except ImportError:
-		if verb > 1:
-			print "[WARNING] Tkinter or tkFileDialog could not be imported. Instruction file should be named \"test\"."
-			input_instructions = "test"
+	if len(sys.argv) > 1:
+		tmp = sys.argv[1:]
+		input_instructions = ' '.join(x for x in tmp)
+		
+	else:
+		try:
+			import Tkinter
+			import tkFileDialog
+			input_instructions = tkFileDialog.askopenfilename(filetypes = [("All", "*")], title='Please select an instruction file')
+		except ImportError:
+			if verb > 1:
+				print "[WARNING] Tkinter or tkFileDialog could not be imported. Instruction file should be named \"test\"."
+				input_instructions = "test"
 
 	# ==========================
 	# Import Psyco if available
@@ -453,9 +458,10 @@ if __name__ == '__main__':
 		
 		if verb > 2:
 			print "[INFO] Generating compressed file. This may take some time..."
-			
-		tar = tarfile.open("project%s%s.tar.gz" % (os.sep, project.project_name), "w:gz")
-		tar.add("project%s%s" % (os.sep, project.project_name))
+		
+		os.chdir("project")	
+		tar = tarfile.open("%s.tar.gz" % (project.project_name), "w:gz")
+		tar.add("%s" % (project.project_name))
 		tar.close()
 		
 		if verb > 2:
