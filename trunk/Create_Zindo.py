@@ -11,8 +11,6 @@ from data_input import *
 			
 if __name__ == '__main__':
 	t1 = time.clock()
-
-	input_instructions = "test_lyra"
 	
 	##############################################
 	#                                            #
@@ -27,6 +25,15 @@ if __name__ == '__main__':
 	##############################################
 	
 	verb = 3
+
+	try:
+		import Tkinter
+		import tkFileDialog
+		input_instructions = tkFileDialog.askopenfilename(filetypes = [("All", "*")], title='Please select an instruction file')
+	except ImportError:
+		if verb > 1:
+			print "[WARNING] Tkinter or tkFileDialog could not be imported. Instruction file should be named \"test\"."
+			input_instructions = "test"
 
 	# ==========================
 	# Import Psyco if available
@@ -69,7 +76,8 @@ if __name__ == '__main__':
 				project.project_name_ok = True
 			
 			elif first_word=="INPUT_DIR":
-				project.input_dir = words[1]
+				tmp = words[1:]
+				project.input_dir = ' '.join(x for x in tmp)
 				project.input_dir_ok = True
 				
 			elif first_word=="FILE_TYPE":
@@ -327,7 +335,7 @@ if __name__ == '__main__':
 	# ==========================
 	(project.file_type, project.ext) = FileTypeCheck(project.file_type)
 	
-	project.input_cluster = '%s%sinput%sMD' % (project.project_name, os.sep, os.sep)
+	project.input_cluster = 'project%s%s%sinput%sMD' % (os.sep, project.project_name, os.sep, os.sep)
 	try:
 		os.makedirs(project.input_cluster)
 	except:
@@ -336,7 +344,7 @@ if __name__ == '__main__':
 			print "[WARNING] Could not create %s folder or folder already exists." % (project.input_cluster)
 	
 	try:
-		shutil.copy("src%screate_input_zindo.cpp" % (os.sep), "%s" % (project.project_name))
+		shutil.copy("src%screate_input_zindo.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
 	except:
 		pass
 		if verb > 1:
@@ -446,8 +454,8 @@ if __name__ == '__main__':
 		if verb > 2:
 			print "[INFO] Generating compressed file. This may take some time..."
 			
-		tar = tarfile.open("%s.tar.gz" % project.project_name, "w:gz")
-		tar.add("%s" % project.project_name)
+		tar = tarfile.open("project%s%s.tar.gz" % (os.sep, project.project_name), "w:gz")
+		tar.add("project%s%s" % (os.sep, project.project_name))
 		tar.close()
 		
 		if verb > 2:
@@ -455,7 +463,7 @@ if __name__ == '__main__':
 			
 	except:
 		if verb > 1:
-			print "[WARNING] Could not create %s.tar.gz file.\n" % (project.project_name)	
+			print "[WARNING] Could not create project%s%s.tar.gz file.\n" % (os.sep, project.project_name)	
 
 
 	t2 = time.clock()

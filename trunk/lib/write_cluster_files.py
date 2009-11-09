@@ -141,10 +141,11 @@ def ScriptFileCreation(project):
 
 	tmp += 'rm -rf $SCRATCH_DIR/*\n'
 	
+	file = 'project%s%s%s01.file_creation.sh' % (os.sep, project.project_name, os.sep)
 	try:
-		foutput = open('%s/01.file_creation.sh' % (project.project_name), 'w')
+		foutput = open(file, 'w')
 	except:
-		print "[ERROR] Could not create %s/01.file_creation.sh. Aborting..." % (project.project_name)
+		print "[ERROR] Could not create %s. Aborting..." % (file)
 		sys.exit(1)
 	
 	foutput.write(tmp)
@@ -213,10 +214,11 @@ def ScriptFileCreationDirect(project):
 	tmp += 'done\n\n'
 	tmp += 'rm $INPUT_DIR/MD/create_input_zindo*\n'
 	
+	file = 'project%s%s%s01.file_creation_direct.sh' % (os.sep, project.project_name, os.sep)
 	try:
-		foutput = open('%s/01.file_creation_direct.sh' % (project.project_name), 'w')
+		foutput = open(file, 'w')
 	except:
-		print "[ERROR] Could not create %s/01.file_creation_direct.sh. Aborting..." % (project.project_name)
+		print "[ERROR] Could not create %s. Aborting..." % (file)
 		sys.exit(1)
 	
 	foutput.write(tmp)
@@ -253,10 +255,11 @@ def ScriptFileCreationPBS(project):
 	tmp += 'chmod +x 01.file_creation.sh\n'
 	tmp += './01.file_creation.sh\n'
 
+	file = 'project%s%s%s01.file_creation.pbs' % (os.sep, project.project_name, os.sep)
 	try:
-		foutput = open('%s/01.file_creation.pbs' % (project.project_name), 'w')
+		foutput = open(file, 'w')
 	except:
-		print "[ERROR] Could not create %s/01.file_creation.pbs. Aborting..." % (project.project_name)
+		print "[ERROR] Could not create %s. Aborting..." % (file)
 		sys.exit(1)
 	
 	foutput.write(tmp)
@@ -427,11 +430,11 @@ def ScriptZINDOLaunch(project):
 	tmp += '	qsub $PBS\n'
 	tmp += 'done\n'
 
-	
+	file = 'project%s%s%s02.launch_zindo.sh' % (os.sep, project.project_name, os.sep)
 	try:
-		foutput = open('%s/02.launch_zindo.sh' % (project.project_name), 'w')
+		foutput = open(file, 'w')
 	except:
-		print "[ERROR] Could not create %s/02.launch_zindo.sh. Aborting..." % (project.project_name)
+		print "[ERROR] Could not create %s. Aborting..." % (file)
 		sys.exit(1)
 	
 	foutput.write(tmp)
