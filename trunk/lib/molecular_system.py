@@ -150,3 +150,41 @@ class Neighbors_System(object):
 		self.neighbors = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2))
 		self.displ_vec = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2, 3))
 		self.dist_square = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2))
+
+class Eigenvector_Matrix(object):
+	""" Class for the eigenvectors of the matrix"""
+	def __init__(self, n_modes=1):
+		self.n_modes = n_modes		# Number of vibrational modes
+		self.freq = numpy.zeros((self.n_modes), float)
+		
+		self.vec_matrix = numpy.matrix(numpy.zeros((self.n_modes, self.n_modes), float))	# Displacement vectors for each mode
+		self.vec_matrix_I = numpy.matrix(numpy.zeros((self.n_modes, self.n_modes), float))	# Inverted matrix
+		
+		self.cart_coord_matrix = numpy.matrix(numpy.zeros((self.n_modes, 1), float))		# Cartesian coordinates matrix
+		self.normal_coord_matrix = 0.0														# Cartesian coordinates matrix
+
+	def __str__(self):
+		tmp = ''
+		for i in xrange(self.n_modes):
+#		for i in xrange(10):
+			tmp += 'Mode %d: %f cm-1\n' % (i+1, self.freq[i])
+			for ii in xrange(0, self.n_modes, 3):
+				tmp += '%6d %12.5f %12.5f %12.5f\n' % (ii/3 + 1, self.vec_matrix[i, ii], self.vec_matrix[i, ii+1], self.vec_matrix[i, ii+2])
+			
+		return tmp
+		
+	def getI(self):
+		self.vec_matrix_I = self.vec_matrix.getI()
+		
+	def getRefCoord(self, mol):
+		j = 0
+		for i in xrange(mol.n_mol):
+			for ii in xrange(mol.n_atom):
+#				print i, ii, j
+				self.cart_coord_matrix[j, 0] = mol.x[0,i,ii]
+				self.cart_coord_matrix[j+1, 0] = mol.y[0,i,ii]
+				self.cart_coord_matrix[j+2, 0] = mol.z[0,i,ii]
+				j += 3
+				
+	def getNormalCoord(self):
+		self.normal_coord_matrix = self.vec_matrix*self.cart_coord_matrix

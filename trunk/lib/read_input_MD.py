@@ -187,3 +187,61 @@ def Read_TINKER_arc_File(name, mol, verb=2):
 				mol.atomic_valence[i, ii, iii] = atomic_valences[mol.symbol[i][ii][iii]] 
 		if ( i%100 == 0 and verb > 3):
 			print "[INFO] Frame %d read!" % (i)
+
+def Read_Tinker_vec_File(name, mol, data):
+	""" Read Tinker Vector file """
+	try:
+		finput = open(name, 'r')
+	except:
+		print "Could not open %s" % (name)
+		exit(1)
+
+	i = 0
+	
+	line = finput.readline()
+
+	while len(line)!=0:
+#			print len(line)
+		words = line.split()
+		
+		while (len(words)==0):
+			line = finput.readline()
+			words = line.split()
+			
+		if (len(words)!=0 and (words[0]=="Vibrational" and words[1]=="Normal" and words[2]=="Mode")):
+			try:
+				data.freq[i] = float(words[6])
+			except:
+				data.freq[i] = 0.0
+				
+			line = finput.readline()
+			words = line.split()
+			
+			while (len(words)==0):
+				line = finput.readline()
+				words = line.split()
+				
+			if (len(words)!=0 and (words[0]=="Atom" and words[1]=="Delta" and words[2]=="X")):
+				line = finput.readline()
+				words = line.split()
+				
+				while (len(words)==0):
+					line = finput.readline()
+					words = line.split()
+				
+				data.vec_matrix[i,0] = float(words[1])
+				data.vec_matrix[i,1] = float(words[2])
+				data.vec_matrix[i,2] = float(words[3])
+				for ii in xrange(1, mol.n_mol * mol.n_atom, 1):
+					line = finput.readline()
+					words = line.split()
+					
+					data.vec_matrix[i,ii*3] = float(words[1])
+					data.vec_matrix[i,(ii*3) + 1] = float(words[2])
+					data.vec_matrix[i,(ii*3) + 2] = float(words[3])
+					
+			i += 1
+		line = finput.readline()
+		
+	finput.close()
+#	print "Reading of input file done!"
