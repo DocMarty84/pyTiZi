@@ -161,6 +161,7 @@ class Eigenvector_Matrix(object):
 		self.vec_matrix_I = numpy.matrix(numpy.zeros((self.n_modes, self.n_modes), float))	# Inverted matrix
 		
 		self.cart_coord_matrix = numpy.matrix(numpy.zeros((self.n_modes, 1), float))		# Cartesian coordinates matrix
+		self.mass_matrix = numpy.matrix(numpy.zeros((1, self.n_modes), float))				# Masses matrix
 		self.normal_coord_matrix = 0.0														# Cartesian coordinates matrix
 
 	def __str__(self):
@@ -175,16 +176,28 @@ class Eigenvector_Matrix(object):
 		
 	def getI(self):
 		self.vec_matrix_I = self.vec_matrix.getI()
+#		return self.vec_matrix.getI()
 		
 	def getRefCoord(self, mol):
 		j = 0
 		for i in xrange(mol.n_mol):
 			for ii in xrange(mol.n_atom):
 #				print i, ii, j
-				self.cart_coord_matrix[j, 0] = mol.x[0,i,ii]
+				self.cart_coord_matrix[j, 0]   = mol.x[0,i,ii]
 				self.cart_coord_matrix[j+1, 0] = mol.y[0,i,ii]
 				self.cart_coord_matrix[j+2, 0] = mol.z[0,i,ii]
 				j += 3
 				
+	def getMasses(self, mol):
+		j = 0
+		for i in xrange(mol.n_mol):
+			for ii in xrange(mol.n_atom):
+#				print i, ii, j
+				self.mass_matrix[0, j]   = mol.atomic_mass[0,i,ii]
+				self.mass_matrix[0, j+1] = mol.atomic_mass[0,i,ii]
+				self.mass_matrix[0, j+2] = mol.atomic_mass[0,i,ii]
+				j += 3
+				
 	def getNormalCoord(self):
 		self.normal_coord_matrix = self.vec_matrix*self.cart_coord_matrix
+#		return vec_matrix*self.cart_coord_matrix
