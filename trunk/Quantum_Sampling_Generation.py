@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import numpy
+import numpy as np
 import time
 import copy
 
@@ -9,6 +9,7 @@ sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files
 from data_input import *
 
+hbar = 6.350775218e-8	# hbar constant in atomic mass units
 
 if __name__ == '__main__':
 	""" 
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 	qs_eigen = molecular_system.Eigenvector_Matrix(qs_coord.n_atom[0]*3)
 	read_input_MD.Read_Tinker_vec_File(file_vec, qs_coord, qs_eigen)
 #	print qs_eigen
-#	print sum(numpy.ravel(qs_eigen.vec_matrix[:,:])*numpy.ravel(qs_eigen.vec_matrix[:,:]))
+#	print sum(np.ravel(qs_eigen.vec_matrix[:,:])*np.ravel(qs_eigen.vec_matrix[:,:]))
 	
 	qs_eigen.getI()
 #	print qs_eigen.vec_matrix*qs_eigen.vec_matrix_I
@@ -66,17 +67,17 @@ if __name__ == '__main__':
 
 			t2 = 0.0
 			for k in xrange(3):
-				t2 += numpy.power(qs_eigen.vec_matrix[mode,j+k], 2)
+				t2 += np.power(qs_eigen.vec_matrix[mode,j+k], 2)
 			mu_up = mu_up + qs_coord.atomic_mass[0, a, b] * t2
 			mu_down = mu_down + t2
 
 			j += 3
 
-		mu = numpy.sqrt(mu_up) / numpy.sqrt(mu_down)
+		mu = np.sqrt(mu_up) / np.sqrt(mu_down)
 #		print "mu =", mu
 	
 		tmp = ''
-		for d in xrange(-101,100,20):
+		for d in xrange(1,1000000,100000):
 			X = copy.copy(X_ref)
 			Q = copy.copy(Q_ref)
 			
@@ -87,14 +88,14 @@ if __name__ == '__main__':
 			T = copy.copy(T_ref)
 			
 			# Apply the displacement
-			T[mode,:] = T[mode,:]*d*numpy.sqrt(2/mu)
+			T[mode,:] = T[mode,:]*d*np.sqrt(2*hbar/mu)
 			Q = T*X
 			
 			# Normalize the new matrix
 			t_norm = 0.0
 			for i in xrange(qs_eigen.n_modes):
-				t_norm = t_norm + numpy.power(T[mode,i],2)
-			t_norm = numpy.sqrt(t_norm)
+				t_norm = t_norm + np.power(T[mode,i],2)
+			t_norm = np.sqrt(t_norm)
 			T[mode,:] = T[mode,:]/t_norm
 				
 			T_I = T.getI()
@@ -102,7 +103,7 @@ if __name__ == '__main__':
 			X = T_I*Q
 
 #			print "Q =", Q[mode,0]
-#			print sum(numpy.ravel(T[:,:])*numpy.ravel(T[:,:]))
+#			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
 #			print X
 			
 			tmp += '%5d %s\n' % (qs_coord.n_mol*qs_coord.n_atom, filename_base)
