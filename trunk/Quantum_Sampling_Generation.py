@@ -54,7 +54,7 @@ if __name__ == '__main__':
 	Q_ref   = copy.copy(qs_eigen.normal_coord_matrix)
 	
 #	for mode in xrange(qs_eigen.n_modes):
-	for mode in xrange(0, 1, 1):
+	for mode in xrange(24, 25, 1):
 		# =================================
 		# Calculation of the "reduced mass"
 		# =================================
@@ -77,34 +77,29 @@ if __name__ == '__main__':
 #		print "mu =", mu
 	
 		tmp = ''
-		for d in xrange(1,1000000,100000):
+		for d in xrange(-5000,5000,500):
 			X = copy.copy(X_ref)
-			Q = copy.copy(Q_ref)
+			T = copy.copy(T_ref)
+#			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
 			
 			# ==========================================
 			# Modify the eigenvectors of the normal mode
 			# ==========================================
-			
-			T = copy.copy(T_ref)
-			
 			# Apply the displacement
 			T[mode,:] = T[mode,:]*d*np.sqrt(2*hbar/mu)
 			Q = T*X
 			
-			# Normalize the new matrix
-			t_norm = 0.0
-			for i in xrange(qs_eigen.n_modes):
-				t_norm = t_norm + np.power(T[mode,i],2)
-			t_norm = np.sqrt(t_norm)
-			T[mode,:] = T[mode,:]/t_norm
-				
-			T_I = T.getI()
-			
-			X = T_I*Q
+			# Undo the mass-weighting of the new matrix
+			T[mode,:] = T[mode,:]/np.sqrt(qs_eigen.mass_matrix[:])
+#			t_norm = 0.0
+#			for i in xrange(qs_eigen.n_modes):
+#				t_norm = t_norm + np.power(T[mode,i],2)
+#			t_norm = np.sqrt(t_norm)
+#			T[mode,:] = T[mode,:]/t_norm
 
-#			print "Q =", Q[mode,0]
-#			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
-#			print X
+			X_T = X.getT()
+			X_T = X_T + T[mode,:]
+			X = X_T.getT()
 			
 			tmp += '%5d %s\n' % (qs_coord.n_mol*qs_coord.n_atom, filename_base)
 			j = 0
