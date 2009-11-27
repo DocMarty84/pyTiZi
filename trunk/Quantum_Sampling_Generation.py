@@ -53,6 +53,15 @@ if __name__ == '__main__':
 	T_I_ref = copy.copy(qs_eigen.vec_matrix_I)
 	Q_ref   = copy.copy(qs_eigen.normal_coord_matrix)
 	
+	# Converting the output of Tinker in the good starting form
+	for j in xrange(qs_eigen.n_modes):
+		T_ref[j,:] = np.ravel(T_ref[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
+		t_norm = 0.0
+		for i in xrange(qs_eigen.n_modes):
+			t_norm = t_norm + np.power(T_ref[j,i],2)
+		t_norm = np.sqrt(t_norm)
+		T_ref[j,:] = T_ref[j,:]/t_norm
+	
 #	for mode in xrange(qs_eigen.n_modes):
 	for mode in xrange(24, 25, 1):
 		# =================================
