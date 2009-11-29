@@ -188,7 +188,7 @@ def Read_TINKER_arc_File(name, mol, verb=2):
 		if ( i%100 == 0 and verb > 3):
 			print "[INFO] Frame %d read!" % (i)
 
-def Read_Tinker_vec_File(name, mol, data):
+def Read_TINKER_vec_File(name, mol, data):
 	""" Read Tinker Vector file """
 	try:
 		finput = open(name, 'r')
@@ -244,4 +244,13 @@ def Read_Tinker_vec_File(name, mol, data):
 		line = finput.readline()
 		
 	finput.close()
+	
+	for j in xrange(data.n_modes):
+		data.vec_matrix[j,:] = np.ravel(data.vec_matrix[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
+		t_norm = 0.0
+		for i in xrange(qs_eigen.n_modes):
+			t_norm = t_norm + np.power(data.vec_matrix[j,i],2)
+		t_norm = np.sqrt(t_norm)
+		data.vec_matrix[j,:] = data.vec_matrix[j,:]/t_norm
+		
 #	print "Reading of input file done!"

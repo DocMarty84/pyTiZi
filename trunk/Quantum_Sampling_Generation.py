@@ -32,7 +32,7 @@ if __name__ == '__main__':
 #	print qs_coord
 	
 	qs_eigen = molecular_system.Eigenvector_Matrix(qs_coord.n_atom[0]*3)
-	read_input_MD.Read_Tinker_vec_File(file_vec, qs_coord, qs_eigen)
+	read_input_MD.Read_TINKER_vec_File(file_vec, qs_coord, qs_eigen)
 #	print qs_eigen
 #	print sum(np.ravel(qs_eigen.vec_matrix[:,:])*np.ravel(qs_eigen.vec_matrix[:,:]))
 	
@@ -54,13 +54,13 @@ if __name__ == '__main__':
 	Q_ref   = copy.copy(qs_eigen.normal_coord_matrix)
 	
 	# Converting the output of Tinker in the good starting form
-	for j in xrange(qs_eigen.n_modes):
-		T_ref[j,:] = np.ravel(T_ref[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
-		t_norm = 0.0
-		for i in xrange(qs_eigen.n_modes):
-			t_norm = t_norm + np.power(T_ref[j,i],2)
-		t_norm = np.sqrt(t_norm)
-		T_ref[j,:] = T_ref[j,:]/t_norm
+#	for j in xrange(qs_eigen.n_modes):
+#		T_ref[j,:] = np.ravel(T_ref[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
+#		t_norm = 0.0
+#		for i in xrange(qs_eigen.n_modes):
+#			t_norm = t_norm + np.power(T_ref[j,i],2)
+#		t_norm = np.sqrt(t_norm)
+#		T_ref[j,:] = T_ref[j,:]/t_norm
 	
 #	for mode in xrange(qs_eigen.n_modes):
 	for mode in xrange(24, 25, 1):
