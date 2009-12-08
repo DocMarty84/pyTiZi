@@ -1,5 +1,5 @@
 import string
-import numpy
+import numpy as np
 import sys
 import read_various
 
@@ -118,12 +118,12 @@ def Read_TINKER_add_File(name, verb=2):
 			elif first_word == "n_frame":
 				n_frame = int(words[1])
 				
-				a = numpy.zeros((n_frame), float)
-				b = numpy.zeros((n_frame), float)
-				c = numpy.zeros((n_frame), float)
-				alpha = numpy.zeros((n_frame), float)
-				beta = numpy.zeros((n_frame), float)
-				gamma = numpy.zeros((n_frame), float)
+				a = np.zeros((n_frame), float)
+				b = np.zeros((n_frame), float)
+				c = np.zeros((n_frame), float)
+				alpha = np.zeros((n_frame), float)
+				beta = np.zeros((n_frame), float)
+				gamma = np.zeros((n_frame), float)
 				
 			elif first_word == "n_mol":
 				n_mol = int(words[1])
@@ -244,13 +244,5 @@ def Read_TINKER_vec_File(name, mol, data):
 		line = finput.readline()
 		
 	finput.close()
-	
-	for j in xrange(data.n_modes):
-		data.vec_matrix[j,:] = np.ravel(data.vec_matrix[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
-		t_norm = 0.0
-		for i in xrange(qs_eigen.n_modes):
-			t_norm = t_norm + np.power(data.vec_matrix[j,i],2)
-		t_norm = np.sqrt(t_norm)
-		data.vec_matrix[j,:] = data.vec_matrix[j,:]/t_norm
 		
 #	print "Reading of input file done!"

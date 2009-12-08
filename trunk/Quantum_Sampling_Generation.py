@@ -9,7 +9,8 @@ sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files
 from data_input import *
 
-hbar = 6.350775218e-8	# hbar constant in atomic mass units
+h_planck = 3.990312682e+13	# Planck constant in atomic mass units and angstrom^2
+cm1_TO_Hz = 2.99792458e+10	# conversion between cm-1 and Hz
 
 if __name__ == '__main__':
 	""" 
@@ -24,46 +25,50 @@ if __name__ == '__main__':
 	file_xyz = "%s.xyz" % (filename_base)
 	file_add = "%s.add" % (filename_base)
 	
+	# Get the cell parameters as well as the number frame, molecules and atoms
 	(n_frame, n_mol, n_atom, a, b, c, alpha, beta, gamma) = read_input_MD.Read_TINKER_add_File(file_add)
 	box = molecular_system.SimulationBox(n_frame, a, b, c, alpha, beta, gamma)
 	
+	# Get the coordinates of the system
 	qs_coord = molecular_system.MolecularSystem(n_frame, n_mol, [n_atom])
 	read_input_MD.Read_TINKER_arc_File(file_xyz, qs_coord)
 #	print qs_coord
 	
+	# Get the eigenvectors of the system. After this part, the eigenvectors
+	# must be non mass-weighted and normalized
 	qs_eigen = molecular_system.Eigenvector_Matrix(qs_coord.n_atom[0]*3)
 	read_input_MD.Read_TINKER_vec_File(file_vec, qs_coord, qs_eigen)
 #	print qs_eigen
 #	print sum(np.ravel(qs_eigen.vec_matrix[:,:])*np.ravel(qs_eigen.vec_matrix[:,:]))
-	
-	qs_eigen.getI()
-#	print qs_eigen.vec_matrix*qs_eigen.vec_matrix_I
 
+	# Copy the coordinates of the equilibrium system
 	qs_eigen.getRefCoord(qs_coord)
 #	print qs_eigen.cart_coord_matrix
 
+	# Get the mass of each atoms
 	qs_eigen.getMasses(qs_coord)
 #	print qs_eigen.mass_matrix
 
-	qs_eigen.getNormalCoord()
+	# Converts the eigenvectors read in the output file in non mass-weighted
+	# and normalized eigenvectors
+	qs_eigen.ConvertEigenVec("tinker")
+#	print sum(np.ravel(qs_eigen.vec_matrix[:,:])*np.ravel(qs_eigen.vec_matrix[:,:]))
+
+	# Calculates Normal Coordinates, on the basis of the 
+	# mass-weighted eigenvectors
+#	qs_eigen.getNormalCoord("tinker")
 #	print qs_eigen.normal_coord_matrix
+
+	# Calculates the inverse matrix of both eigenvectors matrix
+#	qs_eigen.getI()
+#	print qs_eigen.vec_matrix*qs_eigen.vec_matrix_I
+#	print qs_eigen.vec_matrix_MW*qs_eigen.vec_matrix_MW_I
 
 	X_ref   = copy.copy(qs_eigen.cart_coord_matrix)
 	T_ref   = copy.copy(qs_eigen.vec_matrix)
-	T_I_ref = copy.copy(qs_eigen.vec_matrix_I)
-	Q_ref   = copy.copy(qs_eigen.normal_coord_matrix)
-	
-	# Converting the output of Tinker in the good starting form
-#	for j in xrange(qs_eigen.n_modes):
-#		T_ref[j,:] = np.ravel(T_ref[j,:])*(np.ravel(np.sqrt(qs_eigen.mass_matrix[:])))
-#		t_norm = 0.0
-#		for i in xrange(qs_eigen.n_modes):
-#			t_norm = t_norm + np.power(T_ref[j,i],2)
-#		t_norm = np.sqrt(t_norm)
-#		T_ref[j,:] = T_ref[j,:]/t_norm
 	
 #	for mode in xrange(qs_eigen.n_modes):
-	for mode in xrange(24, 25, 1):
+	for mode in xrange(70, 71, 1):
 		# =================================
 		# Calculation of the "reduced mass"
 		# =================================
@@ -86,7 +91,8 @@ if __name__ == '__main__':
 #		print "mu =", mu
 	
 		tmp = ''
-		for d in xrange(-5000,5000,500):
+		for d in xrange(-5,5,1):
+			d = d/10.0
 			X = copy.copy(X_ref)
 			T = copy.copy(T_ref)
 #			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
@@ -94,17 +100,9 @@ if __name__ == '__main__':
 			# ==========================================
 			# Modify the eigenvectors of the normal mode
 			# ==========================================
-			# Apply the displacement
-			T[mode,:] = T[mode,:]*d*np.sqrt(2*hbar/mu)
-			Q = T*X
 			
-			# Undo the mass-weighting of the new matrix
-			T[mode,:] = T[mode,:]/np.sqrt(qs_eigen.mass_matrix[:])
-#			t_norm = 0.0
-#			for i in xrange(qs_eigen.n_modes):
-#				t_norm = t_norm + np.power(T[mode,i],2)
-#			t_norm = np.sqrt(t_norm)
-#			T[mode,:] = T[mode,:]/t_norm
+			# Apply the displacement
+			T[mode,:] = (1/mu)*np.sqrt(h_planck/(cm1_TO_Hz*qs_eigen.freq[mode]))*T[mode,:]*d
 
 			X_T = X.getT()
 			X_T = X_T + T[mode,:]

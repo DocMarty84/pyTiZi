@@ -1,5 +1,7 @@
-import math, numpy
+import math
+import numpy as np
 import copy
+import string
 
 #=====================================================================
 #-------------------------Class Definition----------------------------
@@ -18,22 +20,22 @@ class SimulationBox(object):
 		self.alpha_deg = copy.copy(alpha)
 		self.beta_deg = copy.copy(beta)
 		self.gamma_deg = copy.copy(gamma)
-		self.alpha_rad = numpy.zeros((n_frame), float)
-		self.beta_rad = numpy.zeros((n_frame), float)
-		self.gamma_rad = numpy.zeros((n_frame), float)
+		self.alpha_rad = np.zeros((n_frame), float)
+		self.beta_rad = np.zeros((n_frame), float)
+		self.gamma_rad = np.zeros((n_frame), float)
 				
 		for i in xrange(n_frame):
 			self.alpha_rad[i] = math.radians(self.alpha_deg[i])
 			self.beta_rad[i] = math.radians(self.beta_deg[i])
 			self.gamma_rad[i] = math.radians(self.gamma_deg[i])
 		
-		self.temp_alpha_cos=numpy.zeros((n_frame), float)
-		self.temp_beta_sin=numpy.zeros((n_frame), float)
-		self.temp_beta_cos=numpy.zeros((n_frame), float)
-		self.temp_gamma_sin=numpy.zeros((n_frame), float)
-		self.temp_gamma_cos=numpy.zeros((n_frame), float)
-		self.temp_beta_term=numpy.zeros((n_frame), float)
-		self.temp_gamma_term=numpy.zeros((n_frame), float)
+		self.temp_alpha_cos=np.zeros((n_frame), float)
+		self.temp_beta_sin=np.zeros((n_frame), float)
+		self.temp_beta_cos=np.zeros((n_frame), float)
+		self.temp_gamma_sin=np.zeros((n_frame), float)
+		self.temp_gamma_cos=np.zeros((n_frame), float)
+		self.temp_beta_term=np.zeros((n_frame), float)
+		self.temp_gamma_term=np.zeros((n_frame), float)
 
 	def __str__(self):
 		tmp = ''
@@ -87,7 +89,7 @@ class MolecularSystem(object):
 	def __init__(self, n_frame=1, n_mol=1, n_atom=[1]):
 		self.n_frame = n_frame	# Number of frame
 		self.n_mol = n_mol		# Number of molecules
-		self.n_atom = numpy.zeros((n_mol), int)
+		self.n_atom = np.zeros((n_mol), int)
 		
 		for ii in xrange(n_mol):
 			if len(n_atom) != n_mol:
@@ -96,17 +98,17 @@ class MolecularSystem(object):
 				self.n_atom[ii] = n_atom[ii]	# Number of atom per molecule 
 		
 		self.symbol = [[["A" for i in xrange(max(n_atom))] for j in xrange(n_mol)] for k in xrange(n_frame)]	# Atomic symbols
-		self.x = numpy.zeros((n_frame, n_mol, max(n_atom)), float)	# x coordinates
-		self.y = numpy.zeros((n_frame, n_mol, max(n_atom)), float)
-		self.z = numpy.zeros((n_frame, n_mol, max(n_atom)), float)
-		self.mol_number = numpy.zeros((n_frame, n_mol))	# Molecule label
-		self.atomic_number = numpy.zeros((n_frame, n_mol, max(n_atom)), float)	# Atomic mass
-		self.atomic_mass = numpy.zeros((n_frame, n_mol, max(n_atom)), float)	# Atomic mass
-		self.atomic_valence = numpy.zeros((n_frame, n_mol, max(n_atom)), int)	# Atomic valence
-		self.CM_x = numpy.zeros((n_frame, n_mol), float)	# Center of mass x coordinates
-		self.CM_y = numpy.zeros((n_frame, n_mol), float)
-		self.CM_z = numpy.zeros((n_frame, n_mol), float)
-		self.n_electrons = numpy.zeros((n_frame, n_mol), int)
+		self.x = np.zeros((n_frame, n_mol, max(n_atom)), float)	# x coordinates
+		self.y = np.zeros((n_frame, n_mol, max(n_atom)), float)
+		self.z = np.zeros((n_frame, n_mol, max(n_atom)), float)
+		self.mol_number = np.zeros((n_frame, n_mol))	# Molecule label
+		self.atomic_number = np.zeros((n_frame, n_mol, max(n_atom)), float)	# Atomic mass
+		self.atomic_mass = np.zeros((n_frame, n_mol, max(n_atom)), float)	# Atomic mass
+		self.atomic_valence = np.zeros((n_frame, n_mol, max(n_atom)), int)	# Atomic valence
+		self.CM_x = np.zeros((n_frame, n_mol), float)	# Center of mass x coordinates
+		self.CM_y = np.zeros((n_frame, n_mol), float)
+		self.CM_z = np.zeros((n_frame, n_mol), float)
+		self.n_electrons = np.zeros((n_frame, n_mol), int)
 	
 	def __str__(self):
 		tmp = ""
@@ -147,27 +149,29 @@ class Neighbors_System(object):
 	def __init__(self, n_frame=1, n_mol_mol1=1, n_mol_mol2=1):
 		self.n_frame = n_frame
 		self.n_mol = n_mol_mol1
-		self.neighbors = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2))
-		self.displ_vec = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2, 3))
-		self.dist_square = numpy.zeros((n_frame, n_mol_mol1, n_mol_mol2))
+		self.neighbors = np.zeros((n_frame, n_mol_mol1, n_mol_mol2))
+		self.displ_vec = np.zeros((n_frame, n_mol_mol1, n_mol_mol2, 3))
+		self.dist_square = np.zeros((n_frame, n_mol_mol1, n_mol_mol2))
 
 class Eigenvector_Matrix(object):
 	""" Class for the eigenvectors of the matrix"""
 	def __init__(self, n_modes=1):
 		self.n_modes = n_modes		# Number of vibrational modes
-		self.freq = numpy.zeros((self.n_modes), float)
+		self.freq = np.zeros((self.n_modes), float)
 		
-		self.vec_matrix = numpy.matrix(numpy.zeros((self.n_modes, self.n_modes), float))	# Displacement vectors for each mode
-		self.vec_matrix_I = numpy.matrix(numpy.zeros((self.n_modes, self.n_modes), float))	# Inverted matrix
+		self.vec_matrix = np.matrix(np.zeros((self.n_modes, self.n_modes), float))		# Eigenvectors matrix, non mass-weighted
+		self.vec_matrix_I = 0.0															# Inverted matrix
 		
-		self.cart_coord_matrix = numpy.matrix(numpy.zeros((self.n_modes, 1), float))		# Cartesian coordinates matrix
-		self.mass_matrix = numpy.matrix(numpy.zeros((1, self.n_modes), float))				# Masses matrix
-		self.normal_coord_matrix = 0.0														# Cartesian coordinates matrix
+		self.vec_matrix_MW = np.matrix(np.zeros((self.n_modes, self.n_modes), float))	# Eigenvectors matrix, mass-weighted
+		self.vec_matrix_MW_I = 0.0														# Inverted matrix
+		
+		self.cart_coord_matrix = np.matrix(np.zeros((self.n_modes, 1), float))			# Cartesian coordinates matrix
+		self.mass_matrix = np.matrix(np.zeros((1, self.n_modes), float))				# Masses matrix
+		self.normal_coord_matrix = 0.0													# Cartesian coordinates matrix
 
 	def __str__(self):
 		tmp = ''
 		for i in xrange(self.n_modes):
-#		for i in xrange(10):
 			tmp += 'Mode %d: %f cm-1\n' % (i+1, self.freq[i])
 			for ii in xrange(0, self.n_modes, 3):
 				tmp += '%6d %12.5f %12.5f %12.5f\n' % (ii/3 + 1, self.vec_matrix[i, ii], self.vec_matrix[i, ii+1], self.vec_matrix[i, ii+2])
@@ -176,7 +180,8 @@ class Eigenvector_Matrix(object):
 		
 	def getI(self):
 		self.vec_matrix_I = self.vec_matrix.getI()
-#		return self.vec_matrix.getI()
+		if len(self.normal_coord_matrix) != 1:
+			self.vec_matrix_MW_I = self.vec_matrix_MW.getI()
 		
 	def getRefCoord(self, mol):
 		j = 0
@@ -198,6 +203,20 @@ class Eigenvector_Matrix(object):
 				self.mass_matrix[0, j+2] = mol.atomic_mass[0,i,ii]
 				j += 3
 				
-	def getNormalCoord(self):
-		self.normal_coord_matrix = self.vec_matrix*self.cart_coord_matrix
-#		return vec_matrix*self.cart_coord_matrix
+	def getNormalCoord(self, type):
+		type = string.lower(type)
+		if type=="tinker":
+			for j in xrange(self.n_modes):
+				self.vec_matrix_MW[j,:] = np.ravel(self.vec_matrix[j,:])*(np.ravel(np.sqrt(self.mass_matrix[:])))
+				t_norm = 0.0
+				for i in xrange(self.n_modes):
+					t_norm = t_norm + np.power(self.vec_matrix_MW[j,i],2)
+				t_norm = np.sqrt(t_norm)
+				self.vec_matrix_MW[j,:] = self.vec_matrix_MW[j,:]/t_norm
+
+		self.normal_coord_matrix = self.vec_matrix_MW*self.vec_matrix
+
+	def ConvertEigenVec(self, type):
+		type = string.lower(type)
+		if type=="tinker":
+			pass
