@@ -9,7 +9,7 @@ def Calculate_Number_Atom_Mol_PDB(name):
 		finput = open(name, 'r')
 	except:
 		print "Could not open %s" % (name)
-		exit(1)
+		sys.exit(1)
 	
 	n_mol = 0
 	n_atom = []
@@ -232,7 +232,7 @@ def Read_TINKER_vec_File(name, mol, data):
 				data.vec_matrix[i,0] = float(words[1])
 				data.vec_matrix[i,1] = float(words[2])
 				data.vec_matrix[i,2] = float(words[3])
-				for ii in xrange(1, mol.n_mol * mol.n_atom, 1):
+				for ii in xrange(1, mol.n_mol * mol.n_atom[0], 1):
 					line = finput.readline()
 					words = line.split()
 					

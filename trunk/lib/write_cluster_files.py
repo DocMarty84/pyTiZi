@@ -3,6 +3,9 @@ import os, sys
 import numpy
 
 def CreateXYZ(data, cell, project, filename_base, verb=2):
+	""" Create the .xyz file containing the coordinates of all the atoms
+		in the system.
+	"""
 	file = '%s%s%s.xyz' % (project.input_cluster, os.sep, filename_base)
 	try:
 		foutput = open(file, 'w')
@@ -35,6 +38,9 @@ def CreateXYZ(data, cell, project, filename_base, verb=2):
 	foutput.close()
 
 def CreateCELL(data, cell, project, filename_base):
+	""" Create the .cell file containing the cell parameters related
+		to the .xyz file.
+	"""
 	tmp = 'PBC %s' % (project.pbc_number)
 	tmp += 'cutoff %f\n' % (project.cutoff)
 	for i in xrange(data.n_frame):
@@ -53,6 +59,9 @@ def CreateCELL(data, cell, project, filename_base):
 	foutput.close()
 
 def CreateCM(data, project, filename_base):
+	""" Create the .cm file containing the center of masses of the molecules
+		of the .xyz file.
+	"""
 	tmp = ''
 	for i in xrange(data.n_frame):
 		tmp += 'frame %d\n' % (i)
@@ -75,6 +84,8 @@ def CreateCM(data, project, filename_base):
 	foutput.close()
 	
 def ScriptFileCreation(project):
+	""" Create the script used to calculate the neighbors.
+	"""
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
@@ -152,6 +163,8 @@ def ScriptFileCreation(project):
 	foutput.close()
 	
 def ScriptFileCreationDirect(project):
+	""" Create the script used to calculate the neighbors in interactive mode.
+	"""
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
@@ -225,6 +238,8 @@ def ScriptFileCreationDirect(project):
 	foutput.close()
 
 def ScriptFileCreationPBS(project):
+	""" Create the .pbs file for the neighbor calculations.
+	"""
 	tmp = ''
 	if project.location_cluster == "joe":
 		tmp += '#!/bin/csh\n'
@@ -266,7 +281,9 @@ def ScriptFileCreationPBS(project):
 	foutput.close()
 
 def ScriptZINDOLaunch(project):
-	
+	""" Create a bash script which will create the scripts (.pbs and .run files) needed 
+		to run all the ZIND0 calculations.
+	"""
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)

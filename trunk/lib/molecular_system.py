@@ -186,7 +186,7 @@ class Eigenvector_Matrix(object):
 	def getRefCoord(self, mol):
 		j = 0
 		for i in xrange(mol.n_mol):
-			for ii in xrange(mol.n_atom):
+			for ii in xrange(mol.n_atom[0]):
 #				print i, ii, j
 				self.cart_coord_matrix[j, 0]   = mol.x[0,i,ii]
 				self.cart_coord_matrix[j+1, 0] = mol.y[0,i,ii]
@@ -196,7 +196,7 @@ class Eigenvector_Matrix(object):
 	def getMasses(self, mol):
 		j = 0
 		for i in xrange(mol.n_mol):
-			for ii in xrange(mol.n_atom):
+			for ii in xrange(mol.n_atom[0]):
 #				print i, ii, j
 				self.mass_matrix[0, j]   = mol.atomic_mass[0,i,ii]
 				self.mass_matrix[0, j+1] = mol.atomic_mass[0,i,ii]
