@@ -2,6 +2,21 @@ import string
 import os, sys
 import numpy
 
+#sys.path.append("lib")
+import coord_conversion
+
+################################################################################
+#                                                                              #
+#  This library contains all the functions creating the files used on the      #
+#  calculation cluster. The functions related to the Create_Zindo.py file as   #
+#  well as the Quantum_Sampling_Generation.py will be stored here.             #
+#                                                                              #
+################################################################################
+
+# ******************************************************************************
+#                       Functions related to Create_Zindo.py
+# ******************************************************************************
+
 def CreateXYZ(data, cell, project, filename_base, verb=2):
 	""" Create the .xyz file containing the coordinates of all the atoms
 		in the system.
@@ -452,6 +467,258 @@ def ScriptZINDOLaunch(project):
 		foutput = open(file, 'w')
 	except:
 		print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+	
+	foutput.write(tmp)
+	foutput.close()
+
+# ******************************************************************************
+#                Functions related to Quantum_Sampling_Generation.py
+# ******************************************************************************
+
+def CreateTINKERVisualization(X, mol, mode, tmp, filename_base, p):
+	tmp += '%5d %s\n' % (mol.n_mol*mol.n_atom[0], filename_base)
+	j = 0
+	for i in xrange(mol.n_mol*mol.n_atom[0]):
+		a = i%mol.n_mol
+		b = i%mol.n_atom[i%mol.n_mol]
+		tmp += '%5d %2s %12.6f %12.6f %12.6f 0\n' % (i + 1, mol.symbol[0][a][b], X[j, 0], X[j+1, 0], X[j+2, 0])
+		j += 3
+	
+	if p:
+		try:
+			os.makedirs("TINKER")
+		except:
+			pass
+		
+		name = "TINKER/mode_%d.arc" % (mode+1)
+		try:
+			foutput = open(name, 'w')
+		except:
+			print "Could not open file %s" % (name)
+			sys.exit(1)
+		
+		foutput.write(tmp)		
+		foutput.close()
+		
+		
+	return tmp
+
+def CreateNormalMode(X, mol, mode, d):
+	""" Creation of the normal modes files, like Sigi's input
+	"""
+	dir = "normal_modes/normal_mode_%d" % (mode+1)
+	try:
+		os.makedirs(dir)
+	except:
+		pass
+	
+	tmp = ''
+	j = 0
+	for i in xrange(mol.n_mol*mol.n_atom[0]):
+		a = i%mol.n_mol
+		b = i%mol.n_atom[i%mol.n_mol]
+		tmp += '%2s %12.6f %12.6f %12.6f\n' % (mol.symbol[0][a][b], X[j, 0], X[j+1, 0], X[j+2, 0])
+		j += 3
+	
+	if d < 0.0:
+		name = "%s/result-%d-minus-%.1f.dat" % (dir, mode+1, abs(d))
+	else:
+		name = "%s/result-%d-plus-%.1f.dat" % (dir, mode+1, d)
+		
+	try:
+		foutput = open(name, 'w')
+	except:
+		print "Could not open %s" % (name)
+		sys.exit(1)
+		
+	foutput.write(tmp)
+	foutput.close()	
+
+def CreateVBHFInput(X, mol, box, mode, d):
+	""" Creation of the VBHF input files
+	"""
+	for charge in [-1, 0, 1]:
+		try:
+			dir_all="VBHF/all_%d" % (charge)
+			os.makedirs(dir_all)
+		except:
+			pass
+		try:
+			dir_mono="VBHF/mono_%d" % (charge)
+			os.makedirs(dir_mono)
+		except:
+			pass
+					
+		print "Calculating normal mode %d of charge %d" %(mode+1, charge)
+			
+		# All cluster
+		if d < 0.0:
+			name = "%s/result-%d-minus-%.1f.dat" % (dir_all, mode+1, abs(d))
+		else:
+			name = "%s/result-%d-plus-%.1f.dat" % (dir_all, mode+1, d)
+			
+		foutput = open(name, 'w')
+		
+		if foutput:
+			tmp = ''
+			tmp = "AM1 1SCF VBHF\n\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n" 
+
+			k = 1
+			for a in [0, -1, 1]:
+				for b in [0, -1, 1]:
+					j = 0
+					for i in xrange(mol.n_atom[0]):
+						Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+						Frac_Coord[0] += a
+						Frac_Coord[1] += b
+						Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+						tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						j += 3
+						k += 1
+					for i in xrange(mol.n_atom[1]):
+						Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+						Frac_Coord[0] += a
+						Frac_Coord[1] += b
+						Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+						tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						j += 3
+						k += 1
+						
+			for a in [-2, -1, 0, 1]:
+				j = 0
+				for i in xrange(mol.n_atom[1]):
+					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(mol.n_atom[0]*3)+j, 0], X[(mol.n_atom[0]*3)+j+1, 0], X[(mol.n_atom[0]*3)+j+2, 0], box)
+					Frac_Coord[0] += a
+					Frac_Coord[1] += -2
+					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+						
+			for b in [-1, 0, 1]:
+				j = 0
+				for i in xrange(mol.n_atom[1]):
+					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(mol.n_atom[0]*3)+j, 0], X[(mol.n_atom[0]*3)+j+1, 0], X[(mol.n_atom[0]*3)+j+2, 0], box)
+					Frac_Coord[0] += -2
+					Frac_Coord[1] += b
+					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+		
+			tmp += "$$VBHF\n"
+			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)
+			for x in xrange(24):
+				tmp += "%d 0 AM1 OMF-OPT\n"	 % mol.n_atom[0]	
+
+			foutput.write(tmp)		
+			foutput.close() 
+
+
+		# Molecule alone
+		if d < 0.0:
+			name = "%s/result-%d-minus-%.1f.dat" % (dir_mono, mode+1, abs(d))
+		else:
+			name = "%s/result-%d-plus-%.1f.dat" % (dir_mono, mode+1, d)
+			
+		foutput = open(name, 'w')
+		
+		if foutput:
+			tmp = ''
+			tmp = "AM1 1SCF VBHF\n\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
+
+			for i in xrange(mol.n_atom[0]):
+				tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][1][i], X[i, 0], X[i+1, 0], X[i+2, 0])
+			
+			tmp += "$$VBHF\n"
+			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	
+
+			foutput.write(tmp)		
+			foutput.close()
+
+def ScriptVBHFLaunch(dir_cluster):
+	""" Create a bash script which will create the scripts (.pbs and .run files) needed 
+		to run all the VBHF calculations.
+	"""
+	tmp = ''
+	tmp += '#!/bin/bash\n\n'
+	tmp += 'DIR="%s"\n' % (dir_cluster)
+	tmp += 'N_PBS=16\n\n'
+
+	tmp += 'MakePBS(){\n'
+
+#	if project.location_cluster == "lyra" or project.location_cluster == "adam":
+	tmp += '	echo "#!/bin/bash"			>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -j y"					>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -cwd"					>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -l vf=2G"				>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -l h_cpu=600:00:00"		>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -N QS"		>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -m bea"		>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "#$ -M nicolas.g.martinelli@gmail.com"		>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo " "					>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "module load common compilers/intel/fortran/9.1 compilers/intel/cpp/9.1 libs/mkl/9.1"			>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo " "					>> $DIR/vbhf_$1.pbs\n'
+	
+#	else:
+#		print '[ERROR] Bad cluster location. Aborting...'
+#		sys.exit(1)
+		
+	tmp += '	echo "cd $DIR"								>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "for FILE in \`cat $DIR/vbhf_$1.dir\`"	>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "do" 									>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "	/home/nmartine/bin/vbhf \$FILE"		>> $DIR/vbhf_$1.pbs\n'
+	tmp += '	echo "done" 								>> $DIR/vbhf_$1.pbs\n'
+	tmp += '}\n\n'
+	
+	tmp += 'i=1\n'
+	tmp += 'j=1\n'
+	tmp += 'k=0\n\n'
+
+	tmp += 'cd $DIR/\n\n'
+
+	tmp += 'find . -name "*.dat" > files.tmp\n'
+	tmp += 'N_DIR=`wc -l files.tmp | awk \'{print $1}\'`\n'
+	tmp += 'N_STEP=$(($N_DIR/$N_PBS + 1))\n'
+
+	tmp += 'while [ $i -le $N_PBS ]\n'
+	tmp += 'do\n\n'
+
+	tmp += '	k=$(($j+$N_STEP))\n'
+	tmp += '	MakePBS $i\n'
+	tmp += '	sed -n "$j","$k"p files.tmp > $DIR/vbhf_$i.dir\n\n'
+
+	tmp += '	j=$(($k+1))\n'
+	tmp += '	i=$(($i+1))\n\n'
+
+	tmp += 'done\n\n'
+	
+	tmp += 'cd $DIR\n'
+	tmp += 'for PBS in `ls vbhf_*.pbs`\n'
+	tmp += 'do\n'
+	tmp += '	qsub $PBS\n'
+	tmp += 'done\n'
+
+	file = '01.launch_vbhf.sh'
+	try:
+		foutput = open(file, 'w')
+	except:
+		print "Could not create %s. Aborting..." % (file)
 		sys.exit(1)
 	
 	foutput.write(tmp)

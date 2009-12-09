@@ -66,20 +66,15 @@ if __name__ == '__main__':
 #	print qs_eigen.vec_matrix*qs_eigen.vec_matrix_I
 #	print qs_eigen.vec_matrix_MW*qs_eigen.vec_matrix_MW_I
 
-	X_ref   = copy.copy(qs_eigen.cart_coord_matrix)
-	T_ref   = copy.copy(qs_eigen.vec_matrix)
-	
-	try:
-		os.mkdir("normal_modes")
-	except:
-		pass
+	X_ref = copy.copy(qs_eigen.cart_coord_matrix)
+	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
-#	for mode in xrange(4, qs_eigen.n_modes, 1):
+	for mode in xrange(4, qs_eigen.n_modes, 1):
 #		print qs_eigen.freq[mode]
-	for mode in xrange(12, 13, 1):
-		# =================================
-		# Calculation of the "reduced mass"
-		# =================================
+#	for mode in xrange(12, 13, 1):
+		# ===============================
+		# Calculation of the reduced mass
+		# ===============================
 		j = 0
 		mu_up = 0.0
 		mu_down = 0.0
@@ -96,15 +91,11 @@ if __name__ == '__main__':
 			j += 3
 
 		mu = mu_up / mu_down
-	
-		dir = "normal_modes/normal_mode_%d" % (mode+1)
-		try:
-			os.mkdir(dir)
-		except:
-			pass
-			
+		
+		tmp = ''
+		p = False
+		
 		for d in xrange(-5,6,1):
-			tmp = ''
 			d = d/10.0
 			X = copy.copy(X_ref)
 			T = copy.copy(T_ref)
@@ -121,153 +112,20 @@ if __name__ == '__main__':
 			X_T = X_T + T[mode,:]
 			X = X_T.getT()
 			
-#			tmp += '%5d %s\n' % (qs_coord.n_mol*qs_coord.n_atom[0], filename_base)
-#			j = 0
-#			for i in xrange(qs_coord.n_mol*qs_coord.n_atom[0]):
-#				a = i%qs_coord.n_mol
-#				b = i%qs_coord.n_atom[i%qs_coord.n_mol]
-#				tmp += '%5d %2s %12.6f %12.6f %12.6f 0\n' % (i + 1, qs_coord.symbol[0][a][b], X[j, 0], X[j+1, 0], X[j+2, 0])
-#				j += 3
-				
-			j = 0
-			for i in xrange(qs_coord.n_mol*qs_coord.n_atom[0]):
-				a = i%qs_coord.n_mol
-				b = i%qs_coord.n_atom[i%qs_coord.n_mol]
-				tmp += '%2s %12.6f %12.6f %12.6f\n' % (qs_coord.symbol[0][a][b], X[j, 0], X[j+1, 0], X[j+2, 0])
-				j += 3
+			# Create Tinker file for visualization of the mode
+			if d == 0.5:
+				p = True
+#			tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
 			
-			if d < 0.0:
-				name = "%s/result-%d-minus-%.1f.dat" % (dir, mode+1, abs(d))
-			else:
-				name = "%s/result-%d-plus-%.1f.dat" % (dir, mode+1, d)
-				
-			try:
-				foutput = open(name, 'w')
-			except:
-				print "Could not open %s" % (name)
-				sys.exit(1)
-				
-			foutput.write(tmp)
-			foutput.close()	
+			# Create Normal Modes files like Sigi
+#			write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 			
-######################################
+			# Create VBHF input files
+			write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
-			for charge in [-1, 0, 1]:
-				try:
-					dir_all="VBHF/all_%d" % (charge)
-					os.makedirs(dir_all)
-				except:
-					pass
-				try:
-					dir_mono="VBHF/mono_%d" % (charge)
-					os.makedirs(dir_mono)
-				except:
-					pass
-							
-				print "Calculating normal mode %d of charge %d" %(mode+1, charge)
-					
-				# All cluster
-				if d < 0.0:
-					name = "%s/result-%d-minus-%.1f.dat" % (dir_all, mode+1, abs(d))
-				else:
-					name = "%s/result-%d-plus-%.1f.dat" % (dir_all, mode+1, d)
-					
-				foutput = open(name, 'w')
-				
-				if foutput:
-					tmp = ''
-					tmp = "AM1 1SCF VBHF\n\n"
-					tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n" 
-
-					k = 1
-					for a in [0, -1, 1]:
-						for b in [0, -1, 1]:
-							j = 0
-							for i in xrange(qs_coord.n_atom[0]):
-								Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
-								Frac_Coord[0] += a
-								Frac_Coord[1] += b
-								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (qs_coord.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, qs_coord.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-								j += 3
-								k += 1
-							for i in xrange(qs_coord.n_atom[1]):
-								Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
-								Frac_Coord[0] += a
-								Frac_Coord[1] += b
-								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (qs_coord.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, qs_coord.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-								j += 3
-								k += 1
-								
-					for a in [-2, -1, 0, 1]:
-						j = 0
-						for i in xrange(qs_coord.n_atom[1]):
-							Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(qs_coord.n_atom[0]*3)+j, 0], X[(qs_coord.n_atom[0]*3)+j+1, 0], X[(qs_coord.n_atom[0]*3)+j+2, 0], box)
-							Frac_Coord[0] += a
-							Frac_Coord[1] += -2
-							Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-							tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (qs_coord.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-							#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, qs_coord.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-							j += 3
-							k += 1
-								
-					for b in [-1, 0, 1]:
-						j = 0
-						for i in xrange(qs_coord.n_atom[1]):
-							Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(qs_coord.n_atom[0]*3)+j, 0], X[(qs_coord.n_atom[0]*3)+j+1, 0], X[(qs_coord.n_atom[0]*3)+j+2, 0], box)
-							Frac_Coord[0] += -2
-							Frac_Coord[1] += b
-							Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-							tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (qs_coord.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-							#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, qs_coord.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-							j += 3
-							k += 1
-				
-					tmp += "$$VBHF\n"
-					tmp += "%d %d AM1 OMF-OPT\n" % (qs_coord.n_atom[0], charge)
-					for x in xrange(qs_coord.n_atom[0]-1):
-						tmp += "%d 0 AM1 OMF-OPT\n"	 % qs_coord.n_atom[0]	
-
-					foutput.write(tmp)		
-					foutput.close() 
-		
-		
-				# Molecule alone
-				if d < 0.0:
-					name = "%s/result-%d-minus-%.1f.dat" % (dir_mono, mode+1, abs(d))
-				else:
-					name = "%s/result-%d-plus-%.1f.dat" % (dir_mono, mode+1, d)
-					
-				foutput = open(name, 'w')
-				
-				if foutput:
-					tmp = ''
-					tmp = "AM1 1SCF VBHF\n\n"
-					tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
-					tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
-
-					for i in xrange(qs_coord.n_atom[0]):
-						tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (qs_coord.symbol[0][1][i], X[i, 0], X[i+1, 0], X[i+2, 0])
-					
-					tmp += "$$VBHF\n"
-					tmp += "%d %d AM1 OMF-OPT\n" % (qs_coord.n_atom[0], charge)	
-
-					foutput.write(tmp)		
-					foutput.close()
-
-
-######################################
-
+	# Create a script which will create all the needed pbs
+	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
+	
 	t2 = time.clock()
 	print t2-t1
 	
