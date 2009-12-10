@@ -642,8 +642,10 @@ def CreateVBHFInput(X, mol, box, mode, d):
 			tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
 			tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
 
+			j = 0
 			for i in xrange(mol.n_atom[0]):
-				tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][1][i], X[i, 0], X[i+1, 0], X[i+2, 0])
+				tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], X[j, 0], X[j+1, 0], X[j+2, 0])
+				j += 3
 			
 			tmp += "$$VBHF\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	

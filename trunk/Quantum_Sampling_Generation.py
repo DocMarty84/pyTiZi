@@ -10,8 +10,12 @@ sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files, coord_conversion
 from data_input import *
 
-h_planck = 3.990312682e+13	# Planck constant in atomic mass units and angstrom^2
-cm1_TO_Hz = 2.99792458e+10	# conversion between cm-1 and Hz
+Temperature = 300						# Temperature in K
+h_bar = 3.990312682e+13/(2*np.pi)		# Planck constant in atomic mass units and angstrom^2
+k_B = 8.314472477e+23					# Boltmann constant in atomic mass units and angstrom^2
+cm1_TO_Hz = 2.99792458e+10*(2*np.pi)	# conversion between cm-1 and Hz
+
+deltaE_max = 10.0*k_B*Temperature
 
 if __name__ == '__main__':
 	""" 
@@ -70,7 +74,6 @@ if __name__ == '__main__':
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
 	for mode in xrange(4, qs_eigen.n_modes, 1):
-#		print qs_eigen.freq[mode]
 #	for mode in xrange(12, 13, 1):
 		# ===============================
 		# Calculation of the reduced mass
@@ -92,11 +95,13 @@ if __name__ == '__main__':
 
 		mu = mu_up / mu_down
 		
+		d_max = np.sqrt(2*deltaE_max/(h_bar*cm1_TO_Hz*qs_eigen.freq[mode]))
+		
 		tmp = ''
 		p = False
 		
-		for d in xrange(-5,6,1):
-			d = d/10.0
+		for d_step in xrange(-10,10,1):
+			d = (d_max)*(d_step/10)
 			X = copy.copy(X_ref)
 			T = copy.copy(T_ref)
 #			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
@@ -106,7 +111,7 @@ if __name__ == '__main__':
 			# ==========================================
 			
 			# Apply the displacement
-			T[mode,:] = np.sqrt(h_planck/(mu*cm1_TO_Hz*qs_eigen.freq[mode]))*T[mode,:]*d
+			T[mode,:] = np.sqrt(h_bar/(mu*cm1_TO_Hz*qs_eigen.freq[mode]))*T[mode,:]*d
 
 			X_T = X.getT()
 			X_T = X_T + T[mode,:]
@@ -115,13 +120,13 @@ if __name__ == '__main__':
 			# Create Tinker file for visualization of the mode
 			if d == 0.5:
 				p = True
-#			tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+			tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
 			
 			# Create Normal Modes files like Sigi
 #			write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 			
 			# Create VBHF input files
-			write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+#			write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 	# Create a script which will create all the needed pbs
 	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
