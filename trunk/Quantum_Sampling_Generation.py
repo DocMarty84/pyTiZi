@@ -10,12 +10,12 @@ sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files, coord_conversion
 from data_input import *
 
-Temperature = 300						# Temperature in K
-h_bar = 3.990312682e+13/(2*np.pi)		# Planck constant in atomic mass units and angstrom^2
-k_B = 8.314472477e+23					# Boltmann constant in atomic mass units and angstrom^2
-cm1_TO_Hz = 2.99792458e+10*(2*np.pi)	# conversion between cm-1 and Hz
+TEMPERATURE = 300						# Temperature in K
+H_BAR = 3.990312682e+13/(2*np.pi)		# Planck constant in atomic mass units and angstrom^2
+K_B = 8.314472477e+23					# Boltmann constant in atomic mass units and angstrom^2
+CM1_TO_HZ = 2.99792458e+10*(2*np.pi)	# conversion between cm-1 and Hz, multiplied by 2pi for pulsation
 
-deltaE_max = 10.0*k_B*Temperature
+DELTA_E_MAX = K_B*TEMPERATURE
 
 if __name__ == '__main__':
 	""" 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 	# Converts the eigenvectors read in the output file in non mass-weighted
 	# and normalized eigenvectors
 	qs_eigen.ConvertEigenVec("tinker")
-#	print sum(np.ravel(qs_eigen.vec_matrix[:,:])*np.ravel(qs_eigen.vec_matrix[:,:]))
+#	print sum(np.ravel(qs_eigen.vec_matrix[1,:])*np.ravel(qs_eigen.vec_matrix[1,:]))
 
 	# Calculates Normal Coordinates, on the basis of the 
 	# mass-weighted eigenvectors
@@ -73,60 +73,62 @@ if __name__ == '__main__':
 	X_ref = copy.copy(qs_eigen.cart_coord_matrix)
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
-	for mode in xrange(4, qs_eigen.n_modes, 1):
+	for mode in xrange(0, qs_eigen.n_modes, 1):
+		if qs_eigen.freq[mode] > 0.0:
 #	for mode in xrange(12, 13, 1):
-		# ===============================
-		# Calculation of the reduced mass
-		# ===============================
-		j = 0
-		mu_up = 0.0
-		mu_down = 0.0
-		for i in xrange(qs_coord.n_mol*qs_coord.n_atom[0]):
-			a = i%qs_coord.n_mol
-			b = i%qs_coord.n_atom[i%qs_coord.n_mol]
+			# ===============================
+			# Calculation of the reduced mass
+			# ===============================
+			j = 0
+			mu_up = 0.0
+			mu_down = 0.0
+			for i in xrange(qs_coord.n_mol*qs_coord.n_atom[0]):
+				a = i%qs_coord.n_mol
+				b = i%qs_coord.n_atom[i%qs_coord.n_mol]
 
-			t2 = 0.0
-			for k in xrange(3):
-				t2 += np.power(qs_eigen.vec_matrix[mode,j+k], 2)
-			mu_up = mu_up + qs_coord.atomic_mass[0, a, b] * t2
-			mu_down = mu_down + t2
+#				t2 = 0.0
+				for k in xrange(3):
+					t2 = np.power(qs_eigen.vec_matrix[mode,j+k], 2)
+					mu_down = mu_down + qs_coord.atomic_mass[0, a, b] * t2
+					mu_up = mu_up + t2
 
-			j += 3
+				j += 3
 
-		mu = mu_up / mu_down
-		
-		d_max = np.sqrt(2*deltaE_max/(h_bar*cm1_TO_Hz*qs_eigen.freq[mode]))
-		
-		tmp = ''
-		p = False
-		
-		for d_step in xrange(-10,10,1):
-			d = (d_max)*(d_step/10)
-			X = copy.copy(X_ref)
-			T = copy.copy(T_ref)
-#			print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
+			mu_I = mu_up / mu_down
+			mu = 1/mu_I
 			
-			# ==========================================
-			# Modify the eigenvectors of the normal mode
-			# ==========================================
+			d_max = np.sqrt(2*DELTA_E_MAX/(H_BAR*CM1_TO_HZ*qs_eigen.freq[mode]))
 			
-			# Apply the displacement
-			T[mode,:] = np.sqrt(h_bar/(mu*cm1_TO_Hz*qs_eigen.freq[mode]))*T[mode,:]*d
+			tmp = ''
+			p = False
+			
+			for d_step in xrange(-10,11,2):
+				d = (d_max)*(d_step/10.0)
+				X = copy.copy(X_ref)
+				T = copy.copy(T_ref)
+#				print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
+				
+				# ==========================================
+				# Modify the eigenvectors of the normal mode
+				# ==========================================
+				
+				# Apply the displacement
+				T[mode,:] = np.sqrt(H_BAR/(mu*CM1_TO_HZ*qs_eigen.freq[mode]))*T[mode,:]*d
 
-			X_T = X.getT()
-			X_T = X_T + T[mode,:]
-			X = X_T.getT()
-			
-			# Create Tinker file for visualization of the mode
-			if d == 0.5:
-				p = True
-			tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
-			
-			# Create Normal Modes files like Sigi
-#			write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
-			
-			# Create VBHF input files
-#			write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+				X_T = X.getT()
+				X_T = X_T + T[mode,:]
+				X = X_T.getT()
+				
+				# Create Tinker file for visualization of the mode
+				if d == d_max:
+					p = True
+				tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+				
+				# Create Normal Modes files like Sigi
+#				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
+				
+				# Create VBHF input files
+				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 	# Create a script which will create all the needed pbs
 	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")

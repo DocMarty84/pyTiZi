@@ -180,8 +180,10 @@ class Eigenvector_Matrix(object):
 		
 	def getI(self):
 		self.vec_matrix_I = self.vec_matrix.getI()
-		if len(self.normal_coord_matrix) != 1:
+		try:
 			self.vec_matrix_MW_I = self.vec_matrix_MW.getI()
+		except:
+			pass
 		
 	def getRefCoord(self, mol):
 		j = 0

@@ -522,9 +522,9 @@ def CreateNormalMode(X, mol, mode, d):
 		j += 3
 	
 	if d < 0.0:
-		name = "%s/result-%d-minus-%.1f.dat" % (dir, mode+1, abs(d))
+		name = "%s/result-%d-minus-%f.dat" % (dir, mode+1, abs(d))
 	else:
-		name = "%s/result-%d-plus-%.1f.dat" % (dir, mode+1, d)
+		name = "%s/result-%d-plus-%f.dat" % (dir, mode+1, d)
 		
 	try:
 		foutput = open(name, 'w')
@@ -554,9 +554,9 @@ def CreateVBHFInput(X, mol, box, mode, d):
 			
 		# All cluster
 		if d < 0.0:
-			name = "%s/result-%d-minus-%.1f.dat" % (dir_all, mode+1, abs(d))
+			name = "%s/result-%d-minus-%f.dat" % (dir_all, mode+1, abs(d))
 		else:
-			name = "%s/result-%d-plus-%.1f.dat" % (dir_all, mode+1, d)
+			name = "%s/result-%d-plus-%f.dat" % (dir_all, mode+1, d)
 			
 		foutput = open(name, 'w')
 		
@@ -627,9 +627,9 @@ def CreateVBHFInput(X, mol, box, mode, d):
 
 		# Molecule alone
 		if d < 0.0:
-			name = "%s/result-%d-minus-%.1f.dat" % (dir_mono, mode+1, abs(d))
+			name = "%s/result-%d-minus-%f.dat" % (dir_mono, mode+1, abs(d))
 		else:
-			name = "%s/result-%d-plus-%.1f.dat" % (dir_mono, mode+1, d)
+			name = "%s/result-%d-plus-%f.dat" % (dir_mono, mode+1, d)
 			
 		foutput = open(name, 'w')
 		
