@@ -12,10 +12,14 @@ from data_input import *
 
 TEMPERATURE = 300						# Temperature in K
 H_BAR = 3.990312682e+13/(2*np.pi)		# Planck constant in atomic mass units and angstrom^2
+H_BAR_EV = 6.58211899e-16				# Planck constant in eV
 K_B = 8.314472477e+23					# Boltmann constant in atomic mass units and angstrom^2
 CM1_TO_HZ = 2.99792458e+10*(2*np.pi)	# conversion between cm-1 and Hz, multiplied by 2pi for pulsation
 
-DELTA_E_MAX = K_B*TEMPERATURE
+DELTA_E_MAX = 0.1*K_B*TEMPERATURE
+
+CHECK = False
+MODE = 40
 
 if __name__ == '__main__':
 	""" 
@@ -99,11 +103,18 @@ if __name__ == '__main__':
 			
 			d_max = np.sqrt(2*DELTA_E_MAX/(H_BAR*CM1_TO_HZ*qs_eigen.freq[mode]))
 			
+			if MODE==mode+1 and CHECK:
+				print H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode]/2
+			
 			tmp = ''
 			p = False
 			
 			for d_step in xrange(-10,11,2):
 				d = (d_max)*(d_step/10.0)
+				
+				if MODE==mode+1 and CHECK:
+					print d
+				
 				X = copy.copy(X_ref)
 				T = copy.copy(T_ref)
 #				print sum(np.ravel(T[:,:])*np.ravel(T[:,:]))
@@ -128,10 +139,10 @@ if __name__ == '__main__':
 #				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 				
 				# Create VBHF input files
-				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+#				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 	# Create a script which will create all the needed pbs
-	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
+#	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
 	
 	t2 = time.clock()
 	print t2-t1
