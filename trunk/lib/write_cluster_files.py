@@ -521,10 +521,7 @@ def CreateNormalMode(X, mol, mode, d):
 		tmp += '%2s %12.6f %12.6f %12.6f\n' % (mol.symbol[0][a][b], X[j, 0], X[j+1, 0], X[j+2, 0])
 		j += 3
 	
-	if d < 0.0:
-		name = "%s/result-%d-minus-%f.dat" % (dir, mode+1, abs(d))
-	else:
-		name = "%s/result-%d-plus-%f.dat" % (dir, mode+1, d)
+	name = "%s/result_%d_%.12f_.dat" % (dir, mode+1, d)
 		
 	try:
 		foutput = open(name, 'w')
@@ -553,10 +550,7 @@ def CreateVBHFInput(X, mol, box, mode, d):
 		print "Calculating normal mode %d of charge %d" %(mode+1, charge)
 			
 		# All cluster
-		if d < 0.0:
-			name = "%s/result-%d-minus-%f.dat" % (dir_all, mode+1, abs(d))
-		else:
-			name = "%s/result-%d-plus-%f.dat" % (dir_all, mode+1, d)
+		name = "%s/result_%d_%.12f_.dat" % (dir_all, mode+1, d)
 			
 		foutput = open(name, 'w')
 		
@@ -626,10 +620,7 @@ def CreateVBHFInput(X, mol, box, mode, d):
 
 
 		# Molecule alone
-		if d < 0.0:
-			name = "%s/result-%d-minus-%f.dat" % (dir_mono, mode+1, abs(d))
-		else:
-			name = "%s/result-%d-plus-%f.dat" % (dir_mono, mode+1, d)
+		name = "%s/result_%d_%.12f_.dat" % (dir_mono, mode+1, d)
 			
 		foutput = open(name, 'w')
 		

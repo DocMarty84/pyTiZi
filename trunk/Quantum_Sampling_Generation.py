@@ -16,7 +16,7 @@ H_BAR_EV = 6.58211899e-16				# Planck constant in eV
 K_B = 8.314472477e+23					# Boltmann constant in atomic mass units and angstrom^2
 CM1_TO_HZ = 2.99792458e+10*(2*np.pi)	# conversion between cm-1 and Hz, multiplied by 2pi for pulsation
 
-DELTA_E_MAX = 0.1*K_B*TEMPERATURE
+DELTA_E_MAX = K_B*TEMPERATURE
 
 CHECK = False
 MODE = 40
@@ -78,13 +78,14 @@ if __name__ == '__main__':
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
 	for mode in xrange(0, qs_eigen.n_modes, 1):
+		print mode+1, qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode]
 		if qs_eigen.freq[mode] > 0.0:
 #	for mode in xrange(12, 13, 1):
 			# ===============================
 			# Calculation of the reduced mass
 			# ===============================
 			j = 0
-			mu_up = 0.0
+#			mu_up = 0.0
 			mu_down = 0.0
 			for i in xrange(qs_coord.n_mol*qs_coord.n_atom[0]):
 				a = i%qs_coord.n_mol
@@ -94,11 +95,13 @@ if __name__ == '__main__':
 				for k in xrange(3):
 					t2 = np.power(qs_eigen.vec_matrix[mode,j+k], 2)
 					mu_down = mu_down + qs_coord.atomic_mass[0, a, b] * t2
-					mu_up = mu_up + t2
+#					mu_up = mu_up + t2
 
 				j += 3
 
-			mu_I = mu_up / mu_down
+#			print mu_up, mu_down
+#			mu_I = mu_up / mu_down
+			mu_I = 1 / mu_down
 			mu = 1/mu_I
 			
 			d_max = np.sqrt(2*DELTA_E_MAX/(H_BAR*CM1_TO_HZ*qs_eigen.freq[mode]))
