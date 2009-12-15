@@ -1,4 +1,5 @@
 import os
+import re
 
 class InstructionsData(object):
 	""" Class containing all intruction for the simulation """
@@ -83,6 +84,10 @@ class InstructionsData(object):
 def ls(path, ext):
 	return [fichier for fichier in os.listdir(path)
 								if os.path.splitext(fichier)[1] == ext]
+								
+def grep(string,list):
+	expr = re.compile(string)
+	return filter(expr.search,list)
 		
 def FileTypeCheck(file_type):
 	if file_type == "tinker":

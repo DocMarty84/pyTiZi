@@ -3,11 +3,16 @@
 import string
 import os, shutil, sys
 import math
-import numpy
+import numpy as np
+import scipy as sp
 import time
 import copy
 
-R_MIN = 0.97
+K_B = 8.617343e-5		# Boltzmann constant in eV
+
+R_MIN = 0.97			# Minimum R value to consider a mode as linear
+N_TEMP = 500			# Temperature max for calculating sigma (starting at 1K)
+FILE = "AM1"
 
 #=====================================================================
 #-------------------------Class Definition----------------------------
@@ -19,71 +24,73 @@ class VBHF_Data(object):
 		self.n_modes = n_modes	# Number of vibrational modes
 		self.n_displ = n_displ	# Number of displacements, including equilibrium geometry
 		
-		self.displ = numpy.zeros((n_modes, n_displ), float)			# Displacement in normal modes coordinates
+		self.displ = np.zeros((n_modes, n_displ), float)			# Displacement in normal modes coordinates
+		self.freq = np.zeros((n_modes), float)	
+		self.energy = np.zeros((n_modes), float)	
 		
-		self.E_cluster_0 = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for neutral cluster
-		self.E_cluster_1 = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for cluster with charge=1
-		self.E_cluster_m1 = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for cluster with charge=-1
+		self.E_cluster_0 = np.zeros((n_modes, n_displ), float)	# VBHF energy for neutral cluster
+		self.E_cluster_1 = np.zeros((n_modes, n_displ), float)	# VBHF energy for cluster with charge=1
+		self.E_cluster_m1 = np.zeros((n_modes, n_displ), float)	# VBHF energy for cluster with charge=-1
 
-		self.E_alone_0 = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone neutral molecule
-		self.E_alone_1 = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
-		self.E_alone_m1 = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=-1
+		self.E_alone_0 = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone neutral molecule
+		self.E_alone_1 = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
+		self.E_alone_m1 = np.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=-1
 
-		self.IP_cluster = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=1
-		self.EA_cluster = numpy.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=-1
-		self.IP_alone = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
-		self.EA_alone = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=-1
-		self.P_plus = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
-		self.P_minus = numpy.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=-1	
+		self.IP_cluster = np.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=1
+		self.EA_cluster = np.zeros((n_modes, n_displ), float)	# VBHF energy for alone molecule with charge=-1
+		self.IP_alone = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
+		self.EA_alone = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=-1
+		self.P_plus = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=1
+		self.P_minus = np.zeros((n_modes, n_displ), float)		# VBHF energy for alone molecule with charge=-1	
 
-		self.IP_cluster_av = numpy.zeros((n_modes), float)	
-		self.EA_cluster_av = numpy.zeros((n_modes), float)
-		self.IP_alone_av = numpy.zeros((n_modes), float)
-		self.EA_alone_av = numpy.zeros((n_modes), float)
-		self.P_plus_av = numpy.zeros((n_modes), float)
-		self.P_minus_av = numpy.zeros((n_modes), float)	
+		self.IP_cluster_av = np.zeros((n_modes), float)	
+		self.EA_cluster_av = np.zeros((n_modes), float)
+		self.IP_alone_av = np.zeros((n_modes), float)
+		self.EA_alone_av = np.zeros((n_modes), float)
+		self.P_plus_av = np.zeros((n_modes), float)
+		self.P_minus_av = np.zeros((n_modes), float)	
 		
-		self.IP_cluster_var = numpy.zeros((n_modes), float)	
-		self.EA_cluster_var = numpy.zeros((n_modes), float)
-		self.IP_alone_var = numpy.zeros((n_modes), float)
-		self.EA_alone_var = numpy.zeros((n_modes), float)
-		self.P_plus_var = numpy.zeros((n_modes), float)
-		self.P_minus_var = numpy.zeros((n_modes), float)
+		self.IP_cluster_var = np.zeros((n_modes), float)	
+		self.EA_cluster_var = np.zeros((n_modes), float)
+		self.IP_alone_var = np.zeros((n_modes), float)
+		self.EA_alone_var = np.zeros((n_modes), float)
+		self.P_plus_var = np.zeros((n_modes), float)
+		self.P_minus_var = np.zeros((n_modes), float)
 	
-		self.IP_cluster_dE = numpy.zeros((n_modes), float)	
-		self.EA_cluster_dE = numpy.zeros((n_modes), float)
-		self.IP_alone_dE = numpy.zeros((n_modes), float)
-		self.EA_alone_dE = numpy.zeros((n_modes), float)
-		self.P_plus_dE = numpy.zeros((n_modes), float)
-		self.P_minus_dE = numpy.zeros((n_modes), float)	
+		self.IP_cluster_dE = np.zeros((n_modes), float)	
+		self.EA_cluster_dE = np.zeros((n_modes), float)
+		self.IP_alone_dE = np.zeros((n_modes), float)
+		self.EA_alone_dE = np.zeros((n_modes), float)
+		self.P_plus_dE = np.zeros((n_modes), float)
+		self.P_minus_dE = np.zeros((n_modes), float)	
 		
-		self.IP_cluster_R = numpy.zeros((n_modes), float)	
-		self.EA_cluster_R = numpy.zeros((n_modes), float)
-		self.IP_alone_R = numpy.zeros((n_modes), float)
-		self.EA_alone_R = numpy.zeros((n_modes), float)
-		self.P_plus_R = numpy.zeros((n_modes), float)
-		self.P_minus_R = numpy.zeros((n_modes), float)	
+		self.IP_cluster_R = np.zeros((n_modes), float)	
+		self.EA_cluster_R = np.zeros((n_modes), float)
+		self.IP_alone_R = np.zeros((n_modes), float)
+		self.EA_alone_R = np.zeros((n_modes), float)
+		self.P_plus_R = np.zeros((n_modes), float)
+		self.P_minus_R = np.zeros((n_modes), float)	
 		
-		self.IP_cluster_a0 = numpy.zeros((n_modes), float)	
-		self.EA_cluster_a0 = numpy.zeros((n_modes), float)
-		self.IP_alone_a0 = numpy.zeros((n_modes), float)
-		self.EA_alone_a0 = numpy.zeros((n_modes), float)
-		self.P_plus_a0 = numpy.zeros((n_modes), float)
-		self.P_minus_a0 = numpy.zeros((n_modes), float)	
+		self.IP_cluster_a0 = np.zeros((n_modes), float)	
+		self.EA_cluster_a0 = np.zeros((n_modes), float)
+		self.IP_alone_a0 = np.zeros((n_modes), float)
+		self.EA_alone_a0 = np.zeros((n_modes), float)
+		self.P_plus_a0 = np.zeros((n_modes), float)
+		self.P_minus_a0 = np.zeros((n_modes), float)	
 		
-		self.IP_cluster_a1 = numpy.zeros((n_modes), float)	
-		self.EA_cluster_a1 = numpy.zeros((n_modes), float)
-		self.IP_alone_a1 = numpy.zeros((n_modes), float)
-		self.EA_alone_a1 = numpy.zeros((n_modes), float)
-		self.P_plus_a1 = numpy.zeros((n_modes), float)
-		self.P_minus_a1 = numpy.zeros((n_modes), float)	
+		self.IP_cluster_a1 = np.zeros((n_modes), float)	
+		self.EA_cluster_a1 = np.zeros((n_modes), float)
+		self.IP_alone_a1 = np.zeros((n_modes), float)
+		self.EA_alone_a1 = np.zeros((n_modes), float)
+		self.P_plus_a1 = np.zeros((n_modes), float)
+		self.P_minus_a1 = np.zeros((n_modes), float)	
 
 	def __str__(self):
 		tmp=''
 #		for i in xrange(self.n_modes):
 #			tmp += 'Mode %d\n' % (i+1)
 #			for ii in xrange(self.n_displ):
-#				tmp += '%6.2f %10.2f %10.2f %10.2f %12.5f %12.5f %10.2f %10.2f %10.2f %12.5f %12.5f %12.5f %12.5f\n' % (self.displ[i,ii], self.E_cluster_0[i,ii], self.E_cluster_1[i,ii], self.E_cluster_m1[i,ii], self.IP_cluster[i,ii], self.EA_cluster[i,ii], self.E_alone_0[i,ii], self.E_alone_1[i,ii], self.E_alone_m1[i,ii], self.IP_alone[i,ii], self.EA_alone[i,ii], self.P_plus[i,ii], self.P_minus[i,ii]) 
+#				tmp += '%12.5f %10.2f %10.2f %10.2f %12.5f %12.5f %10.2f %10.2f %10.2f %12.5f %12.5f %12.5f %12.5f\n' % (self.displ[i,ii], self.E_cluster_0[i,ii], self.E_cluster_1[i,ii], self.E_cluster_m1[i,ii], self.IP_cluster[i,ii], self.EA_cluster[i,ii], self.E_alone_0[i,ii], self.E_alone_1[i,ii], self.E_alone_m1[i,ii], self.IP_alone[i,ii], self.EA_alone[i,ii], self.P_plus[i,ii], self.P_minus[i,ii]) 
 
 		tmp += '======================\n'
 		tmp += 'Averages and variances\n'
@@ -92,90 +99,159 @@ class VBHF_Data(object):
 		tmp += 'IP_cluster\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.IP_cluster_av[i], numpy.sqrt(self.IP_cluster_var[i]), self.IP_cluster_dE[i], numpy.abs(self.IP_cluster_R[i]), self.IP_cluster_a0[i], self.IP_cluster_a1[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_cluster_av[i], np.sqrt(self.IP_cluster_var[i]), self.IP_cluster_dE[i], np.abs(self.IP_cluster_R[i]), self.IP_cluster_a0[i], self.IP_cluster_a1[i])
 			
 		tmp += 'EA_cluster\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.EA_cluster_av[i], numpy.sqrt(self.EA_cluster_var[i]), self.EA_cluster_dE[i], numpy.abs(self.EA_cluster_R[i]), self.EA_cluster_a0[i], self.EA_cluster_a1[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_cluster_av[i], np.sqrt(self.EA_cluster_var[i]), self.EA_cluster_dE[i], np.abs(self.EA_cluster_R[i]), self.EA_cluster_a0[i], self.EA_cluster_a1[i])
 			
 		tmp += 'IP_alone\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.IP_alone_av[i], numpy.sqrt(self.IP_alone_var[i]), self.IP_alone_dE[i], numpy.abs(self.IP_alone_R[i]), self.IP_alone_a0[i], self.IP_alone_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_alone_av[i], np.sqrt(self.IP_alone_var[i]), self.IP_alone_dE[i], np.abs(self.IP_alone_R[i]), self.IP_alone_a0[i], self.IP_alone_a0[i])
 			
 		tmp += 'EA_alone\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.EA_alone_av[i], numpy.sqrt(self.EA_alone_var[i]), self.EA_alone_dE[i], numpy.abs(self.EA_alone_R[i]), self.EA_alone_a0[i], self.EA_alone_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_alone_av[i], np.sqrt(self.EA_alone_var[i]), self.EA_alone_dE[i], np.abs(self.EA_alone_R[i]), self.EA_alone_a0[i], self.EA_alone_a0[i])
 
 		tmp += 'P_plus\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.P_plus_av[i], numpy.sqrt(self.P_plus_var[i]), self.P_plus_dE[i], numpy.abs(self.P_plus_R[i]), self.P_plus_a0[i], self.P_plus_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_plus_av[i], np.sqrt(self.P_plus_var[i]), self.P_plus_dE[i], np.abs(self.P_plus_R[i]), self.P_plus_a0[i], self.P_plus_a0[i])
 			
 		tmp += 'P_minus\n'
 		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.P_minus_av[i], numpy.sqrt(self.P_minus_var[i]), self.P_minus_dE[i], numpy.abs(self.P_minus_R[i]), self.P_minus_a0[i], self.P_minus_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_minus_av[i], np.sqrt(self.P_minus_var[i]), self.P_minus_dE[i], np.abs(self.P_minus_R[i]), self.P_minus_a0[i], self.P_minus_a0[i])
 			
 		return tmp
 		
 	def Calculate_Av_Var_dE(self):
-		self.IP_cluster_av = numpy.average(self.IP_cluster, axis=1)
-		self.EA_cluster_av = numpy.average(self.EA_cluster, axis=1)
-		self.IP_alone_av = numpy.average(self.IP_alone, axis=1)
-		self.EA_alone_av = numpy.average(self.EA_alone, axis=1)
-		self.P_plus_av = numpy.average(self.P_plus, axis=1)
-		self.P_minus_av = numpy.average(self.P_minus, axis=1)
+		self.IP_cluster_av = np.average(self.IP_cluster, axis=1)
+		self.EA_cluster_av = np.average(self.EA_cluster, axis=1)
+		self.IP_alone_av = np.average(self.IP_alone, axis=1)
+		self.EA_alone_av = np.average(self.EA_alone, axis=1)
+		self.P_plus_av = np.average(self.P_plus, axis=1)
+		self.P_minus_av = np.average(self.P_minus, axis=1)
 		
-		self.IP_cluster_var = numpy.var(self.IP_cluster, axis=1)
-		self.EA_cluster_var = numpy.var(self.EA_cluster, axis=1)
-		self.IP_alone_var = numpy.var(self.IP_alone, axis=1)
-		self.EA_alone_var = numpy.var(self.EA_alone, axis=1)
-		self.P_plus_var = numpy.var(self.P_plus, axis=1)
-		self.P_minus_var = numpy.var(self.P_minus, axis=1)
+		self.IP_cluster_var = np.var(self.IP_cluster, axis=1)
+		self.EA_cluster_var = np.var(self.EA_cluster, axis=1)
+		self.IP_alone_var = np.var(self.IP_alone, axis=1)
+		self.EA_alone_var = np.var(self.EA_alone, axis=1)
+		self.P_plus_var = np.var(self.P_plus, axis=1)
+		self.P_minus_var = np.var(self.P_minus, axis=1)
 		
-		self.IP_cluster_dE = numpy.max(self.IP_cluster, axis=1) - numpy.min(self.IP_cluster, axis=1)
-		self.EA_cluster_dE = numpy.max(self.EA_cluster, axis=1) - numpy.min(self.EA_cluster, axis=1) 
-		self.IP_alone_dE = numpy.max(self.IP_alone, axis=1) - numpy.min(self.IP_alone, axis=1)
-		self.EA_alone_dE = numpy.max(self.EA_alone, axis=1) - numpy.min(self.EA_alone, axis=1) 
-		self.P_plus_dE = numpy.max(self.P_plus, axis=1) - numpy.min(self.P_plus, axis=1) 
-		self.P_minus_dE = numpy.max(self.P_minus, axis=1) - numpy.min(self.P_minus, axis=1) 
+		self.IP_cluster_dE = np.max(self.IP_cluster, axis=1) - np.min(self.IP_cluster, axis=1)
+		self.EA_cluster_dE = np.max(self.EA_cluster, axis=1) - np.min(self.EA_cluster, axis=1) 
+		self.IP_alone_dE = np.max(self.IP_alone, axis=1) - np.min(self.IP_alone, axis=1)
+		self.EA_alone_dE = np.max(self.EA_alone, axis=1) - np.min(self.EA_alone, axis=1) 
+		self.P_plus_dE = np.max(self.P_plus, axis=1) - np.min(self.P_plus, axis=1) 
+		self.P_minus_dE = np.max(self.P_minus, axis=1) - np.min(self.P_minus, axis=1) 
 	
 	def Calculate_R(self):
-		S_X = numpy.sqrt(numpy.average(numpy.power(self.displ, 2), axis=1) - numpy.power(numpy.average(self.displ, axis=1), 2))
+		S_X = np.sqrt(np.average(np.power(self.displ, 2), axis=1) - np.power(np.average(self.displ, axis=1), 2))
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.IP_cluster, 2), axis=1) - numpy.power(self.IP_cluster_av, 2))
-		S_XY = numpy.average(self.displ*self.IP_cluster, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.IP_cluster, axis=1)
+		S_Y = np.sqrt(np.average(np.power(self.IP_cluster, 2), axis=1) - np.power(self.IP_cluster_av, 2))
+		S_XY = np.average(self.displ*self.IP_cluster, axis=1) - np.average(self.displ, axis=1)*np.average(self.IP_cluster, axis=1)
 		self.IP_cluster_R = S_XY/(S_X*S_Y)
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.EA_cluster, 2), axis=1) - numpy.power(self.EA_cluster_av, 2))
-		S_XY = numpy.average(self.displ*self.EA_cluster, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.EA_cluster, axis=1)
+		S_Y = np.sqrt(np.average(np.power(self.EA_cluster, 2), axis=1) - np.power(self.EA_cluster_av, 2))
+		S_XY = np.average(self.displ*self.EA_cluster, axis=1) - np.average(self.displ, axis=1)*np.average(self.EA_cluster, axis=1)
 		self.EA_cluster_R = S_XY/(S_X*S_Y)
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.IP_alone, 2), axis=1) - numpy.power(self.IP_alone_av, 2))
-		S_XY = numpy.average(self.displ*self.IP_alone, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.IP_alone, axis=1)
+		S_Y = np.sqrt(np.average(np.power(self.IP_alone, 2), axis=1) - np.power(self.IP_alone_av, 2))
+		S_XY = np.average(self.displ*self.IP_alone, axis=1) - np.average(self.displ, axis=1)*np.average(self.IP_alone, axis=1)
 		self.IP_alone_R = S_XY/(S_X*S_Y)
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.EA_alone, 2), axis=1) - numpy.power(self.EA_alone_av, 2))
-		S_XY = numpy.average(self.displ*self.EA_alone, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.EA_alone, axis=1)
+		S_Y = np.sqrt(np.average(np.power(self.EA_alone, 2), axis=1) - np.power(self.EA_alone_av, 2))
+		S_XY = np.average(self.displ*self.EA_alone, axis=1) - np.average(self.displ, axis=1)*np.average(self.EA_alone, axis=1)
 		self.EA_alone_R = S_XY/(S_X*S_Y)
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.P_plus, 2), axis=1) - numpy.power(self.P_plus_av, 2))
-		S_XY = numpy.average(self.displ*self.P_plus, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.P_plus, axis=1)
+		S_Y = np.sqrt(np.average(np.power(self.P_plus, 2), axis=1) - np.power(self.P_plus_av, 2))
+		S_XY = np.average(self.displ*self.P_plus, axis=1) - np.average(self.displ, axis=1)*np.average(self.P_plus, axis=1)
 		self.P_plus_R = S_XY/(S_X*S_Y)
 		
-		S_Y = numpy.sqrt(numpy.average(numpy.power(self.P_minus, 2), axis=1) - numpy.power(self.P_minus_av, 2))
-		S_XY = numpy.average(self.displ*self.P_minus, axis=1) - numpy.average(self.displ, axis=1)*numpy.average(self.P_minus, axis=1)		
+		S_Y = np.sqrt(np.average(np.power(self.P_minus, 2), axis=1) - np.power(self.P_minus_av, 2))
+		S_XY = np.average(self.displ*self.P_minus, axis=1) - np.average(self.displ, axis=1)*np.average(self.P_minus, axis=1)		
 		self.P_minus_R = S_XY/(S_X*S_Y)
+
+class Sigma_evol(object):
+	""" Class for the VBHF data"""
+	def __init__(self, n_temp=1):
+		self.n_temp = int(n_temp)
 		
+		self.IP_cluster_qu = np.zeros((n_temp), float)	
+		self.EA_cluster_qu = np.zeros((n_temp), float)
+		self.IP_alone_qu = np.zeros((n_temp), float)
+		self.EA_alone_qu = np.zeros((n_temp), float)
+		self.P_plus_qu = np.zeros((n_temp), float)
+		self.P_minus_qu = np.zeros((n_temp), float)
+		
+		self.IP_cluster_cl = np.zeros((n_temp), float)	
+		self.EA_cluster_cl = np.zeros((n_temp), float)
+		self.IP_alone_cl = np.zeros((n_temp), float)
+		self.EA_alone_cl = np.zeros((n_temp), float)
+		self.P_plus_cl = np.zeros((n_temp), float)
+		self.P_minus_cl = np.zeros((n_temp), float)
+		
+	def __str__(self):
+		tmp = ''
+		
+		tmp += "IP_cluster\n"
+		for i in xrange(self.n_temp):
+			print i
+			tmp += "%d %e %e\n" % (i+1, self.IP_cluster_qu[i], self.IP_cluster_cl[i])
+
+		tmp += "EA_cluster\n"
+		for i in xrange(self.n_temp):
+			tmp += "%d %e %e\n" % (i+1, self.EA_cluster_qu[i], self.EA_cluster_cl[i])
+			
+		tmp += "IP_alone\n"
+		for i in xrange(self.n_temp):
+			tmp += "%d %e %e\n" % (i+1, self.IP_alone_qu[i], self.IP_alone_cl[i])
+			
+		tmp += "EA_alone\n"
+		for i in xrange(self.n_temp):
+			tmp += "%d %e %e\n" % (i+1, self.EA_alone_qu[i], self.EA_alone_cl[i])	
+				
+		tmp += "P_plus\n"
+		for i in xrange(self.n_temp):
+			tmp += "%d %e %e\n" % (i+1, self.P_plus_qu[i], self.P_plus_cl[i])
+			
+		tmp += "P_minus\n"
+		for i in xrange(self.n_temp):
+			tmp += "%d %e %e\n" % (i+1, self.P_minus_qu[i], self.P_minus_cl[i])
+			
+		return tmp	
+			
+	def Calculate_Sigma(self, data):
+		for temperature in xrange(self.n_temp):
+			tmp = 1/(sp.tanh(data.energy/(2*K_B*(temperature+1))))
+			self.IP_cluster_qu[temperature] = np.sqrt(np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp))
+			self.EA_cluster_qu[temperature] = np.sqrt(np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/2 * tmp))
+			self.IP_alone_qu[temperature] = np.sqrt(np.sum((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp))
+			self.EA_alone_qu[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
+			self.P_plus_qu[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
+			self.P_minus_qu[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
+			
+			tmp = 2*K_B*(temperature+1)/data.energy
+			self.IP_cluster_cl[temperature] = np.sqrt(np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp))
+			self.EA_cluster_cl[temperature] = np.sqrt(np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/2 * tmp))
+			self.IP_alone_cl[temperature] = np.sqrt(np.sum((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp))
+			self.EA_alone_cl[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
+			self.P_plus_cl[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
+			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
+			
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
 #=====================================================================
 
-def Read_Data(input_file, data):
+def Read_Data(data):
 	""" Read VBHF data file """
+	input_file = "%s.dat" % (FILE)
+	
 	try:
 		finput = open(input_file, 'r')
 	except:
@@ -212,6 +288,27 @@ def Read_Data(input_file, data):
 					data.EA_alone[i,ii] = float(words[10])
 					data.P_plus[i,ii] = float(words[11])
 					data.P_minus[i,ii] = float(words[12])
+				
+	finput.close()
+
+	input_file = "%s.freq" % (FILE)
+
+	try:
+		finput = open(input_file, 'r')
+	except:
+		print "Could not open %s" % (input_file)
+		sys.exit(1)
+		
+	for i in xrange(data.n_modes):
+			line = finput.readline()
+			words = line.split()
+			while (len(words)==0):
+				line = finput.readline()
+				words = line.split()
+						
+			if len(words)==3 :
+				data.freq[i] = float(words[1])
+				data.energy[i] = float(words[2])
 				
 	finput.close()
 #	print "Reading of input file done!"
@@ -264,7 +361,6 @@ def Read_Fit(data):
 							data.EA_alone_a1[i] = float(words[2])
 
 			finput.close()
-#	print "Reading of input file done!"
 
 def Write_Gnuplot_dat(data):
 	try :
@@ -394,37 +490,50 @@ if __name__ == '__main__':
 			- calcultes averages, variances and energy differences for each normal
 		  	  mode
 			- calculates the linearity coefficient R
+			- run the Gnuplot scripts, and collect the fit values
 			
-		The coefficient of the linear fit will be obtained while running the
-		Gnuplot scripts. They can be collected with the script 
-		collect_fit_parameters.sh.
+		Finally, it calculates the evolution of sigma for given temperatures at
+		the classical and quantum level.
 		
 	"""
 	t1 = time.clock()
 	
 	(n_modes, n_displ) = (144, 11)
 	
+	# Read the file containing polarization energies and the file
+	# containing the frequencies and energies of the modes
 	qs=VBHF_Data(n_modes, n_displ)
-	Read_Data("AM1.dat", qs)
+	Read_Data(qs)
 	
+	# Calculate averages, variances and deltaE for information
+	qs.Calculate_Av_Var_dE()
+	
+	# Calculate R coefficients
+	qs.Calculate_R()
+	
+	# Create Gnuplot input files
 	Write_Gnuplot_dat(qs)
 	Write_Gnuplot_plt(qs, "png")
 
-	qs.Calculate_Av_Var_dE()
-	qs.Calculate_R()
-	
+	# Copy and run the Gnuplot scripts to calculate the fits	
 	try:
-		shutil.copy("src%scollect_fit_parameters_red.sh" % (os.sep), "plots")
+		shutil.copy("src%sQS_collect_fit_parameters_red.sh" % (os.sep), "plots")
 		os.chdir("plots")
-		os.system("chmod +x collect_fit_parameters_red.sh" % (os.sep))
+		os.system("chmod +x QS_collect_fit_parameters_red.sh")
 	except:
-		print "[ERROR] Problem when copying file collect_fit_parameters_red.sh"
+		print "[ERROR] Problem when copying file QS_collect_fit_parameters_red.sh"
+		sys.exit(1)
+	os.system("./QS_collect_fit_parameters_red.sh")
 	
-	os.system("./collect_fit_parameters_red.sh")
-	
+	# Read the results of the fits
 	Read_Fit(qs)
+
+	# Calculate the evolution of sigma
+	qs_sig = Sigma_evol(N_TEMP)
+	qs_sig.Calculate_Sigma(qs)
 	
-	print qs
+	# print qs
+	print qs_sig
 	
 	t2 = time.clock()
 	print t2-t1
