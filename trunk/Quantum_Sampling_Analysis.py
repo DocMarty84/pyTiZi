@@ -10,7 +10,7 @@ import copy
 
 K_B = 8.617343e-5		# Boltzmann constant in eV
 
-R_MIN = 0.97			# Minimum R value to consider a mode as linear
+R_MIN = 0.90			# Minimum R^2 value to consider a mode as linear
 N_TEMP = 500			# Temperature max for calculating sigma (starting at 1K)
 FILE = "AM1"
 
@@ -97,32 +97,32 @@ class VBHF_Data(object):
 		tmp += '======================\n'
 	
 		tmp += 'IP_cluster\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_cluster_av[i], np.sqrt(self.IP_cluster_var[i]), self.IP_cluster_dE[i], np.abs(self.IP_cluster_R[i]), self.IP_cluster_a0[i], self.IP_cluster_a1[i])
 			
 		tmp += 'EA_cluster\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_cluster_av[i], np.sqrt(self.EA_cluster_var[i]), self.EA_cluster_dE[i], np.abs(self.EA_cluster_R[i]), self.EA_cluster_a0[i], self.EA_cluster_a1[i])
 			
 		tmp += 'IP_alone\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_alone_av[i], np.sqrt(self.IP_alone_var[i]), self.IP_alone_dE[i], np.abs(self.IP_alone_R[i]), self.IP_alone_a0[i], self.IP_alone_a0[i])
 			
 		tmp += 'EA_alone\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_alone_av[i], np.sqrt(self.EA_alone_var[i]), self.EA_alone_dE[i], np.abs(self.EA_alone_R[i]), self.EA_alone_a0[i], self.EA_alone_a0[i])
 
 		tmp += 'P_plus\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_plus_av[i], np.sqrt(self.P_plus_var[i]), self.P_plus_dE[i], np.abs(self.P_plus_R[i]), self.P_plus_a0[i], self.P_plus_a0[i])
 			
 		tmp += 'P_minus\n'
-		tmp += 'Mode Average Std_dev DeltaE R a0 a1\n'
+		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
 			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_minus_av[i], np.sqrt(self.P_minus_var[i]), self.P_minus_dE[i], np.abs(self.P_minus_R[i]), self.P_minus_a0[i], self.P_minus_a0[i])
 			
@@ -175,7 +175,7 @@ class VBHF_Data(object):
 		
 		S_Y = np.sqrt(np.average(np.power(self.P_minus, 2), axis=1) - np.power(self.P_minus_av, 2))
 		S_XY = np.average(self.displ*self.P_minus, axis=1) - np.average(self.displ, axis=1)*np.average(self.P_minus, axis=1)		
-		self.P_minus_R = S_XY/(S_X*S_Y)
+		self.P_minus_R = np.power(S_XY/(S_X*S_Y),2)
 
 class Sigma_evol(object):
 	""" Class for the VBHF data"""
@@ -201,7 +201,6 @@ class Sigma_evol(object):
 		
 		tmp += "IP_cluster\n"
 		for i in xrange(self.n_temp):
-			print i
 			tmp += "%d %e %e\n" % (i+1, self.IP_cluster_qu[i], self.IP_cluster_cl[i])
 
 		tmp += "EA_cluster\n"
@@ -243,6 +242,17 @@ class Sigma_evol(object):
 			self.EA_alone_cl[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
 			self.P_plus_cl[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
 			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
+			
+			"""tmp = 0.0
+			tmp2 = 0.0
+			for i in xrange(144):
+				tmp += (2*K_B*(temperature+1)/data.energy[i])*(data.P_plus_a1[i]*data.P_plus_a1[i])/2
+				tmp2 += (data.P_plus_a1[i]*data.P_plus_a1[i])/2
+			print temperature, np.sqrt(tmp)
+			
+			self.P_plus_cl[temperature] = np.sqrt(tmp)"""
+			
+			
 			
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
@@ -400,7 +410,7 @@ def Write_Gnuplot_plt(data, type):
 			foutput = open(output_file, 'w')
 		except:
 			print "Could not open %s" % (output_file)
-			exit(1)
+			sys.exit(1)
 		
 		if (type=="epslatex"):
 			tmp = 'reset\n'
@@ -532,7 +542,27 @@ if __name__ == '__main__':
 	qs_sig = Sigma_evol(N_TEMP)
 	qs_sig.Calculate_Sigma(qs)
 	
-	# print qs
+	"""output_file = "%s.an" % (FILE)
+	try:
+		foutput = open(output_file, 'w')
+	except:
+		print "Could not open %s" % (output_file)
+		sys.exit(1)
+	tmp = print qs
+	foutput.write(tmp)
+	foutput.close()
+	
+	output_file = "%s.sigma" % (FILE)
+	try:
+		foutput = open(output_file, 'w')
+	except:
+		print "Could not open %s" % (output_file)
+		sys.exit(1)
+	tmp = print qs_sig
+	foutput.write(tmp)
+	foutput.close()"""
+	
+	print qs
 	print qs_sig
 	
 	t2 = time.clock()
