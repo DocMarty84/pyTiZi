@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import time
 import copy
-import os, sys
+import os, sys, shutil
 
 sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files, coord_conversion
@@ -146,6 +146,13 @@ if __name__ == '__main__':
 
 	# Create a script which will create all the needed pbs
 	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
+	
+	# Copy the collection script	
+	try:
+		shutil.copy("src%sQS_collect_data_on_cluster.sh" % (os.sep), "02.QS_collect_data_on_cluster.sh")
+	except:
+		print "[ERROR] QS_collect_data_on_cluster.sh"
+		sys.exit(1)
 	
 	t2 = time.clock()
 	print t2-t1

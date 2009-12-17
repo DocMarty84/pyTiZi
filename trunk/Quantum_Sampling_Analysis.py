@@ -533,7 +533,7 @@ if __name__ == '__main__':
 	except:
 		print "[ERROR] Problem when copying file QS_collect_fit_parameters_red.sh"
 		sys.exit(1)
-#	os.system("./QS_collect_fit_parameters_red.sh")
+	os.system("./QS_collect_fit_parameters_red.sh")
 	
 	# Read the results of the fits
 	Read_Fit(qs)
