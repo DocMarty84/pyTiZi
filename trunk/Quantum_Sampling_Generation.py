@@ -78,7 +78,7 @@ if __name__ == '__main__':
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
 	for mode in xrange(0, qs_eigen.n_modes, 1):
-		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
+#		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
 		if qs_eigen.freq[mode] > 0.0:
 #	for mode in xrange(12, 13, 1):
 			# ===============================
@@ -145,7 +145,7 @@ if __name__ == '__main__':
 #				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 	# Create a script which will create all the needed pbs
-#	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
+	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
 	
 	t2 = time.clock()
 	print t2-t1

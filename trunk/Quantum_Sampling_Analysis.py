@@ -109,22 +109,22 @@ class VBHF_Data(object):
 		tmp += 'IP_alone\n'
 		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_alone_av[i], np.sqrt(self.IP_alone_var[i]), self.IP_alone_dE[i], np.abs(self.IP_alone_R[i]), self.IP_alone_a0[i], self.IP_alone_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.IP_alone_av[i], np.sqrt(self.IP_alone_var[i]), self.IP_alone_dE[i], np.abs(self.IP_alone_R[i]), self.IP_alone_a0[i], self.IP_alone_a1[i])
 			
 		tmp += 'EA_alone\n'
 		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_alone_av[i], np.sqrt(self.EA_alone_var[i]), self.EA_alone_dE[i], np.abs(self.EA_alone_R[i]), self.EA_alone_a0[i], self.EA_alone_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.EA_alone_av[i], np.sqrt(self.EA_alone_var[i]), self.EA_alone_dE[i], np.abs(self.EA_alone_R[i]), self.EA_alone_a0[i], self.EA_alone_a1[i])
 
 		tmp += 'P_plus\n'
 		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_plus_av[i], np.sqrt(self.P_plus_var[i]), self.P_plus_dE[i], np.abs(self.P_plus_R[i]), self.P_plus_a0[i], self.P_plus_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_plus_av[i], np.sqrt(self.P_plus_var[i]), self.P_plus_dE[i], np.abs(self.P_plus_R[i]), self.P_plus_a0[i], self.P_plus_a1[i])
 			
 		tmp += 'P_minus\n'
 		tmp += ' Mode Freq Energy Average Std_dev DeltaE R^2 a0 a1\n'
 		for i in xrange(self.n_modes):
-			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_minus_av[i], np.sqrt(self.P_minus_var[i]), self.P_minus_dE[i], np.abs(self.P_minus_R[i]), self.P_minus_a0[i], self.P_minus_a0[i])
+			tmp += '%4d   %f   %e   %12.5f   %e   %e   %f   %e   %e\n' % (i+1, self.freq[i], self.energy[i], self.P_minus_av[i], np.sqrt(self.P_minus_var[i]), self.P_minus_dE[i], np.abs(self.P_minus_R[i]), self.P_minus_a0[i], self.P_minus_a1[i])
 			
 		return tmp
 		
@@ -533,7 +533,7 @@ if __name__ == '__main__':
 	except:
 		print "[ERROR] Problem when copying file QS_collect_fit_parameters_red.sh"
 		sys.exit(1)
-	os.system("./QS_collect_fit_parameters_red.sh")
+#	os.system("./QS_collect_fit_parameters_red.sh")
 	
 	# Read the results of the fits
 	Read_Fit(qs)
