@@ -138,6 +138,16 @@ if __name__ == '__main__':
 				project.zindo_dir_cluster = words[1]
 				project.zindo_dir_cluster_ok = True
 				
+			elif first_word=="CALCULATE_SIGN":
+				a = string.lower(words[1])
+				if (a == "true" or a == "t" or a == "1") and (len(words) == 6):
+					project.sign = True
+					project.coeff_H_lign = int(words[2])
+					project.coeff_H_row = int(words[3])
+					project.coeff_L_lign = int(words[4])
+					project.coeff_L_row = int(words[5])
+					project.sign_ok = True			
+				
 			elif first_word=="END":
 				break
 
@@ -280,6 +290,27 @@ if __name__ == '__main__':
 			project.zindo_dir_cluster = copy.copy(a)
 		else:
 			project.zindo_dir_cluster = '/home/output/David/Aijun/zindo-split/split' % (project.username_cluster, project.project_name)
+		project.zindo_dir_cluster_ok = True
+
+	while not project.sign_ok:
+		print "Variable CALCULATE_SIGN not specified!"
+		line = raw_input("CALCULATE_SIGN [False] = ")
+		if len(line) != 0:
+			words = line.split()
+			a = string.lower(words[0])
+			if (a == "true" or a == "t" or a == "1") and (len(words) == 5):
+				project.sign = True
+				project.coeff_H_lign = int(words[2])
+				project.coeff_H_row = int(words[3])
+				project.coeff_L_lign = int(words[4])
+				project.coeff_L_row = int(words[5])
+				project.sign_ok = True
+			else:
+				print "[ERROR] If you specified True, you should also add lign and row of HOMO and LUMO coefficients."
+				project.sign_ok = False
+		else:
+			project.sign = False
+			project.sign_ok = True
 		project.zindo_dir_cluster_ok = True
 
 	if quit:
@@ -443,6 +474,7 @@ if __name__ == '__main__':
 		write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
 		write_cluster_files.CreateCELL(data, cell, project, filename_base)
 		write_cluster_files.CreateCM(data, project, filename_base)
+		write_cluster_files.CreateZIN(project, filename_base)
 		
 	# =====================
 	# Script files creation

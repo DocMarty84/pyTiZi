@@ -98,6 +98,21 @@ def CreateCM(data, project, filename_base):
 	foutput.write(tmp)
 	foutput.close()
 	
+def CreateZIN(project, filename_base):
+	""" Create the .zin file containing information for sign calculation
+	"""
+	tmp = '%d %d %d %d %d \n' % (project.sign, project.coeff_H_lign, project.coeff_H_row, project.coeff_L_lign, project.coeff_L_row)
+
+	file = '%s%s%s.zin' % (project.input_cluster, os.sep, filename_base)
+	try:
+		foutput = open(file, 'w')
+	except:
+		print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+	
+	foutput.write(tmp)
+	foutput.close()
+	
 def ScriptFileCreation(project):
 	""" Create the script used to calculate the neighbors.
 	"""
@@ -262,7 +277,7 @@ def ScriptFileCreationPBS(project):
 		tmp += '#PBS -l nodes=1:p4:ppn=1\n'
 		tmp += '#PBS -A %s\n' % (project.username_cluster)
 		tmp += '#PBS -M %s@averell.umh.ac.be\n' % (project.username_cluster)
-		tmp += '#PBS -m bae\n'
+		tmp += '#PBS -m ae\n'
 		tmp += '#PBS -V\n\n'
 	
 	elif project.location_cluster == "lyra" or project.location_cluster == "adam":
@@ -308,7 +323,7 @@ def ScriptZINDOLaunch(project):
 		tmp += 'SCRATCH_DIR="\\%s"\n\n' % (project.scratch_dir_cluster)
 	else:
 		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
-	tmp += 'N_PBS=6\n\n'
+	tmp += 'N_PBS=12\n\n'
 
 	tmp += 'MakePBS(){\n'
 
@@ -328,8 +343,8 @@ def ScriptZINDOLaunch(project):
 		tmp += '	echo "#$ -cwd"					>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#$ -l vf=2G"				>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#$ -l h_cpu=600:00:00"		>> $DIR/zindo_$1.pbs\n'
-		tmp += '	echo "#$ -N %s"		>> $DIR/zindo_$1.pbs\n' % (project.project_name)
-		tmp += '	echo "#$ -m bea"		>> $DIR/zindo_$1.pbs\n'
+		tmp += '	echo "#$ -N %s_$1"		>> $DIR/zindo_$1.pbs\n' % (project.project_name)
+		tmp += '	echo "#$ -m ea"		>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#$ -M nicolas.g.martinelli@gmail.com"		>> $DIR/zindo_$1.pbs\n'
  		tmp += '	echo " "					>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "module load common"			>> $DIR/zindo_$1.pbs\n'
@@ -425,7 +440,7 @@ def ScriptZINDOLaunch(project):
 	tmp += '	echo " " >> $DIR/zindo_$1.run\n'
 	
 	tmp += '	echo "	cd $SCRATCH_DIR" >> $DIR/zindo_$1.run\n'
-	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/dimer_*_*.out" >> $DIR/zindo_$1.run\n'
+	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/dimer_*_*.out \$PROJECT/frame_\$FRAME/molecule_*.coeff_*" >> $DIR/zindo_$1.run\n'
 	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$OUTPUT_DIR" >> $DIR/zindo_$1.run\n\n'
 	tmp += '	echo " " >> $DIR/zindo_$1.run\n'
 	

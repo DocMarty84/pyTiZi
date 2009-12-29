@@ -27,6 +27,9 @@ double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_g
 
 int ****displ_vec; bool ***neighbors;
 
+bool sign;
+int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
+
 void Read_XYZ(string input_file, bool print_results){
 	string tmp;
 	stringstream file_xyz;
@@ -195,6 +198,30 @@ void Read_CM(string input_file, bool print_results){
 	}
 	else{
 		cerr << "Error opening " << file_cm.str().c_str() << endl;
+		exit(1);
+	}
+}
+
+void Read_ZIN(string input_file, bool print_results){
+	string tmp;
+	stringstream file_zin;
+	file_zin << input_file << ".zin";
+	
+	ifstream input(file_zin.str().c_str(), ios::in);
+	if (input){
+		input >> sign >> coeff_H_lign >> coeff_H_row >> coeff_L_lign >> coeff_L_row; 
+		input.close();
+		
+		if(print_results){
+			cout << "Read sign: " << sign << endl;
+			cout << "coeff_H_lign: " << coeff_H_lign << endl;
+			cout << "coeff_H_row: " << coeff_H_row << endl;
+			cout << "coeff_L_lign: " << coeff_L_lign << endl;
+			cout << "coeff_L_row: " << coeff_L_row << endl;
+		}
+	}
+	else{
+		cerr << "Error opening " << file_zin.str().c_str() << endl;
 		exit(1);
 	}
 }
@@ -458,7 +485,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 	
 	if (output){
 		output << "#!/bin/bash" << endl << endl;
-		output << "cp cell_"  <<  mol_n1 << "_" << mol_n2 << ".dat cell.dat" << endl << endl;
+		output << "cp cell_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".dat cell.dat" << endl << endl;
 		output << "nlaya=1" << endl;
 		output << "nlayb=1" << endl;
 		output << "nlayc=1" << endl << endl;
@@ -470,11 +497,19 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 		output << "echo $nmol > mo_all.txt" << endl;
 		output << "echo $nmol > nat_all.txt" << endl;
 		output << "echo $nmol > nb_all.txt" << endl << endl;
-		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_n1 << ".inp >molecule_" << mol_n1 << ".out" << endl;
+		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
+		if (sign){
+			output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_h" << endl;
+			output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_l" << endl;
+		}
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
 		output << "cat nb.txt >> nb_all.txt" << endl << endl;
-		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_n2 << ".inp >molecule_" << mol_n2 << ".out" << endl;
+		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
+		if (sign){
+			output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_h" << endl;
+			output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_l" << endl;
+		}
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
 		output << "cat nb.txt >> nb_all.txt" << endl << endl;
@@ -509,9 +544,9 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 		output << "	done" << endl;
 		output << "done" << endl << endl;
 		output << "if [[ `wc -l split.out | awk '{print $1}'` -le 4 ]]; then" << endl;
-		output << "	echo 'Error with file " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_n1 << "_" << mol_n2 << ".out" << "' >> " << output_folder << ".log" << endl;
+		output << "	echo 'Error with file " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << "' >> " << output_folder << ".log" << endl;
 		output << "fi" << endl << endl;
-		output << "mv split.out dimer_"  <<  mol_n1 << "_" << mol_n2 << ".out" << endl;
+		output << "mv split.out dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
 //		output << "rm *.out" << endl;
 		output.close();
 	}
@@ -627,6 +662,7 @@ int main(int argc, char **argv){
 	Read_XYZ(input_file, false);
 	Read_CELL(input_file, false);
 	Read_CM(input_file, false);
+	Read_ZIN(input_file, false);
 	Find_Neighbors_Sphere(input_file, output_folder, false);
 	Write_ZINDO_Files(input_file, output_folder, zindo_folder);
 

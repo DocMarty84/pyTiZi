@@ -19,6 +19,11 @@ class InstructionsData(object):
 		self.scratch_dir_cluster = ''
 		self.location_cluster = ''
 		self.zindo_dir_cluster = ''
+		self.sign = ''
+		self.coeff_H_lign = 0
+		self.coeff_H_row = 0
+		self.coeff_L_lign = 0
+		self.coeff_L_row = 0
 		
 		self.project_name_ok = False
 		self.input_dir_ok = False
@@ -35,6 +40,7 @@ class InstructionsData(object):
 		self.scratch_dir_cluster_ok = False
 		self.location_cluster_ok = False
 		self.zindo_dir_cluster_ok = False
+		self.sign_ok = False
 		
 		self.input_cluster = ''
 		self.pbc_number = ''
@@ -66,6 +72,9 @@ class InstructionsData(object):
 		for x in self.molecules_for_J:
 			summary += ' %s ' % (x)
 		summary += '\n'
+		
+		summary += 'CALCULATE_SIGN = %d, %d %d %d %d \n' % (self.sign, self.coeff_H_lign, self.coeff_H_row, self.coeff_L_lign, self.coeff_L_row)
+
 			
 		summary += 'CUTOFF = %f \n\n' % (self.cutoff)
 		summary += 'Cluster parameters:\n'

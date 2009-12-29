@@ -473,7 +473,7 @@ void Write_CMD(string input_file, string output_folder, int frame, int mol_n1, i
 	
 	if (output){
 		output << "#!/bin/bash" << endl << endl;
-		output << "cp cell_"  <<  mol_n1 << "_" << mol_n2 << ".dat cell.dat" << endl << endl;
+		output << "cp cell_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".dat cell.dat" << endl << endl;
 		output << "nlaya=1" << endl;
 		output << "nlayb=1" << endl;
 		output << "nlayc=1" << endl << endl;
@@ -485,11 +485,11 @@ void Write_CMD(string input_file, string output_folder, int frame, int mol_n1, i
 		output << "echo $nmol > mo_all.txt" << endl;
 		output << "echo $nmol > nat_all.txt" << endl;
 		output << "echo $nmol > nb_all.txt" << endl << endl;
-		output << "/home/output/David/Aijun/zindo-split/molecule/zindo1 <molecule_" << mol_n1 << ".inp >molecule_" << mol_n1 << ".out" << endl;
+		output << "/home/output/David/Aijun/zindo-split/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
 		output << "cat nb.txt >> nb_all.txt" << endl << endl;
-		output << "/home/output/David/Aijun/zindo-split/molecule/zindo1 <molecule_" << mol_n2 << ".inp >molecule_" << mol_n2 << ".out" << endl;
+		output << "/home/output/David/Aijun/zindo-split/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
 		output << "cat nb.txt >> nb_all.txt" << endl << endl;
@@ -523,7 +523,7 @@ void Write_CMD(string input_file, string output_folder, int frame, int mol_n1, i
 		output << "		cat split.tmp >> split.out" << endl << endl;
 		output << "	done" << endl;
 		output << "done" << endl;
-		output << "mv split.out " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_n1 << "_" << mol_n2 << ".out" << endl;
+		output << "mv split.out " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
 		output << "rm *.out" << endl;
 	}
 	else 
