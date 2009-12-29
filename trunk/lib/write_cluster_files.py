@@ -86,7 +86,7 @@ def CreateCM(data, project, filename_base):
 			else:
 				a = 0
 			tmp += 'molecule %d %d ' % (ii, data.n_electrons[i, ii])
-			tmp += '%.15f %.15f %.15f %d\n' % (data.CM_x[i, ii], data.CM_y[i, ii], data.CM_y[i, ii], a)
+			tmp += '%.15f %.15f %.15f %d\n' % (data.CM_x[i, ii], data.CM_y[i, ii], data.CM_z[i, ii], a)
 
 	file = '%s%s%s.cm' % (project.input_cluster, os.sep, filename_base)
 	try:
