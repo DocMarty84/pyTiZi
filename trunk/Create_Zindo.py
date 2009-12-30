@@ -381,6 +381,7 @@ if __name__ == '__main__':
 	
 	try:
 		shutil.copy("src%screate_input_zindo.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
+		shutil.copy("src%sZINDO_sign.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
 	except:
 		pass
 		if verb > 1:
@@ -484,6 +485,7 @@ if __name__ == '__main__':
 	write_cluster_files.ScriptFileCreationDirect(project)
 	write_cluster_files.ScriptFileCreationPBS(project)
 	write_cluster_files.ScriptZINDOLaunch(project)
+	write_cluster_files.ScriptZINDOCollectDirect(data, project)
 
 	try:
 		import tarfile

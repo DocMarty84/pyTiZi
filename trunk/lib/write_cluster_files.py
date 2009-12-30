@@ -486,6 +486,103 @@ def ScriptZINDOLaunch(project):
 	
 	foutput.write(tmp)
 	foutput.close()
+	
+def ScriptZINDOCollectDirect(data, project):
+	""" Create the script used to collect the transfer integrals values.
+	"""
+	
+	a = data.n_electrons[0, 0]/2
+	
+	tmp = ''
+	tmp += '#!/bin/bash\n\n'
+	tmp += 'DIR="%s"\n' % (project.dir_cluster)
+	tmp += 'OUTPUT_DIR="%s"\n\n' % (project.output_dir_cluster)
+
+	tmp += 'if [[ -d $DIR ]]; then\n'
+	tmp += '	cd $DIR\n'
+	tmp += 'else\n'
+	tmp += '	echo "The folder $DIR does not exist, but it is supposed to be the project directory. Aborting..."\n'
+	tmp += '	exit\n'
+	tmp += 'fi\n\n'
+
+	tmp += 'mkdir -p $DIR/results\n'
+	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $DIR/results/ZINDO_sign\n\n'
+
+	tmp += 'cd $OUTPUT_DIR\n\n'
+
+	tmp += 'for x in `ls *J.tar.gz`; do\n'
+	tmp += '	tar xfz $x\n'
+	tmp += 'done\n\n'
+
+	tmp += 'for SYSTEM in `ls`; do\n'
+	tmp += '	if [[ -d $SYSTEM ]]; then\n'
+	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
+	tmp += '		cd $SYSTEM\n'
+	tmp += '		for FRAME in `ls | sort -t "_" -k 2 -g`; do\n'
+	tmp += '			if [[ -d $FRAME ]]; then\n'
+	tmp += '				cd $FRAME\n'
+	tmp += '				for x in `ls *.out`; do\n'
+	tmp += '					MOL_1=`echo $x | cut -d "_" -f2`\n'
+	tmp += '					MOL_2=`echo $x | cut -d "_" -f3 | cut -d "." -f1`\n'
+	tmp += '					J_H=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a, a)
+	tmp += '					J_L=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a+1, a+1)
+	tmp += '					N=`echo $FRAME | cut -d "_" -f2`\n\n'
+					
+	tmp += '					if [[ -f molecule_"$MOL_1".coeff_h ]]; then\n'
+	tmp += '						H_1=`cat molecule_"$MOL_1".coeff_h`\n'
+	tmp += '					else\n'
+	tmp += '						H_1="1.0"\n'
+	tmp += '					fi\n\n'
+					
+	tmp += '					if [[ -f molecule_"$MOL_2".coeff_h ]]; then\n'
+	tmp += '						H_2=`cat molecule_"$MOL_2".coeff_h`\n'
+	tmp += '					else\n'
+	tmp += '						H_2="1.0"\n'
+	tmp += '					fi\n\n'
+
+	tmp += '					if [[ -f molecule_"$MOL_1".coeff_l ]]; then\n'
+	tmp += '						L_1=`cat molecule_"$MOL_1".coeff_l`\n'
+	tmp += '					else\n'
+	tmp += '						L_1="1.0"\n'
+	tmp += '					fi\n\n'
+
+	tmp += '					if [[ -f molecule_"$MOL_2".coeff_l ]]; then\n'
+	tmp += '						L_2=`cat molecule_"$MOL_2".coeff_l`\n'
+	tmp += '					else\n'
+	tmp += '						L_2="1.0"\n'
+	tmp += '					fi\n'
+	tmp += '					echo $N $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> "$DIR"/results/"$SYSTEM"_"$x"\n'
+	tmp += '				done\n'
+	tmp += '				cd ..\n'
+	tmp += '			fi\n'
+	tmp += '		done\n'
+	tmp += '		cd ..\n'
+	tmp += '	fi\n'
+	tmp += 'done\n\n'
+
+	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
+	tmp += 'cd $DIR/results\n'
+	tmp += 'for x in `ls *.out`; do\n'
+	tmp += '	./ZINDO_sign -n `wc -l $x | awk \'{ print $1 }\'` -f $x > "$x".sign\n'
+	tmp += 'done\n\n'
+
+	tmp += 'echo "Now cleaning everything..."\n'
+	tmp += 'cd $OUTPUT_DIR\n'
+	tmp += 'for x in `ls`; do\n'
+	tmp += '	if [[ -d $x ]]; then\n'
+	tmp += '		rm -rf $x\n'
+	tmp += '	fi\n'
+	tmp += 'done\n'
+	
+	file = 'project%s%s%s03.collect_direct.sh' % (os.sep, project.project_name, os.sep)
+	try:
+		foutput = open(file, 'w')
+	except:
+		print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+	
+	foutput.write(tmp)
+	foutput.close()
 
 # ******************************************************************************
 #                Functions related to Quantum_Sampling_Generation.py
