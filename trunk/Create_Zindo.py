@@ -146,7 +146,14 @@ if __name__ == '__main__':
 					project.coeff_H_row = int(words[3])
 					project.coeff_L_lign = int(words[4])
 					project.coeff_L_row = int(words[5])
-					project.sign_ok = True			
+					project.sign_ok = True		
+				if (a == "false" or a == "f" or a == "0"):
+					project.sign = False
+					project.coeff_H_lign = 0
+					project.coeff_H_row = 0
+					project.coeff_L_lign = 0
+					project.coeff_L_row = 0
+					project.sign_ok = True		
 				
 			elif first_word=="END":
 				break

@@ -132,7 +132,14 @@ def Read_TINKER_add_File(name, verb=2):
 				n_atom = int(words[1])
 			
 			elif first_word == "frame":
-				frame = int(words[1])-1
+				frame = int(words[1])
+				if frame+1 > n_frame:
+					if verb > 0:
+						print "[ERROR] While reading %s: at least one frame \
+						       number is higher than the total number of \
+						       frames. Aborting..." % (name)
+						sys.exit(1)
+						
 				for i in xrange(2, 14, 1):
 					if words[i] == "a":
 						a[frame] = float(words[i+1])
