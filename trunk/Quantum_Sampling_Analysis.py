@@ -421,22 +421,22 @@ def Write_Gnuplot_plt(data, type):
 			
 			tmp += 'set output \'IP_cluster/mode_%d.eps\'\n' % (i+1)
 			tmp += 'f(x) = a*x+b\n'
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:2 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:2 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:2 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 
 			tmp += 'set output \'EA_cluster/mode_%d.eps\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:3 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 			
 			tmp += 'set output \'IP_alone/mode_%d.eps\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:4 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 			
 			tmp += 'set output \'EA_alone/mode_%d.eps\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:5 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 
@@ -459,22 +459,22 @@ def Write_Gnuplot_plt(data, type):
 			
 			tmp += 'set output \'IP_cluster/mode_%d.png\'\n' % (i+1)
 			tmp += 'f(x) = a*x+b\n'
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:2 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:2 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:2 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 
 			tmp += 'set output \'EA_cluster/mode_%d.png\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:3 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 			
 			tmp += 'set output \'IP_alone/mode_%d.png\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:4 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 			
 			tmp += 'set output \'EA_alone/mode_%d.png\'\n' % (i+1)
-			tmp += '#fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:5 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 
