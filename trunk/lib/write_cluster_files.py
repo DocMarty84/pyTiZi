@@ -510,18 +510,18 @@ def ScriptZINDOCollectDirect(data, project):
 
 	tmp += 'cd $OUTPUT_DIR\n\n'
 
-	tmp += 'for x in `ls *J.tar.gz`; do\n'
+	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
 	tmp += '	tar xfz $x\n'
 	tmp += 'done\n\n'
 
-	tmp += 'for SYSTEM in `ls`; do\n'
+	tmp += 'for SYSTEM in `find . -maxdepth 1 -name "*"`; do\n'
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
 	tmp += '		cd $SYSTEM\n'
-	tmp += '		for FRAME in `ls | sort -t "_" -k 2 -g`; do\n'
+	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g`; do\n'
 	tmp += '			if [[ -d $FRAME ]]; then\n'
 	tmp += '				cd $FRAME\n'
-	tmp += '				for x in `ls *.out`; do\n'
+	tmp += '				for x in `find . -maxdepth 1 -name "*.out"`; do\n'
 	tmp += '					MOL_1=`echo $x | cut -d "_" -f2`\n'
 	tmp += '					MOL_2=`echo $x | cut -d "_" -f3 | cut -d "." -f1`\n'
 	tmp += '					J_H=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a, a)
@@ -551,7 +551,8 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '					else\n'
 	tmp += '						L_2="1.0"\n'
 	tmp += '					fi\n'
-	tmp += '					echo $N $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> "$DIR"/results/"$SYSTEM"_"$x"\n'
+	tmp += '					a=`echo $x | cut -d "/" -f2`\n'
+	tmp += '					echo $N $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> "$DIR"/results/"$SYSTEM"_"$a"\n'
 	tmp += '				done\n'
 	tmp += '				cd ..\n'
 	tmp += '			fi\n'
@@ -562,13 +563,13 @@ def ScriptZINDOCollectDirect(data, project):
 
 	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
 	tmp += 'cd $DIR/results\n'
-	tmp += 'for x in `ls *.out`; do\n'
+	tmp += 'for x in `find . -maxdepth 1 -name "*.out"`; do\n'
 	tmp += '	./ZINDO_sign -n `wc -l $x | awk \'{ print $1 }\'` -f $x > "$x".sign\n'
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Now cleaning everything..."\n'
 	tmp += 'cd $OUTPUT_DIR\n'
-	tmp += 'for x in `ls`; do\n'
+	tmp += 'for x in `find . -maxdepth 1 -name "*"`; do\n'
 	tmp += '	if [[ -d $x ]]; then\n'
 	tmp += '		rm -rf $x\n'
 	tmp += '	fi\n'
