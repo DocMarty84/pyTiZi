@@ -25,7 +25,7 @@ double cutoff; // Cutoff distance
 double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg; // Cell parameters
 double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_gamma_cos, *temp_beta_term, *temp_gamma_term; // Parameters for fractional coordinates
 
-int ****displ_vec; bool ***neighbors;
+int ****displ_vec; bool ***neighbors; int **n_neighbors;
 
 bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
@@ -266,14 +266,17 @@ void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_r
 
 	displ_vec = new int***[n_frame];
 	neighbors = new bool**[n_frame];
+	n_neighbors = new int*[n_frame];
 	
 	for(int i=0; i<n_frame; i++){
 		displ_vec[i] = new int**[n_mol];
 		neighbors[i] = new bool*[n_mol];
+		n_neighbors[i] = new int[n_mol];
 		
 		for(int ii=0; ii<n_mol; ii++){
 			displ_vec[i][ii] = new int*[n_mol];
 			neighbors[i][ii] = new bool[n_mol];
+			n_neighbors[i][ii] = 0;
 			
 			for(int jj=0; jj<n_mol; jj++){
 				displ_vec[i][ii][jj] = new int[3];
@@ -323,6 +326,7 @@ void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_r
 					
 					if (Dist_Norm_square < CutOff_square && Dist_Norm_square != 0){
 						neighbors[i][ii][jj] = 1;
+						n_neighbors[i][ii] ++;
 						
 						stringstream output_filename;
 						stringstream s_frame, s_mol_n1, s_mol_n2;
@@ -638,6 +642,32 @@ void Write_ZINDO_Files(string input_file, string output_folder, string zindo_fol
 	}		
 }
 
+void Write_Neighbors_File(string input_file){
+	string tmp;
+	stringstream file_nb;
+	file_nb << input_file << ".nb";
+	
+	FILE * pFile;
+
+	pFile = fopen (file_nb.str().c_str(), "w");
+	
+	fprintf(pFile, "%d %d\n", n_frame, n_mol);
+	for (int i=0; i<n_frame; i++){
+		fprintf(pFile, "frame %d\n", i);
+		for (int ii=0; ii<n_mol; ii++){
+			fprintf(pFile, "molecule %d %d\n", mol_label[ii], n_neighbors[i][ii]);
+			for (int jj=ii+1; jj<n_mol; jj++){
+				if (neighbors[i][ii][jj]){
+					fprintf(pFile, "%d\n", mol_label[jj]);
+				}
+			}
+		}	
+	}
+	
+	fclose (pFile);
+	
+}
+
 int main(int argc, char **argv){
 
 	int s;
@@ -665,6 +695,7 @@ int main(int argc, char **argv){
 	Read_ZIN(input_file, false);
 	Find_Neighbors_Sphere(input_file, output_folder, false);
 	Write_ZINDO_Files(input_file, output_folder, zindo_folder);
+	Write_Neighbors_File(input_file);
 
 	for(int i=0; i<n_frame; i++){
 		for(int ii=0; ii<n_mol; ii++){
@@ -676,9 +707,11 @@ int main(int argc, char **argv){
 		}
 		delete [] displ_vec[i];
 		delete [] neighbors[i];
+		delete [] n_neighbors[i];
 	}
 	delete [] displ_vec; 
 	delete [] neighbors;
+	delete [] n_neighbors;
 
 	for(int i=0; i<n_frame; i++){
 		for(int ii=0; ii<n_mol; ii++){
