@@ -160,7 +160,7 @@ def ScriptFileCreation(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -i $NAME -o output/$NAME -z $ZINDO_DIR\n\n'
+	tmp += '	./create_input_zindo -I $NAME -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
 	
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -237,7 +237,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -i $NAME -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR\n'
+	tmp += '	./create_input_zindo -I $NAME -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -527,6 +527,12 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '					J_H=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a, a)
 	tmp += '					J_L=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a+1, a+1)
 	tmp += '					N=`echo $FRAME | cut -d "_" -f2`\n\n'
+	
+	tmp += '					if [[ $J_H == '']]; then\n'
+	tmp += '						echo "Problem at frame" $N "between molecules" $MOL_1 "and" $MOL_2 .\n'
+	tmp += '						J_H="0.0"\n'
+	tmp += '						J_L="0.0"\n'
+	tmp += '					fi\n\n'
 					
 	tmp += '					if [[ -f molecule_"$MOL_1".coeff_h ]]; then\n'
 	tmp += '						H_1=`cat molecule_"$MOL_1".coeff_h`\n'

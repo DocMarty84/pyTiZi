@@ -25,7 +25,7 @@ double cutoff; // Cutoff distance
 double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg; // Cell parameters
 double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_gamma_cos, *temp_beta_term, *temp_gamma_term; // Parameters for fractional coordinates
 
-int ****displ_vec; bool ***neighbors; int **n_neighbors;
+int ****displ_vec; bool ***neighbors; int **n_neighbors, ***neighbors_label;
 
 bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
@@ -50,7 +50,6 @@ void Read_XYZ(string input_file, bool print_results){
 		atomic_number = new int**[n_frame];
 		atomic_mass = new double**[n_frame];
 		atomic_valence = new int**[n_frame];
-		mol_label = new int[n_mol];
 		symbol = new char**[n_frame];
 		
 		for(int i=0; i<n_frame; i++){
@@ -222,6 +221,113 @@ void Read_ZIN(string input_file, bool print_results){
 	}
 	else{
 		cerr << "Error opening " << file_zin.str().c_str() << endl;
+		exit(1);
+	}
+}
+
+void Read_NB(string input_file, bool print_results){
+	string tmp;
+	stringstream file_nb;
+	file_nb << input_file << ".nb";
+	
+	ifstream input(file_nb.str().c_str(), ios::in);
+	if (input){
+		input >> n_frame >> n_mol;
+		
+		neighbors_label = new int**[n_frame];
+		n_neighbors = new int*[n_frame];
+		
+		for(int i=0; i<n_frame; i++){
+			neighbors_label[i] = new int*[n_mol];
+			n_neighbors[i] = new int[n_mol];
+			
+			for(int ii=0; ii<n_mol; ii++){
+				n_neighbors[i][ii] = 0;
+			}
+		}
+
+		for (int i=0; i<n_frame; i++){
+			input >> tmp >> tmp;
+			for (int ii=0; ii<n_mol; ii++){
+				input >> tmp >> tmp >> n_neighbors[i][ii];
+				neighbors_label[i][ii] = new int[n_neighbors[i][ii]];
+				
+				for (int jj=0; jj<n_neighbors[i][ii]; jj++){
+					input >> neighbors_label[i][ii][jj];
+				}
+			}
+		}
+	}
+		
+		input.close();
+		
+		if (print_results){
+			cout << n_frame << " " << n_mol << endl;
+			for (int i=0; i<n_frame; i++){
+				cout << "frame " << i << endl;
+				for (int ii=0; ii<n_mol; ii++){
+					cout << "molecule " << ii << " " << n_neighbors[i][ii] << endl;
+					for (int jj=0; jj<n_neighbors[i][ii]; jj++){
+						cout << neighbors_label[i][ii][jj] << endl;
+					}
+				}
+			}
+		}
+		
+	else{
+		cerr << "Error opening " << file_nb.str().c_str() << endl;
+		exit(1);
+	}
+}
+
+void Read_J(string output_folder, string input_file, string result_folder, bool print_results){
+	string tmp;
+	stringstream file_J_list;
+	stringstream file_J;
+	double h,l;
+	
+	file_J_list << result_folder << "/" << input_file << ".list";
+	ifstream input_list(file_J_list.str().c_str(), ios::in);
+	
+	if (input_list){
+		input_list >> tmp;
+		while (!input_list.eof()){
+			file_J << result_folder << "/" << tmp;
+			ifstream input(file_J.str().c_str(), ios::in);
+			
+			if (input){
+				int mol1, mol2;
+				char *str_char, *str_char_split;
+				
+				input >> mol1 >> mol2;
+				while (!input.eof()){
+					input >> i >> h >> l;
+					for (int jj=0; jj<n_neighbors[i][mol1]; jj++){ //retenir valeur precedente?
+						if (mol2 == neighbors_label[i][mol1][jj]){
+							J_H[i][mol1][jj] = h; //a declarer
+							J_L[i][mol1][jj] = l;
+							break;
+						}
+					}
+				}	
+			}
+			
+			else{
+				cerr << "Error opening " << file_J.str().c_str() << endl;
+				exit(1);			
+			}
+		}
+		input_list.close();
+	}
+	
+
+		
+		if (print_results){
+
+		}
+		
+	else{
+		cerr << "Error opening " << file_J_list.str().c_str() << endl;
 		exit(1);
 	}
 }
@@ -642,10 +748,10 @@ void Write_ZINDO_Files(string input_file, string output_folder, string zindo_fol
 	}		
 }
 
-void Write_Neighbors_File(string input_file){
+void Write_NB(string output_file){
 	string tmp;
 	stringstream file_nb;
-	file_nb << input_file << ".nb";
+	file_nb << output_file << ".nb";
 	
 	FILE * pFile;
 
@@ -674,10 +780,14 @@ int main(int argc, char **argv){
 	string input_file;
 	string output_folder;
 	string zindo_folder;
+	string result_folder;
 	
-  	while ((s = getopt_long (argc, argv, "i:o:z:", NULL, NULL)) != -1){
+	bool zindo = false;
+	bool mc = false;
+	
+  	while ((s = getopt_long (argc, argv, "I:o:z:t:", NULL, NULL)) != -1){
       	switch (s){
-			case 'i':
+      		case 'I':
 				input_file = optarg;
 	  			break;
 			case 'o':
@@ -686,58 +796,90 @@ int main(int argc, char **argv){
 			case 'z':
 				zindo_folder = optarg;
 	  			break;
+	  		case 't':
+	  			string a;
+	  			a = optarg;
+	  			if (a.compare("zindo") == 0)
+	  				zindo = true;
+	  			else if (a.compare("mc") == 0)
+	  				mc = true;
 		}
 	}
 	
-	Read_XYZ(input_file, false);
+	if (zindo){
+		Read_XYZ(input_file, false);
+	}
+	
+	if (mc){
+		Read_NB(input_file, true);
+	}
+	
 	Read_CELL(input_file, false);
 	Read_CM(input_file, false);
 	Read_ZIN(input_file, false);
-	Find_Neighbors_Sphere(input_file, output_folder, false);
-	Write_ZINDO_Files(input_file, output_folder, zindo_folder);
-	Write_Neighbors_File(input_file);
-
-	for(int i=0; i<n_frame; i++){
-		for(int ii=0; ii<n_mol; ii++){
-			for(int jj=0; jj<n_mol; jj++){
-				delete [] displ_vec[i][ii][jj];
-			}
-			delete [] displ_vec[i][ii];
-			delete [] neighbors[i][ii];
-		}
-		delete [] displ_vec[i];
-		delete [] neighbors[i];
-		delete [] n_neighbors[i];
+	
+	if (zindo){
+		Find_Neighbors_Sphere(input_file, output_folder, false);
+		Write_ZINDO_Files(input_file, output_folder, zindo_folder);
+		Write_NB(input_file);
 	}
-	delete [] displ_vec; 
-	delete [] neighbors;
-	delete [] n_neighbors;
 
-	for(int i=0; i<n_frame; i++){
-		for(int ii=0; ii<n_mol; ii++){
-			delete [] x_cart[i][ii];
-			delete [] y_cart[i][ii];
-			delete [] z_cart[i][ii];
-			delete [] atomic_number[i][ii];
-			delete [] atomic_mass[i][ii];
-			delete [] atomic_valence[i][ii];
-			delete [] symbol[i][ii];
+	if (zindo){
+		for(int i=0; i<n_frame; i++){
+			for(int ii=0; ii<n_mol; ii++){
+				delete [] x_cart[i][ii];
+				delete [] y_cart[i][ii];
+				delete [] z_cart[i][ii];
+				delete [] atomic_number[i][ii];
+				delete [] atomic_mass[i][ii];
+				delete [] atomic_valence[i][ii];
+				delete [] symbol[i][ii];
+			}
+			
+			delete [] x_cart[i];
+			delete [] y_cart[i];
+			delete [] z_cart[i];
+			delete [] atomic_number[i];
+			delete [] atomic_mass[i];
+			delete [] atomic_valence[i];
+			delete [] symbol[i];
 		}
+		delete [] x_cart; delete [] y_cart; delete [] z_cart; 
+		delete [] atomic_number; delete [] atomic_mass; delete [] atomic_valence; delete [] symbol; 
 		
-		delete [] x_cart[i];
-		delete [] y_cart[i];
-		delete [] z_cart[i];
-		delete [] atomic_number[i];
-		delete [] atomic_mass[i];
-		delete [] atomic_valence[i];
-		delete [] symbol[i];
+		for(int i=0; i<n_frame; i++){
+			for(int ii=0; ii<n_mol; ii++){
+				for(int jj=0; jj<n_mol; jj++){
+					delete [] displ_vec[i][ii][jj];
+				}
+				delete [] displ_vec[i][ii];
+				delete [] neighbors[i][ii];
+			}
+			delete [] displ_vec[i];
+			delete [] neighbors[i];
+			delete [] n_neighbors[i];
+		}
+		delete [] displ_vec; delete [] neighbors; delete [] n_neighbors;
+	}
+
+	if (mc){
+		for(int i=0; i<n_frame; i++){
+			for(int ii=0; ii<n_mol; ii++){
+				delete [] neighbors_label[i][ii];
+			}
+			delete [] neighbors_label[i];
+			delete [] n_neighbors[i];
+		}
+		delete [] neighbors_label;
+		delete [] n_neighbors;
+	}
+	
+	for(int i=0; i<n_frame; i++){
 		delete [] CM_x[i];
 		delete [] CM_y[i];
 		delete [] CM_z[i];
 	}
-	delete [] x_cart; delete [] y_cart; delete [] z_cart; 
-	delete [] atomic_number; delete [] atomic_mass; delete [] atomic_valence;
-	delete [] symbol; delete [] mol_label; delete [] J;
+	delete [] mol_label; delete [] J;
 	delete [] CM_x; delete [] CM_y; delete [] CM_z; delete [] n_electrons;
 	
 	delete [] n_atom;
