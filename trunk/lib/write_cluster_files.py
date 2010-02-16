@@ -160,7 +160,7 @@ def ScriptFileCreation(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -I $NAME -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./create_input_zindo -I $NAME -i . -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
 	
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -237,7 +237,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -I $NAME -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./create_input_zindo -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -496,6 +496,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
+	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n\n' % (project.output_dir_cluster)
 
 	tmp += 'if [[ -d $DIR ]]; then\n'
@@ -506,15 +507,18 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'fi\n\n'
 
 	tmp += 'mkdir -p $DIR/results\n'
-	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $DIR/results/ZINDO_sign\n\n'
+	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $DIR/results/ZINDO_sign\n'
+	tmp += 'g++ create_input_zindo.cpp -O2 -lm -o $DIR/results/create_input_zindo\n\n'
 
-	tmp += 'cd $OUTPUT_DIR\n\n'
+	tmp += 'cd $INPUT_DIR/MD\n'
+	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\'`\n\n'
 
+	tmp += 'cd $OUTPUT_DIR\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
 	tmp += '	tar xfz $x\n'
 	tmp += 'done\n\n'
 
-	tmp += 'for SYSTEM in `find . -maxdepth 1 -name "*"`; do\n'
+	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
 	tmp += '		cd $SYSTEM\n'
@@ -528,7 +532,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '					J_L=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a+1, a+1)
 	tmp += '					N=`echo $FRAME | cut -d "_" -f2`\n\n'
 	
-	tmp += '					if [[ $J_H == '']]; then\n'
+	tmp += '					if [[ $J_H == \'\' ]]; then\n'
 	tmp += '						echo "Problem at frame" $N "between molecules" $MOL_1 "and" $MOL_2 .\n'
 	tmp += '						J_H="0.0"\n'
 	tmp += '						J_L="0.0"\n'
@@ -570,14 +574,26 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
 	tmp += 'cd $DIR/results\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*.out"`; do\n'
-	tmp += '	./ZINDO_sign -n `wc -l $x | awk \'{ print $1 }\'` -f $x > "$x".sign\n'
+	tmp += '	mol1=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f1`\n'
+	tmp += '	mol2=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f2`\n'
+	tmp += '	n_frame=`wc -l $x | awk \'{ print $1 }\'`\n'
+	tmp += '	echo $n_frame $mol1 $mol2 > "$x".sign\n'
+	tmp += '	./ZINDO_sign -n $n_frame -f $x >> "$x".sign\n'
+	tmp += 'done\n\n'
+
+	tmp += 'echo "Creating Monte-Carlo input files..."\n'
+	tmp += 'cd $DIR/results\n'
+	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += '	a=`echo $SYSTEM_LIST | awk -F \'\/\' \'{ print $2 }\'`\n'
+	tmp += '	find . -name ""$a"_dimer_*.sign" > "$SYSTEM".list\n'
+	tmp += '	./create_input_zindo -I $SYSTEM -i $INPUT_DIR/MD -r $DIR/results -t mc\n'
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Now cleaning everything..."\n'
 	tmp += 'cd $OUTPUT_DIR\n'
-	tmp += 'for x in `find . -maxdepth 1 -name "*"`; do\n'
-	tmp += '	if [[ -d $x ]]; then\n'
-	tmp += '		rm -rf $x\n'
+	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += '	if [[ -d $SYSTEM ]]; then\n'
+	tmp += '		rm -rf $SYSTEM\n'
 	tmp += '	fi\n'
 	tmp += 'done\n'
 	

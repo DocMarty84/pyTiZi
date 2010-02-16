@@ -30,10 +30,12 @@ int ****displ_vec; bool ***neighbors; int **n_neighbors, ***neighbors_label;
 bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
 
-void Read_XYZ(string input_file, bool print_results){
+double ***J_H, ***J_L;
+
+void Read_XYZ(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_xyz;
-	file_xyz << input_file << ".xyz";
+	file_xyz << input_folder << "/" << input_file << ".xyz";
 	
 	ifstream input(file_xyz.str().c_str(), ios::in);
 	if (input){
@@ -51,6 +53,7 @@ void Read_XYZ(string input_file, bool print_results){
 		atomic_mass = new double**[n_frame];
 		atomic_valence = new int**[n_frame];
 		symbol = new char**[n_frame];
+		mol_label = new int[n_mol];
 		
 		for(int i=0; i<n_frame; i++){
 			x_cart[i] = new double*[n_mol];
@@ -107,10 +110,10 @@ void Read_XYZ(string input_file, bool print_results){
 	}
 }
 
-void Read_CELL(string input_file, bool print_results){
+void Read_CELL(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_cell;
-	file_cell << input_file << ".cell";
+	file_cell << input_folder << "/" << input_file << ".cell";
 	
 	ifstream input(file_cell.str().c_str(), ios::in);
 	if (input){
@@ -156,10 +159,10 @@ void Read_CELL(string input_file, bool print_results){
 	}
 }
 
-void Read_CM(string input_file, bool print_results){
+void Read_CM(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_cm;
-	file_cm << input_file << ".cm";
+	file_cm << input_folder << "/" << input_file << ".cm";
 	
 	ifstream input(file_cm.str().c_str(), ios::in);
 	if (input){
@@ -201,10 +204,10 @@ void Read_CM(string input_file, bool print_results){
 	}
 }
 
-void Read_ZIN(string input_file, bool print_results){
+void Read_ZIN(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_zin;
-	file_zin << input_file << ".zin";
+	file_zin << input_folder << "/" << input_file << ".zin";
 	
 	ifstream input(file_zin.str().c_str(), ios::in);
 	if (input){
@@ -225,10 +228,10 @@ void Read_ZIN(string input_file, bool print_results){
 	}
 }
 
-void Read_NB(string input_file, bool print_results){
+void Read_NB(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_nb;
-	file_nb << input_file << ".nb";
+	file_nb << input_folder << "/" << input_file << ".nb";
 	
 	ifstream input(file_nb.str().c_str(), ios::in);
 	if (input){
@@ -257,8 +260,6 @@ void Read_NB(string input_file, bool print_results){
 				}
 			}
 		}
-	}
-		
 		input.close();
 		
 		if (print_results){
@@ -273,6 +274,7 @@ void Read_NB(string input_file, bool print_results){
 				}
 			}
 		}
+	}
 		
 	else{
 		cerr << "Error opening " << file_nb.str().c_str() << endl;
@@ -280,51 +282,71 @@ void Read_NB(string input_file, bool print_results){
 	}
 }
 
-void Read_J(string output_folder, string input_file, string result_folder, bool print_results){
+void Read_J(string input_file, string result_folder){
 	string tmp;
 	stringstream file_J_list;
 	stringstream file_J;
+	int f;
 	double h,l;
 	
 	file_J_list << result_folder << "/" << input_file << ".list";
 	ifstream input_list(file_J_list.str().c_str(), ios::in);
 	
 	if (input_list){
+		
+		J_H = new double**[n_frame];
+		J_L = new double**[n_frame];
+		
+		for (int i=0; i<n_frame; i++){
+			J_H[i] = new double*[n_mol];
+			J_L[i] = new double*[n_mol];
+		}
+		
 		input_list >> tmp;
 		while (!input_list.eof()){
+			file_J.str("");
 			file_J << result_folder << "/" << tmp;
 			ifstream input(file_J.str().c_str(), ios::in);
 			
 			if (input){
 				int mol1, mol2;
-				char *str_char, *str_char_split;
+				int prev_value = 0;
 				
-				input >> mol1 >> mol2;
+				input >> tmp >> mol1 >> mol2;
+				
 				while (!input.eof()){
-					input >> i >> h >> l;
-					for (int jj=0; jj<n_neighbors[i][mol1]; jj++){ //retenir valeur precedente?
-						if (mol2 == neighbors_label[i][mol1][jj]){
-							J_H[i][mol1][jj] = h; //a declarer
-							J_L[i][mol1][jj] = l;
-							break;
+					input >> f >> h >> l;
+					
+					J_H[f][mol1] = new double[n_neighbors[f][mol1]];
+					J_L[f][mol1] = new double[n_neighbors[f][mol1]];
+
+					if (mol2 == neighbors_label[f][mol1][prev_value]){
+						J_H[f][mol1][prev_value] = h;
+						J_L[f][mol1][prev_value] = l;
+					}					
+					
+					else {
+						for (int jj=0; jj<n_neighbors[f][mol1]; jj++){
+							if (mol2 == neighbors_label[f][mol1][jj]){
+								J_H[f][mol1][jj] = h;
+								J_L[f][mol1][jj] = l;
+								break;
+							}
 						}
 					}
-				}	
+				}
+				input.close();
 			}
 			
 			else{
 				cerr << "Error opening " << file_J.str().c_str() << endl;
 				exit(1);			
 			}
+			
+			input_list >> tmp;
 		}
 		input_list.close();
 	}
-	
-
-		
-		if (print_results){
-
-		}
 		
 	else{
 		cerr << "Error opening " << file_J_list.str().c_str() << endl;
@@ -748,10 +770,10 @@ void Write_ZINDO_Files(string input_file, string output_folder, string zindo_fol
 	}		
 }
 
-void Write_NB(string output_file){
+void Write_NB(string output_file, string input_folder){
 	string tmp;
 	stringstream file_nb;
-	file_nb << output_file << ".nb";
+	file_nb << input_folder << "/" << output_file << ".nb";
 	
 	FILE * pFile;
 
@@ -774,10 +796,35 @@ void Write_NB(string output_file){
 	
 }
 
+void Write_MC(string input_file, string result_folder){
+	string tmp;
+	stringstream file_mc;
+	file_mc << result_folder << "/" << input_file << ".mc";
+	
+	FILE * pFile;
+
+	pFile = fopen (file_mc.str().c_str(), "w");
+	
+	fprintf(pFile, "%d %d\n", n_frame, n_mol);
+	for (int i=0; i<n_frame; i++){
+		fprintf(pFile, "frame %d\n", i);
+		for (int ii=0; ii<n_mol; ii++){
+			fprintf(pFile, "molecule %d %d\n", mol_label[ii], n_neighbors[i][ii]);
+			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
+				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+			}
+		}	
+	}
+	
+	fclose (pFile);
+	
+}
+
 int main(int argc, char **argv){
 
 	int s;
 	string input_file;
+	string input_folder;
 	string output_folder;
 	string zindo_folder;
 	string result_folder;
@@ -785,16 +832,22 @@ int main(int argc, char **argv){
 	bool zindo = false;
 	bool mc = false;
 	
-  	while ((s = getopt_long (argc, argv, "I:o:z:t:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:z:r:t:", NULL, NULL)) != -1){
       	switch (s){
-      		case 'I':
+			case 'I':
 				input_file = optarg;
+				break;
+			case 'i':
+				input_folder = optarg;
 	  			break;
 			case 'o':
 				output_folder = optarg;
 	  			break;
 			case 'z':
 				zindo_folder = optarg;
+	  			break;
+			case 'r':
+				result_folder = optarg;
 	  			break;
 	  		case 't':
 	  			string a;
@@ -807,22 +860,29 @@ int main(int argc, char **argv){
 	}
 	
 	if (zindo){
-		Read_XYZ(input_file, false);
+		Read_XYZ(input_file, input_folder, false);
 	}
 	
 	if (mc){
-		Read_NB(input_file, true);
+		Read_NB(input_file, input_folder, false);
 	}
 	
-	Read_CELL(input_file, false);
-	Read_CM(input_file, false);
-	Read_ZIN(input_file, false);
+	Read_CELL(input_file, input_folder, false);
+	Read_CM(input_file, input_folder, false);
+	Read_ZIN(input_file, input_folder, false);
 	
 	if (zindo){
 		Find_Neighbors_Sphere(input_file, output_folder, false);
 		Write_ZINDO_Files(input_file, output_folder, zindo_folder);
-		Write_NB(input_file);
+		Write_NB(input_file, input_folder);
 	}
+	
+	if (mc){
+		Read_J(input_file, result_folder);
+		Write_MC(input_file, result_folder);
+	}
+
+//==============================================================================
 
 	if (zindo){
 		for(int i=0; i<n_frame; i++){
@@ -872,6 +932,14 @@ int main(int argc, char **argv){
 		}
 		delete [] neighbors_label;
 		delete [] n_neighbors;
+	}
+	
+	if (mc){
+		for(int i=0; i<n_frame; i++){
+			delete [] J_H[i];
+			delete [] J_L[i];
+		}
+		delete [] J_H; delete [] J_L; 
 	}
 	
 	for(int i=0; i<n_frame; i++){

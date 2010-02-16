@@ -11,9 +11,9 @@
 
 using namespace std;
 
-void read_file(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, double *L_2, int n_frame, string input_file) {
+void read_file(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, double *L_2, int *frame, int n_frame, string input_file) {
 
-	int i;
+	int i=0;
 //	string input_file = "integrals.tmp"; 
 	ifstream input(input_file.c_str(), ios::in);
 	if(input)
@@ -21,7 +21,8 @@ void read_file(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, 
 //		cout << "Transfer integrals file successfully opened! Now reading..." << endl;
 
 		while (!input.eof()){
-			input >> i >> J_H[i] >> H_1[i] >> H_2[i] >> J_L[i] >> L_1[i] >> L_2[i];
+			input >> frame[i] >> J_H[i] >> H_1[i] >> H_2[i] >> J_L[i] >> L_1[i] >> L_2[i];
+			i++;
 		}
 		input.close(); // Fermeture du fichier
 //		cout << "Reading done!" << endl;
@@ -30,9 +31,9 @@ void read_file(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, 
 		cerr << "Error while opening trajectory file " << input_file.c_str() << endl;
 }
 
-void print_results(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, double *L_2, int n_frame) {
+void print_results(double *J_H, double *H_1, double *H_2, double *J_L, double *L_1, double *L_2, int *frame, int n_frame) {
 	for(int i=0;i<n_frame;i++){
-		cout << i << " " << 1000*J_H[i]*(H_1[i]*H_2[i]/(fabs(H_1[i]*H_2[i]))) << " " << 1000*J_L[i]*(L_1[i]*L_2[i]/(fabs(L_1[i]*L_2[i]))) << endl;
+		cout << frame[i] << " " << 1000*J_H[i]*(H_1[i]*H_2[i]/(fabs(H_1[i]*H_2[i]))) << " " << 1000*J_L[i]*(L_1[i]*L_2[i]/(fabs(L_1[i]*L_2[i]))) << endl;
 	}
 }
 
@@ -42,16 +43,14 @@ int main(int argc, char **argv) {
 	int n_frame = 0;
 	string input_file;
 	
-  	while ((c = getopt_long (argc, argv, "f:n:", NULL, NULL)) != -1)
-	{
-      		switch (c)
-		{
-			case 'n':
-				n_frame = atoi(optarg);
-	  			break;
-			case 'f':
-				input_file = optarg;
-	  			break;
+  	while ((c = getopt_long (argc, argv, "f:n:", NULL, NULL)) != -1){
+		switch (c){
+		case 'n':
+			n_frame = atoi(optarg);
+			break;
+		case 'f':
+			input_file = optarg;
+			break;
 		}
 	}
 
@@ -62,6 +61,7 @@ int main(int argc, char **argv) {
 	}
 	
 	double *J_H, *H_1, *H_2, *J_L, *L_1, *L_2;
+	int *frame;
 	
 	J_H = new double[n_frame];
 	H_1 = new double[n_frame];
@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
 	J_L = new double[n_frame];
 	L_1 = new double[n_frame];
 	L_2 = new double[n_frame];
+	frame = new int[n_frame];
 	
 	for (int i=0; i<n_frame; i++){
 		J_H[i] = 0.0; J_L[i] = 0.0;
@@ -76,11 +77,12 @@ int main(int argc, char **argv) {
 		L_1[i] = 1.0; L_2[i] = 1.0;
 	}
 	
-	read_file(J_H, H_1, H_2, J_L, L_1, L_2, n_frame, input_file);
-	print_results(J_H, H_1, H_2, J_L, L_1, L_2, n_frame);
+	read_file(J_H, H_1, H_2, J_L, L_1, L_2, frame, n_frame, input_file);
+	print_results(J_H, H_1, H_2, J_L, L_1, L_2, frame, n_frame);
 	
 	delete[] J_H; delete[] H_1; delete[] H_2; 
 	delete[] J_L; delete[] L_1; delete[] L_2;
+	delete[] frame;
 
 	return 0;
 
