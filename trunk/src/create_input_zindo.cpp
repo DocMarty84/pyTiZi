@@ -300,6 +300,11 @@ void Read_J(string input_file, string result_folder){
 		for (int i=0; i<n_frame; i++){
 			J_H[i] = new double*[n_mol];
 			J_L[i] = new double*[n_mol];
+			
+			for (int ii=0; ii<n_mol; ii++){
+				J_H[i][ii] = new double[n_neighbors[i][ii]];
+				J_L[i][ii] = new double[n_neighbors[i][ii]];	
+			}
 		}
 		
 		input_list >> tmp;
@@ -316,9 +321,6 @@ void Read_J(string input_file, string result_folder){
 				
 				while (!input.eof()){
 					input >> f >> h >> l;
-					
-					J_H[f][mol1] = new double[n_neighbors[f][mol1]];
-					J_L[f][mol1] = new double[n_neighbors[f][mol1]];
 
 					if (mol2 == neighbors_label[f][mol1][prev_value]){
 						J_H[f][mol1][prev_value] = h;
@@ -330,6 +332,7 @@ void Read_J(string input_file, string result_folder){
 							if (mol2 == neighbors_label[f][mol1][jj]){
 								J_H[f][mol1][jj] = h;
 								J_L[f][mol1][jj] = l;
+								prev_value = jj;
 								break;
 							}
 						}
@@ -807,12 +810,14 @@ void Write_MC(string input_file, string result_folder){
 	
 	fprintf(pFile, "%d %d\n", n_frame, n_mol);
 	for (int i=0; i<n_frame; i++){
-		fprintf(pFile, "frame %d\n", i);
+		fprintf(pFile, "N_frame=%d\n", i);
+		fprintf(pFile, "%.4f %.4f %.4f %.4f %.4f %.4f\n", a[i], b[i], c[i], alpha_deg[i], beta_deg[i], gamma_deg[i]);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "molecule %d %d\n", mol_label[ii], n_neighbors[i][ii]);
+			fprintf(pFile, "0 %d 0\n", n_neighbors[i][ii]);
 			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj], J_L[i][ii][jj]);
 			}
+			fprintf(pFile, "%e %e %e\n", CM_x[i][ii], CM_y[i][ii], CM_z[i][ii]);
 		}	
 	}
 	

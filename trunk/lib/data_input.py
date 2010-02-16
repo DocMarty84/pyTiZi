@@ -16,6 +16,7 @@ class InstructionsData(object):
 		self.dir_cluster = ''
 		self.input_dir_cluster = ''
 		self.output_dir_cluster = ''
+		self.results_dir_cluster = ''
 		self.scratch_dir_cluster = ''
 		self.location_cluster = ''
 		self.zindo_dir_cluster = ''
@@ -37,6 +38,7 @@ class InstructionsData(object):
 		self.dir_cluster_ok = False
 		self.input_dir_cluster_ok = False
 		self.output_dir_cluster_ok = False
+		self.results_dir_cluster_ok = False
 		self.scratch_dir_cluster_ok = False
 		self.location_cluster_ok = False
 		self.zindo_dir_cluster_ok = False
@@ -81,8 +83,6 @@ class InstructionsData(object):
 		summary += '===================\n'	
 		summary += 'USERNAME_CLUSTER = %s \n' % (self.username_cluster)
 		summary += 'DIR_CLUSTER = %s \n' % (self.dir_cluster)
-		summary += 'INPUT_DIR_CLUSTER = %s \n' % (self.input_dir_cluster)
-		summary += 'OUTPUT_DIR_CLUSTER = %s \n' % (self.output_dir_cluster)
 		summary += 'SCRATCH_DIR_CLUSTER = %s \n' % (self.scratch_dir_cluster)
 		summary += 'ZINDO_DIR_CLUSTER = %s \n' % (self.zindo_dir_cluster)
 		summary += 'LOCATION_CLUSTER = %s \n' % (self.location_cluster)

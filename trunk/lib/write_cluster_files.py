@@ -498,6 +498,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n\n' % (project.output_dir_cluster)
+	tmp += 'RESULTS_DIR="%s"\n\n' % (project.results_dir_cluster)
 
 	tmp += 'if [[ -d $DIR ]]; then\n'
 	tmp += '	cd $DIR\n'
@@ -506,12 +507,12 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '	exit\n'
 	tmp += 'fi\n\n'
 
-	tmp += 'mkdir -p $DIR/results\n'
-	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $DIR/results/ZINDO_sign\n'
-	tmp += 'g++ create_input_zindo.cpp -O2 -lm -o $DIR/results/create_input_zindo\n\n'
+	tmp += 'mkdir -p $RESULTS_DIR\n'
+	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $RESULTS_DIR/ZINDO_sign\n'
+	tmp += 'g++ create_input_zindo.cpp -O2 -lm -o $RESULTS_DIR/create_input_zindo\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
-	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\'`\n\n'
+	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\' | awk -F \'\/\' \'{ print $2 }\'`\n\n'
 
 	tmp += 'cd $OUTPUT_DIR\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
@@ -572,7 +573,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
-	tmp += 'cd $DIR/results\n'
+	tmp += 'cd $RESULTS_DIR\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*.out"`; do\n'
 	tmp += '	mol1=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f1`\n'
 	tmp += '	mol2=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f2`\n'
@@ -582,10 +583,9 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Creating Monte-Carlo input files..."\n'
-	tmp += 'cd $DIR/results\n'
+	tmp += 'cd $RESULTS_DIR\n'
 	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
-	tmp += '	a=`echo $SYSTEM_LIST | awk -F \'\/\' \'{ print $2 }\'`\n'
-	tmp += '	find . -name ""$a"_dimer_*.sign" > "$SYSTEM".list\n'
+	tmp += '	find . -name ""$SYSTEM"_dimer_*.sign" > "$SYSTEM".list\n'
 	tmp += '	./create_input_zindo -I $SYSTEM -i $INPUT_DIR/MD -r $DIR/results -t mc\n'
 	tmp += 'done\n\n'
 
@@ -596,6 +596,26 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '		rm -rf $SYSTEM\n'
 	tmp += '	fi\n'
 	tmp += 'done\n'
+	
+	tmp += 'cd $RESULTS_DIR\n'
+	tmp += 'rm ZINDO_sign create_input_zindo\n'
+	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += '	rm "$SYSTEM".list\n'
+	tmp += '	mkdir -p $SYSTEM\n'
+	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.out"`; do\n'
+	tmp += '		mv $x $SYSTEM\n'
+	tmp += '	done\n'
+	tmp += '	tar cfz "$SYSTEM"_out.tar.gz $SYSTEM\n'
+	tmp += '	rm -rf $SYSTEM\n\n'
+
+	tmp += '	mkdir -p $SYSTEM\n'
+	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.sign"`; do\n'
+	tmp += '		mv $x $SYSTEM\n'
+	tmp += '	done\n'
+	tmp += '	tar cfz "$SYSTEM"_sign.tar.gz $SYSTEM\n'
+	tmp += '	rm -rf $SYSTEM\n'
+	tmp += 'done\n'
+	
 	
 	file = 'project%s%s%s03.collect_direct.sh' % (os.sep, project.project_name, os.sep)
 	try:

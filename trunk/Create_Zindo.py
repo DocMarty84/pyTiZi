@@ -116,16 +116,14 @@ if __name__ == '__main__':
 
 			elif first_word=="DIR_CLUSTER":
 				project.dir_cluster = words[1]
+				project.input_dir_cluster = "%s/input" % (project.dir_cluster)
+				project.output_dir_cluster = "%s/output" % (project.dir_cluster)
+				project.results_dir_cluster = "%s/results" % (project.dir_cluster)
 				project.dir_cluster_ok = True
-
-			elif first_word=="INPUT_DIR_CLUSTER":
-				project.input_dir_cluster = words[1]
 				project.input_dir_cluster_ok = True
-				
-			elif first_word=="OUTPUT_DIR_CLUSTER":
-				project.output_dir_cluster = words[1]
 				project.output_dir_cluster_ok = True
-			
+				project.results_dir_cluster_ok = True
+
 			elif first_word=="SCRATCH_DIR_CLUSTER":
 				project.scratch_dir_cluster = words[1]
 				project.scratch_dir_cluster_ok = True
@@ -261,25 +259,14 @@ if __name__ == '__main__':
 			project.dir_cluster = copy.copy(a)
 		else:
 			project.dir_cluster = '/output/%s/temp/%s' % (project.username_cluster, project.project_name)
+			
+		project.input_dir_cluster = "%s/input" % (project.dir_cluster)
+		project.output_dir_cluster = "%s/output" % (project.dir_cluster)
+		project.results_dir_cluster = "%s/results" % (project.dir_cluster)
 		project.dir_cluster_ok = True
-		
-	while not project.input_dir_cluster_ok:
-		print "Variable INPUT_DIR_CLUSTER not specified!"
-		a = raw_input("INPUT_DIR_CLUSTER [/output/%s/temp/%s/input] = " % (project.username_cluster, project.project_name))
-		if len(a) != 0:
-			project.input_dir_cluster = copy.copy(a)
-		else:
-			project.input_dir_cluster = '/output/%s/temp/%s/input' % (project.username_cluster, project.project_name)
 		project.input_dir_cluster_ok = True
-
-	while not project.output_dir_cluster_ok:
-		print "Variable OUTPUT_DIR_CLUSTER not specified!"
-		a = raw_input("OUTPUT_DIR_CLUSTER [/output/%s/temp/%s/output] = " % (project.username_cluster, project.project_name))
-		if len(a) != 0:
-			project.output_dir_cluster = copy.copy(a)
-		else:
-			project.output_dir_cluster = '/output/%s/temp/%s/output' % (project.username_cluster, project.project_name)
 		project.output_dir_cluster_ok = True
+		project.results_dir_cluster_ok = True
 
 	while not project.scratch_dir_cluster_ok:
 		print "Variable SCRATCH_DIR_CLUSTER not specified!"
