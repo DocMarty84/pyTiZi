@@ -137,14 +137,14 @@ def ScriptFileCreation(project):
 
 	tmp += 'cd $INPUT_DIR/MD\n'
 	tmp += 'find . -name "*" | cpio -pd $SCRATCH_DIR\n'
-	tmp += 'cp $DIR/create_input_zindo* $SCRATCH_DIR\n'
+	tmp += 'cp $DIR/CZ_input_zindo_mc* $SCRATCH_DIR\n'
 	tmp += 'cd $SCRATCH_DIR\n\n'
 
 	if project.location_cluster == "lyra" or project.location_cluster == "adam":
-		tmp += '#pgcpp -fast -Minline=levels:10 create_input_zindo.cpp\n'
-		tmp += '#mv a.out create_input_zindo\n\n'
+		tmp += '#pgcpp -fast -Minline=levels:10 CZ_input_zindo_mc.cpp\n'
+		tmp += '#mv a.out CZ_input_zindo_mc\n\n'
 	else:
-		tmp += 'g++ create_input_zindo.cpp -o create_input_zindo -O2 -lm\n\n'
+		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm\n\n'
 
 	tmp += 'for FILE in `find . -name "*.xyz"`\n'
 	tmp += 'do\n'
@@ -160,7 +160,7 @@ def ScriptFileCreation(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -I $NAME -i . -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
 	
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -212,15 +212,15 @@ def ScriptFileCreationDirect(project):
 	tmp += 'mkdir -p $OUTPUT_DIR\n'
 	tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
 
-	tmp += 'cp create_input_zindo* $INPUT_DIR/MD\n'
+	tmp += 'cp CZ_input_zindo_mc* $INPUT_DIR/MD\n'
 	tmp += 'cd $INPUT_DIR/MD\n\n'
 
 	if project.location_cluster == "lyra" or project.location_cluster == "adam":
 		tmp += '#module load common pgi\n'
-		tmp += '#pgcpp -fast -Minline=levels:10 create_input_zindo.cpp\n'
-		tmp += '#mv a.out create_input_zindo\n\n'
+		tmp += '#pgcpp -fast -Minline=levels:10 CZ_input_zindo_mc.cpp\n'
+		tmp += '#mv a.out CZ_input_zindo_mc\n\n'
 	else:
-		tmp += 'g++ create_input_zindo.cpp -o create_input_zindo -O2 -lm\n\n'
+		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm\n\n'
 
 	tmp += 'for FILE in `find . -name "*.xyz"`\n'
 	tmp += 'do\n'
@@ -237,7 +237,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./create_input_zindo -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -255,7 +255,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '	done\n\n'
 	tmp += '	rm -rf $OUTPUT_DIR/$NAME\n\n'	
 	tmp += 'done\n\n'
-	tmp += 'rm $INPUT_DIR/MD/create_input_zindo*\n'
+	tmp += 'rm $INPUT_DIR/MD/CZ_input_zindo_mc*\n'
 	
 	file = 'project%s%s%s01.file_creation_direct.sh' % (os.sep, project.project_name, os.sep)
 	try:
@@ -509,7 +509,7 @@ def ScriptZINDOCollectDirect(data, project):
 
 	tmp += 'mkdir -p $RESULTS_DIR\n'
 	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $RESULTS_DIR/ZINDO_sign\n'
-	tmp += 'g++ create_input_zindo.cpp -O2 -lm -o $RESULTS_DIR/create_input_zindo\n\n'
+	tmp += 'g++ CZ_input_zindo_mc.cpp -O2 -lm -o $RESULTS_DIR/CZ_input_zindo_mc\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
 	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\' | awk -F \'\/\' \'{ print $2 }\'`\n\n'
@@ -586,7 +586,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'cd $RESULTS_DIR\n'
 	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
 	tmp += '	find . -name ""$SYSTEM"_dimer_*.sign" > "$SYSTEM".list\n'
-	tmp += '	./create_input_zindo -I $SYSTEM -i $INPUT_DIR/MD -r $DIR/results -t mc\n'
+	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r $DIR/results -t mc\n'
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Now cleaning everything..."\n'
@@ -598,7 +598,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'done\n'
 	
 	tmp += 'cd $RESULTS_DIR\n'
-	tmp += 'rm ZINDO_sign create_input_zindo\n'
+	tmp += 'rm ZINDO_sign CZ_input_zindo_mc\n'
 	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
 	tmp += '	rm "$SYSTEM".list\n'
 	tmp += '	mkdir -p $SYSTEM\n'
