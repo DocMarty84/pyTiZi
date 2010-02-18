@@ -235,21 +235,21 @@ class Sigma_evol(object):
 			self.P_plus_qu[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
 			self.P_minus_qu[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
 			
-			"""tmp2 = ''
+			tmp2 = ''
 			if temperature+1 == 300:
 				for x in xrange(144):
 					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_qu[temperature]*self.IP_cluster_qu[temperature])
-					b = ((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_qu[temperature]*self.EA_cluster_qu[temperature])
+					b = 100*((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_qu[temperature]*self.EA_cluster_qu[temperature])
 					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2"""
+				print tmp2
 				
-			"""tmp2 = ''
+			tmp2 = ''
 			if temperature+1 == 300:
 				for x in xrange(144):
 					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
-					b = ((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
+					b = 100*((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
 					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2"""
+				print tmp2
 				
 			tmp = 2*K_B*(temperature+1)/data.energy
 			self.IP_cluster_cl[temperature] = np.sqrt(np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp))
@@ -259,21 +259,21 @@ class Sigma_evol(object):
 			self.P_plus_cl[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
 			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))			
 			
-			"""tmp2 = ''
+			tmp2 = ''
 			if temperature+1 == 300:
 				for x in xrange(144):
 					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_cl[temperature]*self.IP_cluster_cl[temperature])
-					b = ((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_cl[temperature]*self.EA_cluster_cl[temperature])
+					b = 100*((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_cl[temperature]*self.EA_cluster_cl[temperature])
 					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2"""
+				print tmp2
 				
-			"""tmp2 = ''
+			tmp2 = ''
 			if temperature+1 == 300:
 				for x in xrange(144):
-					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
-					b = ((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
+					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_cl[temperature]*self.P_plus_cl[temperature])
+					b = 100*((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_cl[temperature]*self.P_minus_cl[temperature])
 					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2"""
+				print tmp2
 				
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
@@ -426,7 +426,7 @@ def Write_Gnuplot_plt(data, type):
 		pass
 	
 	for i in xrange(data.n_modes):
-		output_file = "plots/mode_%d.plt" % (i+1)
+		output_file = "plots/mode_%d-IP_cluster.plt" % (i+1)
 		try:
 			foutput = open(output_file, 'w')
 		except:
@@ -446,31 +446,6 @@ def Write_Gnuplot_plt(data, type):
 			tmp += 'plot \'mode_%d.dat\' using 1:2 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
 
-			tmp += 'set output \'EA_cluster/mode_%d.eps\'\n' % (i+1)
-			tmp += 'fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
-			tmp += 'plot \'mode_%d.dat\' using 1:3 title \'Mode %d\'\n' % (i+1, i+1)
-			tmp += 'set output\n\n'
-			
-			tmp += 'set output \'IP_alone/mode_%d.eps\'\n' % (i+1)
-			tmp += 'fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
-			tmp += 'plot \'mode_%d.dat\' using 1:4 title \'Mode %d\'\n' % (i+1, i+1)
-			tmp += 'set output\n\n'
-			
-			tmp += 'set output \'EA_alone/mode_%d.eps\'\n' % (i+1)
-			tmp += 'fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
-			tmp += 'plot \'mode_%d.dat\' using 1:5 title \'Mode %d\'\n' % (i+1, i+1)
-			tmp += 'set output\n\n'
-
-			tmp += 'set output \'P_plus/mode_%d.eps\'\n' % (i+1)
-			tmp += 'fit f(x) \'mode_%d.dat\' using 1:6 via a,b\n' % (i+1)
-			tmp += 'plot \'mode_%d.dat\' using 1:6 title \'Mode %d\'\n' % (i+1, i+1)
-			tmp += 'set output\n\n'
-			
-			tmp += 'set output \'P_minus/mode_%d.eps\'\n' % (i+1)
-			tmp += 'fit f(x) \'mode_%d.dat\' using 1:7 via a,b\n' % (i+1)
-			tmp += 'plot \'mode_%d.dat\' using 1:7 title \'Mode %d\'\n' % (i+1, i+1)
-			tmp += 'set output\n\n'
-
 		if (type=="png"):
 			tmp = 'reset\n'
 			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
@@ -483,28 +458,188 @@ def Write_Gnuplot_plt(data, type):
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:2 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:2 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
+		
+		foutput.write(tmp)
+		foutput.close()
 
+	for i in xrange(data.n_modes):
+		output_file = "plots/mode_%d-EA_cluster.plt" % (i+1)
+		try:
+			foutput = open(output_file, 'w')
+		except:
+			print "Could not open %s" % (output_file)
+			sys.exit(1)
+		
+		if (type=="epslatex"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'$E\\ (eV)$\'\n'
+			tmp += 'set terminal epslatex size 5,3\n\n'
+			tmp += '##################################\n\n'
+			
+			tmp += 'set output \'EA_cluster/mode_%d.eps\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
+			tmp += 'plot \'mode_%d.dat\' using 1:3 title \'Mode %d\'\n' % (i+1, i+1)
+			tmp += 'set output\n\n'
+
+		if (type=="png"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'E (eV)\'\n'
+			tmp += 'set terminal png size 640,480 font \'/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf\'\n\n'
+			tmp += '##################################\n\n'
+			
 			tmp += 'set output \'EA_cluster/mode_%d.png\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:3 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:3 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
+		
+		foutput.write(tmp)
+		foutput.close()
+
+	for i in xrange(data.n_modes):
+		output_file = "plots/mode_%d-IP_alone.plt" % (i+1)
+		try:
+			foutput = open(output_file, 'w')
+		except:
+			print "Could not open %s" % (output_file)
+			sys.exit(1)
+		
+		if (type=="epslatex"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'$E\\ (eV)$\'\n'
+			tmp += 'set terminal epslatex size 5,3\n\n'
+			tmp += '##################################\n\n'
+			
+			tmp += 'set output \'IP_alone/mode_%d.eps\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
+			tmp += 'plot \'mode_%d.dat\' using 1:4 title \'Mode %d\'\n' % (i+1, i+1)
+			tmp += 'set output\n\n'
+
+		if (type=="png"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'E (eV)\'\n'
+			tmp += 'set terminal png size 640,480 font \'/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf\'\n\n'
+			tmp += '##################################\n\n'
 			
 			tmp += 'set output \'IP_alone/mode_%d.png\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:4 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:4 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
+		
+		foutput.write(tmp)
+		foutput.close()
+
+	for i in xrange(data.n_modes):
+		output_file = "plots/mode_%d-EA_alone.plt" % (i+1)
+		try:
+			foutput = open(output_file, 'w')
+		except:
+			print "Could not open %s" % (output_file)
+			sys.exit(1)
+		
+		if (type=="epslatex"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'$E\\ (eV)$\'\n'
+			tmp += 'set terminal epslatex size 5,3\n\n'
+			tmp += '##################################\n\n'
+			
+			tmp += 'set output \'EA_alone/mode_%d.eps\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
+			tmp += 'plot \'mode_%d.dat\' using 1:5 title \'Mode %d\'\n' % (i+1, i+1)
+			tmp += 'set output\n\n'
+
+		if (type=="png"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'E (eV)\'\n'
+			tmp += 'set terminal png size 640,480 font \'/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf\'\n\n'
+			tmp += '##################################\n\n'
 			
 			tmp += 'set output \'EA_alone/mode_%d.png\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:5 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:5 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
+		
+		foutput.write(tmp)
+		foutput.close()
 
+	for i in xrange(data.n_modes):
+		output_file = "plots/mode_%d-P_plus.plt" % (i+1)
+		try:
+			foutput = open(output_file, 'w')
+		except:
+			print "Could not open %s" % (output_file)
+			sys.exit(1)
+		
+		if (type=="epslatex"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'$E\\ (eV)$\'\n'
+			tmp += 'set terminal epslatex size 5,3\n\n'
+			tmp += '##################################\n\n'
+			
+			tmp += 'set output \'P_plus/mode_%d.eps\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:6 via a,b\n' % (i+1)
+			tmp += 'plot \'mode_%d.dat\' using 1:6 title \'Mode %d\'\n' % (i+1, i+1)
+			tmp += 'set output\n\n'
+
+		if (type=="png"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'E (eV)\'\n'
+			tmp += 'set terminal png size 640,480 font \'/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf\'\n\n'
+			tmp += '##################################\n\n'
+			
 			tmp += 'set output \'P_plus/mode_%d.png\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:6 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:6 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
+		
+		foutput.write(tmp)
+		foutput.close()
+
+	for i in xrange(data.n_modes):
+		output_file = "plots/mode_%d-P_minus.plt" % (i+1)
+		try:
+			foutput = open(output_file, 'w')
+		except:
+			print "Could not open %s" % (output_file)
+			sys.exit(1)
+		
+		if (type=="epslatex"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'$E\\ (eV)$\'\n'
+			tmp += 'set terminal epslatex size 5,3\n\n'
+			tmp += '##################################\n\n'
+			
+			tmp += 'set output \'P_minus/mode_%d.eps\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
+			tmp += 'fit f(x) \'mode_%d.dat\' using 1:7 via a,b\n' % (i+1)
+			tmp += 'plot \'mode_%d.dat\' using 1:7 title \'Mode %d\'\n' % (i+1, i+1)
+			tmp += 'set output\n\n'
+
+		if (type=="png"):
+			tmp = 'reset\n'
+			tmp += 'set xlabel \'Displacement (normal coordinates)\'\n'
+			tmp += 'set ylabel \'E (eV)\'\n'
+			tmp += 'set terminal png size 640,480 font \'/usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf\'\n\n'
+			tmp += '##################################\n\n'
 			
 			tmp += 'set output \'P_minus/mode_%d.png\'\n' % (i+1)
+			tmp += 'f(x) = a*x+b\n'
 			tmp += 'fit f(x) \'mode_%d.dat\' using 1:7 via a,b\n' % (i+1)
 			tmp += 'plot \'mode_%d.dat\' using 1:7 lw 6 title \'Mode %d\'\n' % (i+1, i+1)
 			tmp += 'set output\n\n'
