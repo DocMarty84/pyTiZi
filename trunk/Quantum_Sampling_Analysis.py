@@ -235,25 +235,46 @@ class Sigma_evol(object):
 			self.P_plus_qu[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
 			self.P_minus_qu[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
 			
+			"""tmp2 = ''
+			if temperature+1 == 300:
+				for x in xrange(144):
+					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_qu[temperature]*self.IP_cluster_qu[temperature])
+					b = ((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_qu[temperature]*self.EA_cluster_qu[temperature])
+					tmp2 += '%d %e %e\n' % (x+1, a, b)
+				print tmp2"""
+				
+			"""tmp2 = ''
+			if temperature+1 == 300:
+				for x in xrange(144):
+					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
+					b = ((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
+					tmp2 += '%d %e %e\n' % (x+1, a, b)
+				print tmp2"""
+				
 			tmp = 2*K_B*(temperature+1)/data.energy
 			self.IP_cluster_cl[temperature] = np.sqrt(np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp))
 			self.EA_cluster_cl[temperature] = np.sqrt(np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/2 * tmp))
 			self.IP_alone_cl[temperature] = np.sqrt(np.sum((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp))
 			self.EA_alone_cl[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
 			self.P_plus_cl[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
-			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
+			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))			
 			
-			"""tmp = 0.0
-			tmp2 = 0.0
-			for i in xrange(144):
-				tmp += (2*K_B*(temperature+1)/data.energy[i])*(data.P_plus_a1[i]*data.P_plus_a1[i])/2
-				tmp2 += (data.P_plus_a1[i]*data.P_plus_a1[i])/2
-			print temperature, np.sqrt(tmp)
-			
-			self.P_plus_cl[temperature] = np.sqrt(tmp)"""
-			
-			
-			
+			"""tmp2 = ''
+			if temperature+1 == 300:
+				for x in xrange(144):
+					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_cl[temperature]*self.IP_cluster_cl[temperature])
+					b = ((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_cl[temperature]*self.EA_cluster_cl[temperature])
+					tmp2 += '%d %e %e\n' % (x+1, a, b)
+				print tmp2"""
+				
+			"""tmp2 = ''
+			if temperature+1 == 300:
+				for x in xrange(144):
+					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
+					b = ((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
+					tmp2 += '%d %e %e\n' % (x+1, a, b)
+				print tmp2"""
+				
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
 #=====================================================================
