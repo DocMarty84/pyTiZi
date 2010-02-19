@@ -808,16 +808,22 @@ void Write_MC(string input_file, string result_folder){
 
 	pFile = fopen (file_mc.str().c_str(), "w");
 	
-	fprintf(pFile, "%d %d\n", n_frame, n_mol);
+	fprintf(pFile, "%d\n", n_frame);
+	fprintf(pFile, "dt\n");
+	fprintf(pFile, "0 0\n");
+	fprintf(pFile, "lambda_i lambda_s T h_omega dist n_charges\n");
+	fprintf(pFile, "F_norm\n");
+	fprintf(pFile, "F_x F_y F_z\n");
+	fprintf(pFile, "%d\n\n", n_mol);
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile, "N_frame=%d\n", i);
 		fprintf(pFile, "%.4f %.4f %.4f %.4f %.4f %.4f\n", a[i], b[i], c[i], alpha_deg[i], beta_deg[i], gamma_deg[i]);
 		for (int ii=0; ii<n_mol; ii++){
 			fprintf(pFile, "0 %d 0\n", n_neighbors[i][ii]);
 			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj], J_L[i][ii][jj]);
+				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
-			fprintf(pFile, "%e %e %e\n", CM_x[i][ii], CM_y[i][ii], CM_z[i][ii]);
+			fprintf(pFile, "%e %e %e 0\n", CM_x[i][ii], CM_y[i][ii], CM_z[i][ii]);
 		}	
 	}
 	
