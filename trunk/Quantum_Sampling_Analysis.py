@@ -179,8 +179,9 @@ class VBHF_Data(object):
 
 class Sigma_evol(object):
 	""" Class for the VBHF data"""
-	def __init__(self, n_temp=1):
+	def __init__(self, n_temp=1, n_modes=1):
 		self.n_temp = int(n_temp)
+		self.n_modes = int(n_modes)
 		
 		self.IP_cluster_qu = np.zeros((n_temp), float)	
 		self.EA_cluster_qu = np.zeros((n_temp), float)
@@ -196,33 +197,84 @@ class Sigma_evol(object):
 		self.P_plus_cl = np.zeros((n_temp), float)
 		self.P_minus_cl = np.zeros((n_temp), float)
 		
+		self.IP_cluster_qu_300K = np.zeros((n_modes), float)	
+		self.EA_cluster_qu_300K = np.zeros((n_modes), float)
+		self.IP_alone_qu_300K = np.zeros((n_modes), float)	
+		self.EA_alone_qu_300K = np.zeros((n_modes), float)
+		self.P_plus_qu_300K = np.zeros((n_modes), float)
+		self.P_minus_qu_300K = np.zeros((n_modes), float)
+		
+		self.IP_cluster_cl_300K = np.zeros((n_modes), float)	
+		self.EA_cluster_cl_300K = np.zeros((n_modes), float)
+		self.IP_alone_cl_300K = np.zeros((n_modes), float)	
+		self.EA_alone_cl_300K = np.zeros((n_modes), float)
+		self.P_plus_cl_300K = np.zeros((n_modes), float)
+		self.P_minus_cl_300K = np.zeros((n_modes), float)		
+		
+		self.IP_cluster_L = 0.0	
+		self.EA_cluster_L = 0.0
+		self.IP_alone_L = 0.0
+		self.EA_alone_L = 0.0
+		self.P_plus_L = 0.0
+		self.P_minus_L = 0.0
+		
+		self.IP_cluster_G2 = 0.0	
+		self.EA_cluster_G2 = 0.0
+		self.IP_alone_G2 = 0.0
+		self.EA_alone_G2 = 0.0
+		self.P_plus_G2 = 0.0
+		self.P_minus_G2 = 0.0
+		
 	def __str__(self):
 		tmp = ''
 		
-		tmp += "IP_cluster\n"
-		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.IP_cluster_qu[i], self.IP_cluster_cl[i])
+		tmp += "\n=================================\n"
+		tmp += "=================================\n\n"
+		tmp += "Evolution of sigma vs Temperature\n\n"
 
-		tmp += "EA_cluster\n"
+		tmp += "Quantum Mechanics:\n"
+		tmp += "Temperature IP EA IP_alone EA_alone P+ P-\n"
 		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.EA_cluster_qu[i], self.EA_cluster_cl[i])
-			
-		tmp += "IP_alone\n"
+			tmp += "%d %e %e %e %e %e %e\n" % (i+1, self.IP_cluster_qu[i], self.EA_cluster_qu[i], self.IP_alone_qu[i], self.EA_alone_qu[i], self.P_plus_qu[i], self.P_minus_qu[i])
+
+		tmp += "\nClassic Approximation:\n"
+		tmp += "Temperature IP EA IP_alone EA_alone P+ P-\n"
 		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.IP_alone_qu[i], self.IP_alone_cl[i])
-			
-		tmp += "EA_alone\n"
-		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.EA_alone_qu[i], self.EA_alone_cl[i])	
-				
-		tmp += "P_plus\n"
-		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.P_plus_qu[i], self.P_plus_cl[i])
-			
-		tmp += "P_minus\n"
-		for i in xrange(self.n_temp):
-			tmp += "%d %e %e\n" % (i+1, self.P_minus_qu[i], self.P_minus_cl[i])
-			
+			tmp += "%d %e %e %e %e %e %e\n" % (i+1, self.IP_cluster_cl[i], self.EA_cluster_cl[i], self.IP_alone_cl[i], self.EA_alone_cl[i], self.P_plus_cl[i], self.P_minus_cl[i])
+						
+		tmp += "\n=================================\n"
+		tmp += "Relative importance of each mode at 300K\n\n"
+		
+		tmp += "Quantum Mechanics:\n"
+		tmp += "mode IP EA IP_alone EA_alone P+ P-\n"
+		for i in xrange(self.n_modes):
+			tmp += "%d %e %e %e %e %e %e\n" % (i+1, self.IP_cluster_qu_300K[i], self.EA_cluster_qu_300K[i], self.IP_alone_qu_300K[i], self.EA_alone_qu_300K[i], self.P_plus_qu_300K[i], self.P_minus_qu_300K[i])
+
+		tmp += "\nClassic Approximation:\n"
+		tmp += "mode IP EA IP_alone EA_alone P+ P-\n"
+		for i in xrange(self.n_modes):
+			tmp += "%d %e %e %e %e %e %e\n" % (i+1, self.IP_cluster_cl_300K[i], self.EA_cluster_cl_300K[i], self.IP_alone_cl_300K[i], self.EA_alone_cl_300K[i], self.P_plus_cl_300K[i], self.P_minus_cl_300K[i])
+		
+		tmp += "\n=====================\n"
+		
+		tmp += "L values:\n\n"
+		tmp += "IP_cluster = %f\n" % (self.IP_cluster_L)
+		tmp += "EA_cluster = %f\n" % (self.EA_cluster_L)
+		tmp += "IP_alone = %f\n" % (self.IP_alone_L)
+		tmp += "EA_alone = %f\n" % (self.EA_alone_L)
+		tmp += "P_plus = %f\n" % (self.P_plus_L)
+		tmp += "P_minus = %f\n" % (self.P_minus_L)
+
+		tmp += "\n=====================\n"
+		
+		tmp += "G2 values:\n\n"
+		tmp += "IP_cluster = %f\n" % (self.IP_cluster_G2)
+		tmp += "EA_cluster = %f\n" % (self.EA_cluster_G2)
+		tmp += "IP_alone = %f\n" % (self.IP_alone_G2)
+		tmp += "EA_alone = %f\n" % (self.EA_alone_G2)
+		tmp += "P_plus = %f\n" % (self.P_plus_G2)
+		tmp += "P_minus = %f\n" % (self.P_minus_G2)
+
 		return tmp	
 			
 	def Calculate_Sigma(self, data):
@@ -234,22 +286,14 @@ class Sigma_evol(object):
 			self.EA_alone_qu[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
 			self.P_plus_qu[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
 			self.P_minus_qu[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
-			
-			tmp2 = ''
+
 			if temperature+1 == 300:
-				for x in xrange(144):
-					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_qu[temperature]*self.IP_cluster_qu[temperature])
-					b = 100*((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_qu[temperature]*self.EA_cluster_qu[temperature])
-					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2
-				
-			tmp2 = ''
-			if temperature+1 == 300:
-				for x in xrange(144):
-					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
-					b = 100*((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
-					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2
+				self.IP_cluster_qu_300K = 100*((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp)/(self.IP_cluster_qu[temperature]*self.IP_cluster_qu[temperature])
+				self.EA_cluster_qu_300K = 100*((data.EA_cluster_a1*data.EA_cluster_a1)/2 * tmp)/(self.EA_cluster_qu[temperature]*self.EA_cluster_qu[temperature])
+				self.IP_alone_qu_300K = 100*((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp)/(self.IP_alone_qu[temperature]*self.IP_alone_qu[temperature])
+				self.EA_alone_qu_300K = 100*((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp)/(self.EA_alone_qu[temperature]*self.EA_alone_qu[temperature])
+				self.P_plus_qu_300K = 100*((data.P_plus_a1*data.P_plus_a1)/2 * tmp)/(self.P_plus_qu[temperature]*self.P_plus_qu[temperature])
+				self.P_minus_qu_300K = 100*((data.P_minus_a1*data.P_minus_a1)/2 * tmp)/(self.P_minus_qu[temperature]*self.P_minus_qu[temperature])
 				
 			tmp = 2*K_B*(temperature+1)/data.energy
 			self.IP_cluster_cl[temperature] = np.sqrt(np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp))
@@ -257,23 +301,29 @@ class Sigma_evol(object):
 			self.IP_alone_cl[temperature] = np.sqrt(np.sum((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp))
 			self.EA_alone_cl[temperature] = np.sqrt(np.sum((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp))
 			self.P_plus_cl[temperature] = np.sqrt(np.sum((data.P_plus_a1*data.P_plus_a1)/2 * tmp))
-			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))			
+			self.P_minus_cl[temperature] = np.sqrt(np.sum((data.P_minus_a1*data.P_minus_a1)/2 * tmp))
 			
-			tmp2 = ''
 			if temperature+1 == 300:
-				for x in xrange(144):
-					a = 100*((data.IP_cluster_a1[x]*data.IP_cluster_a1[x])/2 * tmp[x])/(self.IP_cluster_cl[temperature]*self.IP_cluster_cl[temperature])
-					b = 100*((data.EA_cluster_a1[x]*data.EA_cluster_a1[x])/2 * tmp[x])/(self.EA_cluster_cl[temperature]*self.EA_cluster_cl[temperature])
-					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2
+				self.IP_cluster_cl_300K = 100*((data.IP_cluster_a1*data.IP_cluster_a1)/2 * tmp)/(self.IP_cluster_cl[temperature]*self.IP_cluster_cl[temperature])
+				self.EA_cluster_cl_300K = 100*((data.EA_cluster_a1*data.EA_cluster_a1)/2 * tmp)/(self.EA_cluster_cl[temperature]*self.EA_cluster_cl[temperature])
+				self.IP_alone_cl_300K = 100*((data.IP_alone_a1*data.IP_alone_a1)/2 * tmp)/(self.IP_alone_cl[temperature]*self.IP_alone_cl[temperature])
+				self.EA_alone_cl_300K = 100*((data.EA_alone_a1*data.EA_alone_a1)/2 * tmp)/(self.EA_alone_cl[temperature]*self.EA_alone_cl[temperature])
+				self.P_plus_cl_300K = 100*((data.P_plus_a1*data.P_plus_a1)/2 * tmp)/(self.P_plus_cl[temperature]*self.P_plus_cl[temperature])
+				self.P_minus_cl_300K = 100*((data.P_minus_a1*data.P_minus_a1)/2 * tmp)/(self.P_minus_cl[temperature]*self.P_minus_cl[temperature])
 				
-			tmp2 = ''
-			if temperature+1 == 300:
-				for x in xrange(144):
-					a = 100*((data.P_plus_a1[x]*data.P_plus_a1[x])/2 * tmp[x])/(self.P_plus_cl[temperature]*self.P_plus_cl[temperature])
-					b = 100*((data.P_minus_a1[x]*data.P_minus_a1[x])/2 * tmp[x])/(self.P_minus_cl[temperature]*self.P_minus_cl[temperature])
-					tmp2 += '%d %e %e\n' % (x+1, a, b)
-				print tmp2
+			self.IP_cluster_L = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2*data.energy))
+			self.EA_cluster_L = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2*data.energy))
+			self.IP_alone_L = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2*data.energy))
+			self.EA_alone_L = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2*data.energy))
+			self.P_plus_L = np.sum((data.P_plus_a1*data.P_plus_a1)/(2*data.energy))
+			self.P_minus_L = np.sum((data.P_minus_a1*data.P_minus_a1)/(2*data.energy))
+			
+			self.IP_cluster_G2 = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2))
+			self.EA_cluster_G2 = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2))
+			self.IP_alone_G2 = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2))
+			self.EA_alone_G2 = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2))
+			self.P_plus_G2 = np.sum((data.P_plus_a1*data.P_plus_a1)/(2))
+			self.P_minus_G2 = np.sum((data.P_minus_a1*data.P_minus_a1)/(2))
 				
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
@@ -689,13 +739,13 @@ if __name__ == '__main__':
 	except:
 		print "[ERROR] Problem when copying file QS_collect_fit_parameters_red.sh"
 		sys.exit(1)
-	os.system("./QS_collect_fit_parameters_red.sh")
+#	os.system("./QS_collect_fit_parameters_red.sh")
 	
 	# Read the results of the fits
 	Read_Fit(qs)
 
 	# Calculate the evolution of sigma
-	qs_sig = Sigma_evol(N_TEMP)
+	qs_sig = Sigma_evol(N_TEMP, n_modes)
 	qs_sig.Calculate_Sigma(qs)
 	
 	"""output_file = "%s.an" % (FILE)
