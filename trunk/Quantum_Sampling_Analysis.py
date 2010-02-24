@@ -311,19 +311,19 @@ class Sigma_evol(object):
 				self.P_plus_cl_300K = 100*((data.P_plus_a1*data.P_plus_a1)/2 * tmp)/(self.P_plus_cl[temperature]*self.P_plus_cl[temperature])
 				self.P_minus_cl_300K = 100*((data.P_minus_a1*data.P_minus_a1)/2 * tmp)/(self.P_minus_cl[temperature]*self.P_minus_cl[temperature])
 				
-			self.IP_cluster_L = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2*data.energy))
-			self.EA_cluster_L = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2*data.energy))
-			self.IP_alone_L = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2*data.energy))
-			self.EA_alone_L = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2*data.energy))
-			self.P_plus_L = np.sum((data.P_plus_a1*data.P_plus_a1)/(2*data.energy))
-			self.P_minus_L = np.sum((data.P_minus_a1*data.P_minus_a1)/(2*data.energy))
-			
-			self.IP_cluster_G2 = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2))
-			self.EA_cluster_G2 = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2))
-			self.IP_alone_G2 = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2))
-			self.EA_alone_G2 = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2))
-			self.P_plus_G2 = np.sum((data.P_plus_a1*data.P_plus_a1)/(2))
-			self.P_minus_G2 = np.sum((data.P_minus_a1*data.P_minus_a1)/(2))
+		self.IP_cluster_L = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2*data.energy))
+		self.EA_cluster_L = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2*data.energy))
+		self.IP_alone_L = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2*data.energy))
+		self.EA_alone_L = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2*data.energy))
+		self.P_plus_L = np.sum((data.P_plus_a1*data.P_plus_a1)/(2*data.energy))
+		self.P_minus_L = np.sum((data.P_minus_a1*data.P_minus_a1)/(2*data.energy))
+		
+		self.IP_cluster_G2 = np.sum((data.IP_cluster_a1*data.IP_cluster_a1)/(2))
+		self.EA_cluster_G2 = np.sum((data.EA_cluster_a1*data.EA_cluster_a1)/(2))
+		self.IP_alone_G2 = np.sum((data.IP_alone_a1*data.IP_alone_a1)/(2))
+		self.EA_alone_G2 = np.sum((data.EA_alone_a1*data.EA_alone_a1)/(2))
+		self.P_plus_G2 = np.sum((data.P_plus_a1*data.P_plus_a1)/(2))
+		self.P_minus_G2 = np.sum((data.P_minus_a1*data.P_minus_a1)/(2))
 				
 #=====================================================================
 #--------------------------Data Read/Write----------------------------
@@ -739,7 +739,7 @@ if __name__ == '__main__':
 	except:
 		print "[ERROR] Problem when copying file QS_collect_fit_parameters_red.sh"
 		sys.exit(1)
-#	os.system("./QS_collect_fit_parameters_red.sh")
+	os.system("./QS_collect_fit_parameters_red.sh")
 	
 	# Read the results of the fits
 	Read_Fit(qs)
