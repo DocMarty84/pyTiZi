@@ -849,7 +849,7 @@ void Write_MC(string input_file, string result_folder){
 		for (int ii=0; ii<n_mol; ii++){
 			fprintf(pFile, "mol %d %d\n", mol_label[ii], n_neighbors[i][ii]);
 			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
+				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj], J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
 		}	
 	}
