@@ -799,10 +799,10 @@ void Write_NB(string output_file, string input_folder){
 	
 }
 
-void Write_MC(string input_file, string result_folder){
+void Write_MC_YO(string input_file, string result_folder){
 	string tmp;
 	stringstream file_mc;
-	file_mc << result_folder << "/" << input_file << ".mc";
+	file_mc << result_folder << "/" << input_file << ".mc_yo";
 	
 	FILE * pFile;
 
@@ -824,6 +824,33 @@ void Write_MC(string input_file, string result_folder){
 				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
 			fprintf(pFile, "%e %e %e 0\n", CM_x[i][ii], CM_y[i][ii], CM_z[i][ii]);
+		}	
+	}
+	
+	fclose (pFile);
+	
+}
+
+void Write_MC(string input_file, string result_folder){
+	string tmp;
+	stringstream file_mc;
+	file_mc << result_folder << "/" << input_file << ".mc";
+	
+	FILE * pFile;
+
+	pFile = fopen (file_mc.str().c_str(), "w");
+	
+	fprintf(pFile, "%d %d\n", n_frame, n_mol);
+	fprintf(pFile, "dt\n");
+	fprintf(pFile, "lambda_i lambda_s T h_omega dist n_charges\n");
+	fprintf(pFile, "F_norm\n\n");
+	for (int i=0; i<n_frame; i++){
+		fprintf(pFile, "frame %d\n", i);
+		for (int ii=0; ii<n_mol; ii++){
+			fprintf(pFile, "mol %d %d\n", mol_label[ii], n_neighbors[i][ii]);
+			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
+				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
+			}
 		}	
 	}
 	
@@ -890,6 +917,7 @@ int main(int argc, char **argv){
 	
 	if (mc){
 		Read_J(input_file, result_folder);
+		Write_MC_YO(input_file, result_folder);
 		Write_MC(input_file, result_folder);
 	}
 
