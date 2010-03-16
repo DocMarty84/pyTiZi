@@ -431,9 +431,9 @@ void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_r
 		for (int ii=0; ii<n_mol; ii++){
 			if(J[ii]){
 				for (int jj=ii+1; jj<n_mol; jj++){
-					Dist_Cart[0] = CM_x[i][ii] - CM_x[i][jj];
-					Dist_Cart[1] = CM_y[i][ii] - CM_y[i][jj];
-					Dist_Cart[2] = CM_z[i][ii] - CM_z[i][jj];
+					Dist_Cart[0] = CM_x[i][jj] - CM_x[i][ii];
+					Dist_Cart[1] = CM_y[i][jj] - CM_y[i][ii];
+					Dist_Cart[2] = CM_z[i][jj] - CM_z[i][ii];
 					
 					Cartesian_To_Fractional(Dist_Cart, Dist_Frac, i);
 
@@ -441,11 +441,11 @@ void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_r
 					for (int k=0; k<3; k++){
 						if (fabs(Dist_Frac[k]) > 0.5 && pbc[k]){
 							if (Dist_Frac[k] < 0.0){
-								Dist_Frac[k] = 1.0 + Dist_Frac[k];
+								Dist_Frac[k] = Dist_Frac[k] + 1.0;
 								displ_vec[i][ii][jj][k] = 1;
 							}
 							else{
-								Dist_Frac[k] = 1.0 - Dist_Frac[k];
+								Dist_Frac[k] = Dist_Frac[k] - 1.0;
 								displ_vec[i][ii][jj][k] = -1;
 							}
 						}

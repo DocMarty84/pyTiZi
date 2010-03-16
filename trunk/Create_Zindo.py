@@ -374,7 +374,7 @@ if __name__ == '__main__':
 			print "[WARNING] Could not create %s folder or folder already exists." % (project.input_cluster)
 	
 	try:
-		shutil.copy("src%screate_input_zindo.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
+		shutil.copy("src%sCZ_input_zindo_mc.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
 		shutil.copy("src%sZINDO_sign.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
 	except:
 		pass
