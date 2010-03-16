@@ -746,7 +746,7 @@ void Write_ZINDO_Files(string input_file, string output_folder, string zindo_fol
 					Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[jj]);
 					for (int jjj=0; jjj<n_atom[jj]; jjj++){
 						for (int k=0; k<3; k++){
-							mol2_frac[jjj][k] = mol2_frac[jjj][k] - displ_vec[i][ii][jj][k];
+							mol2_frac[jjj][k] = mol2_frac[jjj][k] + displ_vec[i][ii][jj][k];
 						}
 					}
 					Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[jj]);
