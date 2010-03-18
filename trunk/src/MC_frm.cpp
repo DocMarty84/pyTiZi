@@ -1,17 +1,21 @@
-/* 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
-*/
+/**
+ *******************************************************************************
+ * Copyright (C) 2010 Nicolas Martinelli, nicolas.martinelli@gmail.com         *
+ *                                                                             *
+ * This program is free software: you can redistribute it and/or modify        *
+ * it under the terms of the GNU General Public License as published by        *
+ * the Free Software Foundation, either version 3 of the License, or           *
+ * (at your option) any later version.                                         *
+ *                                                                             *
+ * This program is distributed in the hope that it will be useful,             *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of              *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               *
+ * GNU General Public License for more details.                                *
+ *                                                                             *
+ * You should have received a copy of the GNU General Public License           *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>        *
+ *******************************************************************************
+ */
 
 #include <iostream> //Entrées-sorties standard
 #include <fstream> //Entrées-sorties sur fichiers
@@ -441,7 +445,8 @@ void Calcul_DeltaE(bool print_results){
 					if (mol_label[ll]==neigh_label[i][ii][jj]){
 						
 						// CHECK!!!
-						dE[i][ii].push_back(E_1[0][ii]+E_0[0][ll] - (E_0[0][ii]+E_1[0][ll]));
+						//dE[i][ii].push_back(E_1[0][ii]+E_0[0][ll] - (E_0[0][ii]+E_1[0][ll]));
+						dE[i][ii].push_back(E_1[0][ll]+E_0[0][ii] - (E_0[0][ll]+E_1[0][ii]));
 						
 						break;
 					}
@@ -479,11 +484,12 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 	double dG0 = 0.0;	
 	double k_tmp = 0.0;
 	
+	// CHECK SIGN!
 	if (charge.compare("e") == 0)
-		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
 		
 	if (charge.compare("h") == 0)
-		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
 		
 	dG0 = dG0 + dE_tmp;
 	
@@ -721,7 +727,7 @@ void MC_FRM(string output_folder){
 			// }
 			//cout << charge_count << endl;
 			
-			while (dist <= dist_tot){
+			while (fabs(dist) <= dist_tot){
 				
 				// Waiting time calculation
 				waiting_time.clear();
