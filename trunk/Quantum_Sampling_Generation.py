@@ -144,6 +144,9 @@ if __name__ == '__main__':
 				# Create VBHF input files
 #				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
+				# Create ME input files
+#				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)
+
 	# Create a script which will create all the needed pbs
 	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
 	

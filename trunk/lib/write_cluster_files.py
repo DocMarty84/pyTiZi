@@ -798,6 +798,103 @@ def CreateVBHFInput(X, mol, box, mode, d):
 
 			foutput.write(tmp)		
 			foutput.close()
+			
+def CreateMEInput(X, mol, box, mode, d):
+	""" Creation of the Microelectrostatic input files
+	"""
+
+	try:
+		dir_all="ME"
+		os.makedirs(dir_all)
+	except:
+		pass
+				
+	print "Calculating normal mode %d" %(mode+1)
+		
+	# All cluster
+	name = "%s/result_%d_%.12f_.dat" % (dir_all, mode+1, d)
+		
+	foutput = open(name, 'w')
+	
+	if foutput:
+		tmp = ''
+
+		ii = 1
+		iii = 1
+		for a in [0, -1, 1]:
+			for b in [0, -1, 1]:
+				j = 0
+				for i in xrange(mol.n_atom[0]):
+					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+					Frac_Coord[0] += a
+					Frac_Coord[1] += b
+					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+					if mol.symbol[0][0][i] == "C":
+						t = 2
+					if mol.symbol[0][0][i] == "H":
+						t = 5
+					
+					tmp += "%d %f %f %f %d 0 0 0 %d\n" % (iii, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2], t, ii)
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					iii += 1
+				ii += 1
+				
+				for i in xrange(mol.n_atom[1]):
+					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+					Frac_Coord[0] += a
+					Frac_Coord[1] += b
+					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+					if mol.symbol[0][1][i] == "C":
+						t = 2
+					if mol.symbol[0][1][i] == "H":
+						t = 5
+					
+					tmp += "%d %f %f %f %d 0 0 0 %d\n" % (iii, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2], t, ii)
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					iii += 1
+				ii += 1
+					
+		for a in [-2, -1, 0, 1]:
+			j = 0
+			for i in xrange(mol.n_atom[1]):
+				Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(mol.n_atom[0]*3)+j, 0], X[(mol.n_atom[0]*3)+j+1, 0], X[(mol.n_atom[0]*3)+j+2, 0], box)
+				Frac_Coord[0] += a
+				Frac_Coord[1] += -2
+				Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+				if mol.symbol[0][0][i] == "C":
+					t = 2
+				if mol.symbol[0][0][i] == "H":
+					t = 5
+					
+				tmp += "%d %f %f %f %d 0 0 0 %d\n" % (iii, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2], t, ii)
+				#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+				j += 3
+				iii += 1
+			ii += 1
+					
+		for b in [-1, 0, 1]:
+			j = 0
+			for i in xrange(mol.n_atom[1]):
+				Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[(mol.n_atom[0]*3)+j, 0], X[(mol.n_atom[0]*3)+j+1, 0], X[(mol.n_atom[0]*3)+j+2, 0], box)
+				Frac_Coord[0] += -2
+				Frac_Coord[1] += b
+				Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+				if mol.symbol[0][0][i] == "C":
+					t = 2
+				if mol.symbol[0][0][i] == "H":
+					t = 5
+				
+				tmp += "%d %f %f %f %d 0 0 0 %d\n" % (iii, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2], t, ii)
+				#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+				j += 3
+				iii += 1
+			ii += 1
+
+		foutput.write(tmp)		
+		foutput.close() 
+
 
 def ScriptVBHFLaunch(dir_cluster):
 	""" Create a bash script which will create the scripts (.pbs and .run files) needed 
