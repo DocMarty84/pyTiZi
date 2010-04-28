@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -46,7 +47,7 @@ vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, tem
 int n_frame, n_mol; // Number of frame and molecule
 double snap_delay;
 double LAMBDA_I, LAMBDA_S, T, H_OMEGA, dist_tot;
-int n_charges;
+int n_try, n_charges;
 double F_norm;
 vector<int> mol_label;
 vector< vector< vector<int> > > neigh_label;
@@ -62,6 +63,15 @@ string charge;
 
 double theta_deg, phi_deg, theta_rad, phi_rad;
 double F_x, F_y, F_z;
+
+int n_mini_grid_a;
+int n_mini_grid_b;
+int n_mini_grid_c;
+
+// Vector for the change in mini-grid
+vector< vector< vector<int> > > neigh_jump_vec_a;
+vector< vector< vector<int> > > neigh_jump_vec_b;
+vector< vector< vector<int> > > neigh_jump_vec_c;
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -138,7 +148,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
-		input >> LAMBDA_I >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_charges;
+		input >> LAMBDA_I >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
 		input >> F_norm;
 		
 		//Generate vectors
@@ -178,7 +188,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		if (print_results){
 		cout << n_frame << " " << n_mol << endl;
 		cout << snap_delay << endl;
-		cout << LAMBDA_I << " " << LAMBDA_S << " " << T << " " << H_OMEGA << " " << dist_tot << " " << n_charges << " " << endl;
+		cout << LAMBDA_I << " " << LAMBDA_S << " " << T << " " << H_OMEGA << " " << dist_tot << " " << n_try << " " << endl;
 		cout << F_norm << endl;		
 
 			for (int i=0; i<n_frame; i++){
@@ -358,21 +368,33 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 
 // Calculates distance between molecules
 void Calcul_Dist(bool print_results){
-	double *Dist_Cart, *Dist_Frac;
+	double *Dist_Cart, *Dist_Frac, *vec;
 	Dist_Cart = new double[3];
 	Dist_Frac = new double[3];
+	vec = new double[3];
+	
+	vector< vector< vector<int> > > neigh_jump_vec_a;
+	vector< vector< vector<int> > > neigh_jump_vec_b;
+	vector< vector< vector<int> > > neigh_jump_vec_c;
 	
 	d_x.clear(); d_y.clear(); d_z.clear();
+	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();
 	
 	for (int i=0; i<n_frame; i++){
 		d_x.push_back( vector< vector<double> > ());
 		d_y.push_back( vector< vector<double> > ());
 		d_z.push_back( vector< vector<double> > ());
+		neigh_jump_vec_a.push_back( vector< vector<int> > ());
+		neigh_jump_vec_b.push_back( vector< vector<int> > ());
+		neigh_jump_vec_c.push_back( vector< vector<int> > ());
 		
 		for (int ii=0; ii<n_mol; ii++){
 			d_x[i].push_back( vector<double> ());
 			d_y[i].push_back( vector<double> ());
 			d_z[i].push_back( vector<double> ());
+			neigh_jump_vec_a[i].push_back( vector<int> ());
+			neigh_jump_vec_b[i].push_back( vector<int> ());
+			neigh_jump_vec_c[i].push_back( vector<int> ());
 			
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				
@@ -388,13 +410,18 @@ void Calcul_Dist(bool print_results){
 						Cartesian_To_Fractional(Dist_Cart, Dist_Frac, i);
 					
 						for (int k=0; k<3; k++){
+							vec[k] = 0.0;
+							
 							if (fabs(Dist_Frac[k]) > 0.5 && pbc[k]){
 								//cout << "check mol " << mol_label[ii] << " " << mol_label[ll] << endl;
 								if (Dist_Frac[k] < 0.0)
-									Dist_Frac[k] = Dist_Frac[k] + 1.0;
+									vec[k] = 1.0;
 								else
-									Dist_Frac[k] = Dist_Frac[k] - 1.0;
+									vec[k] = -1.0;
 							}
+							
+							Dist_Frac[k] = Dist_Frac[k] + vec[k];
+							
 						}
 						
 						Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
@@ -402,6 +429,9 @@ void Calcul_Dist(bool print_results){
 						d_x[i][ii].push_back(Dist_Cart[0]);
 						d_y[i][ii].push_back(Dist_Cart[1]);
 						d_z[i][ii].push_back(Dist_Cart[2]);
+						neigh_jump_vec_a[i][ii].push_back(int(vec[0]));
+						neigh_jump_vec_b[i][ii].push_back(int(vec[1]));
+						neigh_jump_vec_c[i][ii].push_back(int(vec[2]));
 						
 						break;
 					}
@@ -412,6 +442,7 @@ void Calcul_Dist(bool print_results){
 	
 	delete [] Dist_Cart;
 	delete [] Dist_Frac;
+	delete [] vec;
 	
 	// Print part
 	if (print_results){
@@ -422,7 +453,7 @@ void Calcul_Dist(bool print_results){
 				cout << "molecule " << mol_label[ii] << endl;
 				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 					double d = sqrt(pow(d_x[i][ii][jj],2) + pow(d_y[i][ii][jj],2) + pow(d_z[i][ii][jj],2));
-					cout << neigh_label[i][ii][jj] << " " << d_x[i][ii][jj] << " " << d_y[i][ii][jj] << " " << d_z[i][ii][jj] << " " << d << endl;
+					cout << neigh_label[i][ii][jj] << " " << d_x[i][ii][jj] << " " << d_y[i][ii][jj] << " " << d_z[i][ii][jj] << " " << d << " " << neigh_jump_vec_a[i][ii][jj] << " " << neigh_jump_vec_b[i][ii][jj] << " " << neigh_jump_vec_c[i][ii][jj] << endl;
 				}
 			}
 		}
@@ -675,8 +706,35 @@ int Choose_Mol_RND(int frame){
 	return mol;
 }
 
+void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid_occ, int *pos){ 
+	
+	int pos_a, pos_b, pos_c, mol; 
+	
+	double k_sum;
+	
+	do {
+		pos_a = rand()%n_mini_grid_a;
+		pos_b = rand()%n_mini_grid_b;
+		pos_c = rand()%n_mini_grid_c;
+		mol = rand()%n_mol;
+		
+		k_sum = 0.0;
+		
+		for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
+			k_sum = k_sum + k_inv[frame][mol][jj];
+		}
+	}
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[pos_a][pos_b][pos_c][mol] == true);
+	
+	pos[0] = pos_a;
+	pos[1] = pos_b;
+	pos[2] = pos_c;
+	pos[3] = mol;
+	
+}
+
 // First Reaction Method algorithm
-void MC_FRM(string output_folder){
+void MC_FRM(string output_folder){/*
 
 	// Conditions for changing frame
 	double mu_min=1e-10, jump_min=1e6;
@@ -713,7 +771,7 @@ void MC_FRM(string output_folder){
 		
 		bool change_frame = false;
 		
-		for(int charge_count=0; charge_count<n_charges; charge_count++){
+		for(int charge_try=0; charge_try<n_try; charge_try++){
 			
 			// Set distance, number of jumps and the travel time to zero
 			double dist = 0.0; 
@@ -726,7 +784,7 @@ void MC_FRM(string output_folder){
 			// else{
 				int curr_mol = Choose_Mol_RND(i);
 			// }
-			//cout << charge_count << endl;
+			//cout << charge_try << endl;
 			
 			while (fabs(dist) <= dist_tot){
 				
@@ -767,14 +825,14 @@ void MC_FRM(string output_folder){
 				}
 				
 				// This part check if the charge is not stuck
-				if ( jump > jump_min && total_time[charge_count] > fabs(dist/(mu_min*F_norm)) ){
+				if ( jump > jump_min && total_time[charge_try] > fabs(dist/(mu_min*F_norm)) ){
 									
 					pFile=fopen(OUT_ERROR.str().c_str(), "a");
 					if (pFile==NULL) { 
 						cerr << "[ERROR] Impossible to write " << OUT_ERROR.str().c_str() << "! Exiting..." << endl;
 						exit (1);
 					}
-					fprintf(pFile,"[WARNING] Frame %d: charge %d/%d stuck. jumps=%.0f and mu < %e\n", i, charge_count+1, n_charges, jump, mu_min);
+					fprintf(pFile,"[WARNING] Frame %d: charge %d/%d stuck. jumps=%.0f and mu < %e\n", i, charge_try+1, n_try, jump, mu_min);
 					fclose(pFile);
 					
 					change_frame = true;
@@ -789,8 +847,241 @@ void MC_FRM(string output_folder){
 		// Calculates the average travel time for the frame
 		double av_travel_time = 0.0; 
 		double temp_nbre_try = total_time.size();
-		for(unsigned int charge_count=0; charge_count<total_time.size(); charge_count++) {
-			av_travel_time = av_travel_time + total_time[charge_count];
+		for(unsigned int charge_try=0; charge_try<total_time.size(); charge_try++) {
+			av_travel_time = av_travel_time + total_time[charge_try];
+		}
+		av_travel_time = av_travel_time/temp_nbre_try;
+		
+		// Calculates the mobility for the frame
+		mu_frame.push_back(dist_tot/(av_travel_time*F_norm));
+
+		// Writes a summary for the frame
+		pFile=fopen(OUT_SIMU.str().c_str(), "a");
+		if (pFile==NULL) { 
+			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
+		fprintf(pFile,"Frame = %d\n", i);
+		fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of charges = %d\n", total_time.size());
+		fprintf(pFile,"Average Travel Time = %e\n", av_travel_time);
+		fprintf(pFile,"Distance = %e\n", dist_tot);
+		fprintf(pFile,"mu = %lf\n", mu_frame.back());
+		fclose(pFile);
+	}
+	
+	// Calculates the average on all the frames
+	double mu_moy = 0.0; 
+	double temp_nbre_frame = n_frame;
+	for(int i=0; i<n_frame; i++) {
+		mu_moy = mu_moy + mu_frame[i];
+	}
+	mu_moy = mu_moy/temp_nbre_frame;
+	
+	// Writes the final mobility
+	pFile=fopen(OUT_SIMU.str().c_str(), "a");
+	if (pFile==NULL) { 
+		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+		exit (1);
+	}
+	fprintf(pFile,"\n==================\n==================\n");
+	fprintf(pFile,"mu_av = %lf\n",mu_moy);
+	fclose(pFile);
+	
+*/}
+
+// First Reaction Method algorithm
+void MC_BKL(string output_folder){
+
+	// Conditions for changing frame
+	double mu_min=1e-10, jump_min=1e6;
+	
+	vector<double> mu_frame;
+	
+	vector< vector< vector< vector<bool> > > > grid_occ;
+	vector<int> pos_a, pos_b, pos_c;
+	vector<int> curr_mol;
+	vector<double> dist, jump;
+	
+	vector<double> event_k;
+	vector<int> event_mol_init, event_mol_fin;
+	
+	double total_time = 0.0, total_dist = 0.0;
+	
+	double uF_x, uF_y, uF_z;
+	uF_x = F_x/F_norm;
+	uF_y = F_y/F_norm;
+	uF_z = F_z/F_norm;
+	
+	// Check if it's possible to write output files
+	stringstream OUT_SIMU, OUT_ERROR, T, P;
+  
+	T << theta_deg;
+	P << phi_deg;
+	OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
+	OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
+  
+	FILE * pFile;
+
+	pFile = fopen(OUT_SIMU.str().c_str(), "w");
+	if (pFile==NULL) { 
+		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+		exit (1);
+	}
+	fclose(pFile);
+	
+	// Start the BKL algorithm
+	for (int i=0; i<n_frame; i++){
+				
+		grid_occ.clear();
+		
+		// Generate the grid		
+		for (int a=0; a<n_mini_grid_a; a++){
+			grid_occ.push_back( vector< vector< vector<bool> > > ());
+			
+			for (int b=0; b<n_mini_grid_b; b++){
+				grid_occ[a].push_back( vector< vector<bool> > ());
+			
+				for (int c=0; c<n_mini_grid_c; c++){
+					grid_occ[a][b].push_back( vector<bool> ());
+			
+					for (int n=0; n<n_mol; n++){
+						grid_occ[a][b][c].push_back( false );
+			
+					}
+				}
+			}
+		}
+
+		// Position of the charges in the grid
+		pos_a.clear();
+		pos_b.clear();
+		pos_c.clear();
+		curr_mol.clear();
+
+		int *pos;
+		pos = new int[4];
+		for (int charge_i; charge_i<n_charges; charge_i++){
+			Dispatch_Mol_RND(i, grid_occ, pos);
+			
+			pos_a.push_back(pos[0]);
+			pos_b.push_back(pos[1]);
+			pos_c.push_back(pos[2]);
+			curr_mol.push_back(pos[3]);
+		}
+		delete [] pos;
+
+		// Set distance, number of jumps and the travel time to zero
+		dist.clear();
+		jump.clear(); 
+		for (int charge_i; charge_i<n_charges; charge_i++){
+			dist.push_back(0.0);
+			jump.push_back(0.0);
+		}
+		
+		int charge_try = 0;
+		while (charge_try < n_try){
+			
+			// Calculates the transfer rates
+			event_k.clear();
+			event_mol_init.clear();
+			event_mol_fin.clear();
+			for (int charge_i; charge_i<n_charges; charge_i++){
+				
+				for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
+					
+					double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
+					
+					event_k.push_back(k_tmp);
+					event_mol_init.push_back(charge_i);
+					event_mol_fin.push_back(jj);
+					
+				}
+			}
+			
+			// Sum of transfer rates
+			double sum_k = 0.0;
+			for (int event=0; event<event_k.size(k_tmp); event++){
+				sum_k += event_k[event];
+			}
+			
+			// Choose an event randomly
+			double random_k = Rand_0_1() * sum_k;
+			double partial_sum_k = 0.0;
+			
+			// Find this event in the list
+			for (int event=0; event<event_k.size(k_tmp); event++){
+				partial_sum_k += event_k[event];
+				
+				if (partial_sum_k > random_k){
+					
+					//TO DO : si saut impossible, annuler tout ça => utilisation de variables temporaires ici
+					// Calculate the new position in the grid
+					pos_a[event_mol_init[event]] += neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
+					pos_b[event_mol_init[event]] += neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
+					pos_c[event_mol_init[event]] += neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
+					
+					// PBC
+					pos_a[event_mol_init[event]] = pos_a[event_mol_init[event]] % n_mini_grid_a;
+					pos_b[event_mol_init[event]] = pos_b[event_mol_init[event]] % n_mini_grid_b;
+					pos_c[event_mol_init[event]] = pos_c[event_mol_init[event]] % n_mini_grid_c;
+										
+					// Search the corresponding next molecule
+					for (int ii=0; ii<n_mol; ii++){
+						if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
+							curr_mol[event_mol_init[event]] = ii;
+							break;
+						}
+					}
+					
+					// Calculate the total time
+					total_time += -(sum_k)*log(Rand_0_1());
+					
+					// Calculate the distance traveled by the charge and the total distance
+					double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][jj] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][jj] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][jj] * uF_z)*1E-8;
+					dist[event_mol_init[event]] += event_dist;
+					total_dist += event_dist;
+					
+					// Calculate the number of jumps for each charge
+					jump[event_mol_init[event]] += 1.0;
+					
+					// Check if the charge traveled more than the distance specified
+					if (dist[event_mol_init[event]] > dist_tot){
+						dist[event_mol_init[event]] = 0.0;
+						jump[event_mol_init[event]] = 0.0;
+						charge_try++;
+					}
+					
+					// TO DO : redéfinir avec les variables temporaires
+					// Calculate the new position in the grid
+					pos_a[event_mol_init[event]] += neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
+					pos_b[event_mol_init[event]] += neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
+					pos_c[event_mol_init[event]] += neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
+					
+					// PBC
+					pos_a[event_mol_init[event]] = pos_a[event_mol_init[event]] % n_mini_grid_a;
+					pos_b[event_mol_init[event]] = pos_b[event_mol_init[event]] % n_mini_grid_b;
+					pos_c[event_mol_init[event]] = pos_c[event_mol_init[event]] % n_mini_grid_c;
+										
+					// Search the corresponding next molecule
+					for (int ii=0; ii<n_mol; ii++){
+						if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
+							curr_mol[event_mol_init[event]] = ii;
+							break;
+						}
+					}
+					
+					break;
+				}
+			}
+		}
+		
+		// TO DO!!!
+		// Calculates the average travel time for the frame
+		double av_travel_time = 0.0; 
+		double temp_nbre_try = total_time.size();
+		for(unsigned int charge_try=0; charge_try<total_time.size(); charge_try++) {
+			av_travel_time = av_travel_time + total_time[charge_try];
 		}
 		av_travel_time = av_travel_time/temp_nbre_try;
 		
