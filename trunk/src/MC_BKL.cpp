@@ -933,150 +933,159 @@ void MC_BKL(string output_folder){
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
 				
-		grid_occ.clear();
-		
-		// Generate the grid		
-		for (int a=0; a<n_mini_grid_a; a++){
-			grid_occ.push_back( vector< vector< vector<bool> > > ());
+		for (int charge_try=0; charge_try<n_try; charge_try++){
+	
+			grid_occ.clear();
 			
-			for (int b=0; b<n_mini_grid_b; b++){
-				grid_occ[a].push_back( vector< vector<bool> > ());
-			
-				for (int c=0; c<n_mini_grid_c; c++){
-					grid_occ[a][b].push_back( vector<bool> ());
-			
-					for (int n=0; n<n_mol; n++){
-						grid_occ[a][b][c].push_back( false );
-			
+			// Generate the grid		
+			for (int a=0; a<n_mini_grid_a; a++){
+				grid_occ.push_back( vector< vector< vector<bool> > > ());
+				
+				for (int b=0; b<n_mini_grid_b; b++){
+					grid_occ[a].push_back( vector< vector<bool> > ());
+				
+					for (int c=0; c<n_mini_grid_c; c++){
+						grid_occ[a][b].push_back( vector<bool> ());
+				
+						for (int n=0; n<n_mol; n++){
+							grid_occ[a][b][c].push_back( false );
+				
+						}
 					}
 				}
 			}
-		}
 
-		// Position of the charges in the grid
-		pos_a.clear();
-		pos_b.clear();
-		pos_c.clear();
-		curr_mol.clear();
+			// Position of the charges in the grid
+			pos_a.clear();
+			pos_b.clear();
+			pos_c.clear();
+			curr_mol.clear();
 
-		int *pos;
-		pos = new int[4];
-		for (int charge_i; charge_i<n_charges; charge_i++){
-			Dispatch_Mol_RND(i, grid_occ, pos);
-			
-			pos_a.push_back(pos[0]);
-			pos_b.push_back(pos[1]);
-			pos_c.push_back(pos[2]);
-			curr_mol.push_back(pos[3]);
-		}
-		delete [] pos;
-
-		// Set distance, number of jumps and the travel time to zero
-		dist.clear();
-		jump.clear(); 
-		for (int charge_i; charge_i<n_charges; charge_i++){
-			dist.push_back(0.0);
-			jump.push_back(0.0);
-		}
-		
-		int charge_try = 0;
-		while (charge_try < n_try){
-			
-			// Calculates the transfer rates
-			event_k.clear();
-			event_mol_init.clear();
-			event_mol_fin.clear();
+			int *pos;
+			pos = new int[4];
 			for (int charge_i; charge_i<n_charges; charge_i++){
+				Dispatch_Mol_RND(i, grid_occ, pos);
 				
-				for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
+				pos_a.push_back(pos[0]);
+				pos_b.push_back(pos[1]);
+				pos_c.push_back(pos[2]);
+				curr_mol.push_back(pos[3]);
+			}
+			delete [] pos;
+
+			// Set distance, number of jumps and the travel time to zero
+			dist.clear();
+			jump.clear(); 
+			for (int charge_i; charge_i<n_charges; charge_i++){
+				dist.push_back(0.0);
+				jump.push_back(0.0);
+			}
+			
+			while (curr_mol.size()>0){
+				
+				// TO DO : à faire seulement si le saut précédent est ok
+				// Calculates the transfer rates
+				event_k.clear();
+				event_mol_init.clear();
+				event_mol_fin.clear();
+				for (int charge_i; charge_i<curr_mol.size(); charge_i++){
 					
-					double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
-					
-					event_k.push_back(k_tmp);
-					event_mol_init.push_back(charge_i);
-					event_mol_fin.push_back(jj);
-					
+					for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
+						
+						double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
+						
+						event_k.push_back(k_tmp);
+						event_mol_init.push_back(charge_i);
+						event_mol_fin.push_back(jj);
+						
+					}
 				}
-			}
-			
-			// Sum of transfer rates
-			double sum_k = 0.0;
-			for (int event=0; event<event_k.size(k_tmp); event++){
-				sum_k += event_k[event];
-			}
-			
-			// Choose an event randomly
-			double random_k = Rand_0_1() * sum_k;
-			double partial_sum_k = 0.0;
-			
-			// Find this event in the list
-			for (int event=0; event<event_k.size(k_tmp); event++){
-				partial_sum_k += event_k[event];
 				
-				if (partial_sum_k > random_k){
+				// Sum of transfer rates
+				double sum_k = 0.0;
+				for (int event=0; event<event_k.size(k_tmp); event++){
+					sum_k += event_k[event];
+				}
+				
+				// TO DO : choisir un autre événement si l'autre n'est pas possible
+				// Choose an event randomly
+				double random_k = Rand_0_1() * sum_k;
+				double partial_sum_k = 0.0;
+				
+				// Find this event in the list
+				for (int event=0; event<event_k.size(k_tmp); event++){
+					partial_sum_k += event_k[event];
 					
-					//TO DO : si saut impossible, annuler tout ça => utilisation de variables temporaires ici
-					// Calculate the new position in the grid
-					pos_a[event_mol_init[event]] += neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
-					pos_b[event_mol_init[event]] += neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
-					pos_c[event_mol_init[event]] += neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
-					
-					// PBC
-					pos_a[event_mol_init[event]] = pos_a[event_mol_init[event]] % n_mini_grid_a;
-					pos_b[event_mol_init[event]] = pos_b[event_mol_init[event]] % n_mini_grid_b;
-					pos_c[event_mol_init[event]] = pos_c[event_mol_init[event]] % n_mini_grid_c;
-										
-					// Search the corresponding next molecule
-					for (int ii=0; ii<n_mol; ii++){
-						if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
-							curr_mol[event_mol_init[event]] = ii;
+					if (partial_sum_k > random_k){
+						
+						// Calculate the new position in the grid
+						int tmp_pos_a = pos_a[event_mol_init[event]] + neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
+						int tmp_pos_b = pos_b[event_mol_init[event]] + neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
+						int tmp_pos_c = pos_c[event_mol_init[event]] + neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
+						
+						// No PBC in this case
+						//tmp_pos_a = tmp_pos_a % n_mini_grid_a;
+						//tmp_pos_b = tmp_pos_b % n_mini_grid_b;
+						//tmp_pos_c = tmp_pos_c % n_mini_grid_c;
+											
+						// Search the corresponding next molecule
+						for (int ii=0; ii<n_mol; ii++){
+							if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
+								int tmp_curr_mol = ii;
+								break;
+							}
+						}
+						
+						// Do not jump if the next molecule is occupied
+						if (grid_occ[tmp_pos_a][tmp_pos_b][tmp_pos_c][tmp_curr_mol] == true){
+							break;
+						}
+						
+						else{
+							
+							// Calculate the total time
+							total_time += -(sum_k)*log(Rand_0_1());
+							
+							// Calculate the distance traveled by the charge and the total distance
+							double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][jj] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][jj] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][jj] * uF_z)*1E-8;
+							dist[event_mol_init[event]] += event_dist;
+							total_dist += event_dist;
+							
+							// Calculate the number of jumps for each charge
+							jump[event_mol_init[event]] += 1.0;
+							
+							// Set the occupancy of the grid
+							grid_occ[pos_a[event_mol_init[event]]][pos_b[event_mol_init[event]]][pos_c[event_mol_init[event]]][curr_mol[event_mol_init[event]]] = false;
+							
+							// Set the new position in the grid from temp values
+							pos_a[event_mol_init[event]] = tmp_pos_a;
+							pos_b[event_mol_init[event]] = tmp_pos_b;
+							pos_c[event_mol_init[event]] = tmp_pos_c;
+							curr_mol[event_mol_init[event]] = tmp_curr_mol;
+							
+							// Check if the charge traveled more than the distance specified
+							if (pos_a[event_mol_init[event]] >= n_mini_grid_a){
+								
+								pos_a.erase(pos_a.begin()+event_mol_init[event]);
+								pos_b.erase(pos_b.begin()+event_mol_init[event]);
+								pos_c.erase(pos_c.begin()+event_mol_init[event]);
+								curr_mol.erase(curr_mol.begin()+event_mol_init[event]);
+								
+							}
+							else{
+								grid_occ[pos_a[event_mol_init[event]]][pos_b[event_mol_init[event]]][pos_c[event_mol_init[event]]][curr_mol[event_mol_init[event]]] = true;
+							}
+							
 							break;
 						}
 					}
-					
-					// Calculate the total time
-					total_time += -(sum_k)*log(Rand_0_1());
-					
-					// Calculate the distance traveled by the charge and the total distance
-					double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][jj] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][jj] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][jj] * uF_z)*1E-8;
-					dist[event_mol_init[event]] += event_dist;
-					total_dist += event_dist;
-					
-					// Calculate the number of jumps for each charge
-					jump[event_mol_init[event]] += 1.0;
-					
-					// Check if the charge traveled more than the distance specified
-					if (dist[event_mol_init[event]] > dist_tot){
-						dist[event_mol_init[event]] = 0.0;
-						jump[event_mol_init[event]] = 0.0;
-						charge_try++;
-					}
-					
-					// TO DO : redéfinir avec les variables temporaires
-					// Calculate the new position in the grid
-					pos_a[event_mol_init[event]] += neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
-					pos_b[event_mol_init[event]] += neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
-					pos_c[event_mol_init[event]] += neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
-					
-					// PBC
-					pos_a[event_mol_init[event]] = pos_a[event_mol_init[event]] % n_mini_grid_a;
-					pos_b[event_mol_init[event]] = pos_b[event_mol_init[event]] % n_mini_grid_b;
-					pos_c[event_mol_init[event]] = pos_c[event_mol_init[event]] % n_mini_grid_c;
-										
-					// Search the corresponding next molecule
-					for (int ii=0; ii<n_mol; ii++){
-						if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
-							curr_mol[event_mol_init[event]] = ii;
-							break;
-						}
-					}
-					
-					break;
 				}
 			}
 		}
+
 		
 		// TO DO!!!
+		
 		// Calculates the average travel time for the frame
 		double av_travel_time = 0.0; 
 		double temp_nbre_try = total_time.size();
