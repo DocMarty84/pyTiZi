@@ -47,7 +47,7 @@ vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, tem
 int n_frame, n_mol; // Number of frame and molecule
 double snap_delay;
 double LAMBDA_I, LAMBDA_S, T, H_OMEGA, dist_tot;
-int n_try, n_charges;
+unsigned int n_try, n_charges;
 double F_norm;
 vector<int> mol_label;
 vector< vector< vector<int> > > neigh_label;
@@ -710,7 +710,7 @@ void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid
 	
 	int pos_a, pos_b, pos_c, mol; 
 	
-	double k_sum;
+	//double k_sum;
 	
 	do {
 		pos_a = rand()%n_mini_grid_a;
@@ -718,11 +718,11 @@ void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid
 		pos_c = rand()%n_mini_grid_c;
 		mol = rand()%n_mol;
 		
-		k_sum = 0.0;
-		
-		for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
-			k_sum = k_sum + k_inv[frame][mol][jj];
-		}
+		//k_sum = 0.0;
+		//
+		//for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
+		//	k_sum = k_sum + k_inv[frame][mol][jj];
+		//}
 	}
 	while(neigh_label[frame][mol].size() == 0 || grid_occ[pos_a][pos_b][pos_c][mol] == true);
 	
@@ -733,180 +733,26 @@ void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid
 	
 }
 
-// First Reaction Method algorithm
-void MC_FRM(string output_folder){/*
-
-	// Conditions for changing frame
-	double mu_min=1e-10, jump_min=1e6;
-
-	vector<double> total_time; 
-	vector<double> waiting_time;
-	
-	vector<double> mu_frame;
-	
-	double uF_x, uF_y, uF_z;
-	uF_x = F_x/F_norm;
-	uF_y = F_y/F_norm;
-	uF_z = F_z/F_norm;
-	
-	// Check if it's possible to write output files
-	stringstream OUT_SIMU, OUT_ERROR, T, P;
-  
-	T << theta_deg;
-	P << phi_deg;
-	OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
-	OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
-  
-	FILE * pFile;
-
-	pFile = fopen(OUT_SIMU.str().c_str(), "w");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-		exit (1);
-	}
-	fclose(pFile);
-	
-	// Start the FRM algorithm
-	for(int i=0; i<n_frame; i++){
-		
-		bool change_frame = false;
-		
-		for(int charge_try=0; charge_try<n_try; charge_try++){
-			
-			// Set distance, number of jumps and the travel time to zero
-			double dist = 0.0; 
-			double jump = 0.0;
-			total_time.push_back(0.0); 
-
-			// if (lay){
-			// 	curr_mol=choose_mol_on_layer(i);
-			// }
-			// else{
-				int curr_mol = Choose_Mol_RND(i);
-			// }
-			//cout << charge_try << endl;
-			
-			while (fabs(dist) <= dist_tot){
-				
-				// Waiting time calculation
-				waiting_time.clear();
-				for (unsigned int jj=0; jj<neigh_label[i][curr_mol].size(); jj++){ 
-					double random_number = Rand_0_1();
-					waiting_time.push_back(-(k_inv[i][curr_mol][jj])*log(random_number));
-				}
-				
-				// Choosing shortest waiting time for the jump
-				int next_mol = 0;
-				for (unsigned int jj=1; jj<neigh_label[i][curr_mol].size(); jj++){ 
-					if (waiting_time[jj] < waiting_time[next_mol]) 
-						next_mol = jj;
-				}
-				//cout << mol_label[curr_mol] << " " << neigh_label[i][curr_mol][next_mol] << endl;
-				
-				bool change_layer = false;
-				// if (lay){
-				//	change_layer=check_change_layer(curr_mol, fneighbors[i][curr_mol][next_mol], i);
-				// }
-				
-				if (change_layer==false){
-					dist = dist + (d_x[i][curr_mol][next_mol] * uF_x + d_y[i][curr_mol][next_mol] * uF_y + d_z[i][curr_mol][next_mol] * uF_z)*1E-8;
-					total_time.back() = total_time.back() + waiting_time[next_mol];
-					
-					// Search the corresponding next molecule
-					for (int ii=0; ii<n_mol; ii++){
-						if (neigh_label[i][curr_mol][next_mol] == mol_label[ii]){
-							curr_mol = ii;
-							break;
-						}
-					}
-		
-					jump = jump + 1.0;
-
-				}
-				
-				// This part check if the charge is not stuck
-				if ( jump > jump_min && total_time[charge_try] > fabs(dist/(mu_min*F_norm)) ){
-									
-					pFile=fopen(OUT_ERROR.str().c_str(), "a");
-					if (pFile==NULL) { 
-						cerr << "[ERROR] Impossible to write " << OUT_ERROR.str().c_str() << "! Exiting..." << endl;
-						exit (1);
-					}
-					fprintf(pFile,"[WARNING] Frame %d: charge %d/%d stuck. jumps=%.0f and mu < %e\n", i, charge_try+1, n_try, jump, mu_min);
-					fclose(pFile);
-					
-					change_frame = true;
-					break;
-				}
-			}
-			
-			if (change_frame) 
-				break;
-		}
-		
-		// Calculates the average travel time for the frame
-		double av_travel_time = 0.0; 
-		double temp_nbre_try = total_time.size();
-		for(unsigned int charge_try=0; charge_try<total_time.size(); charge_try++) {
-			av_travel_time = av_travel_time + total_time[charge_try];
-		}
-		av_travel_time = av_travel_time/temp_nbre_try;
-		
-		// Calculates the mobility for the frame
-		mu_frame.push_back(dist_tot/(av_travel_time*F_norm));
-
-		// Writes a summary for the frame
-		pFile=fopen(OUT_SIMU.str().c_str(), "a");
-		if (pFile==NULL) { 
-			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-			exit (1);
-		}
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of charges = %d\n", total_time.size());
-		fprintf(pFile,"Average Travel Time = %e\n", av_travel_time);
-		fprintf(pFile,"Distance = %e\n", dist_tot);
-		fprintf(pFile,"mu = %lf\n", mu_frame.back());
-		fclose(pFile);
-	}
-	
-	// Calculates the average on all the frames
-	double mu_moy = 0.0; 
-	double temp_nbre_frame = n_frame;
-	for(int i=0; i<n_frame; i++) {
-		mu_moy = mu_moy + mu_frame[i];
-	}
-	mu_moy = mu_moy/temp_nbre_frame;
-	
-	// Writes the final mobility
-	pFile=fopen(OUT_SIMU.str().c_str(), "a");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-		exit (1);
-	}
-	fprintf(pFile,"\n==================\n==================\n");
-	fprintf(pFile,"mu_av = %lf\n",mu_moy);
-	fclose(pFile);
-	
-*/}
-
-// First Reaction Method algorithm
+// BKL algorithm
 void MC_BKL(string output_folder){
-
-	// Conditions for changing frame
-	double mu_min=1e-10, jump_min=1e6;
 	
-	vector<double> mu_frame;
-	
+	// Grid of charges
 	vector< vector< vector< vector<bool> > > > grid_occ;
-	vector<int> pos_a, pos_b, pos_c;
-	vector<int> curr_mol;
-	vector<double> dist, jump;
 	
-	vector<double> event_k;
-	vector<int> event_mol_init, event_mol_fin;
+	// Variables for each charge
+	vector<int> pos_a, pos_b, pos_c; // Position in the grid
+	vector<int> curr_mol; // Number of the molecule in the mini-grid
+	vector<double> dist, jump; // Distance and number of jumps for each charge
 	
-	double total_time = 0.0, total_dist = 0.0;
+	// Variables for a chosen event
+	vector<double> event_k; // Transfer rate
+	vector<int> event_mol_init, event_mol_fin; // Initial molecule and neighbor
+	
+	// Total time and distance, for each try
+	vector<double> total_time_try, total_dist_try;
+	
+	// Average mobility for each frame
+	vector<double> mu_frame;
 	
 	double uF_x, uF_y, uF_z;
 	uF_x = F_x/F_norm;
@@ -932,12 +778,16 @@ void MC_BKL(string output_folder){
 	
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
+		
+		// Clear the total distance and time of the previous frame
+		total_time_try.clear();
+		total_dist_try.clear();
 				
-		for (int charge_try=0; charge_try<n_try; charge_try++){
-	
-			grid_occ.clear();
+		for (unsigned int charge_try=0; charge_try<n_try; charge_try++){
 			
-			// Generate the grid		
+			// Generate the grid
+			grid_occ.clear();
+					
 			for (int a=0; a<n_mini_grid_a; a++){
 				grid_occ.push_back( vector< vector< vector<bool> > > ());
 				
@@ -955,15 +805,13 @@ void MC_BKL(string output_folder){
 				}
 			}
 
-			// Position of the charges in the grid
-			pos_a.clear();
-			pos_b.clear();
-			pos_c.clear();
+			// Put the charges in the grid
+			pos_a.clear(); pos_b.clear(); pos_c.clear();
 			curr_mol.clear();
 
 			int *pos;
 			pos = new int[4];
-			for (int charge_i; charge_i<n_charges; charge_i++){
+			for (unsigned int charge_i; charge_i<n_charges; charge_i++){
 				Dispatch_Mol_RND(i, grid_occ, pos);
 				
 				pos_a.push_back(pos[0]);
@@ -973,83 +821,105 @@ void MC_BKL(string output_folder){
 			}
 			delete [] pos;
 
-			// Set distance, number of jumps and the travel time to zero
+			// Set distances, number of jumps and the travel time to zero
+			total_time_try.push_back(0.0);
+			total_dist_try.push_back(0.0);
+			
 			dist.clear();
 			jump.clear(); 
-			for (int charge_i; charge_i<n_charges; charge_i++){
+			for (unsigned int charge_i; charge_i<n_charges; charge_i++){
 				dist.push_back(0.0);
 				jump.push_back(0.0);
 			}
 			
+			bool previous_jump_ok = true;
+			bool exit_loop = false;
+			double sum_k = 0.0;
+			
 			while (curr_mol.size()>0){
 				
-				// TO DO : à faire seulement si le saut précédent est ok
 				// Calculates the transfer rates
-				event_k.clear();
-				event_mol_init.clear();
-				event_mol_fin.clear();
-				for (int charge_i; charge_i<curr_mol.size(); charge_i++){
+				if (previous_jump_ok){
 					
-					for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
-						
-						double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
-						
-						event_k.push_back(k_tmp);
-						event_mol_init.push_back(charge_i);
-						event_mol_fin.push_back(jj);
-						
+					// List all the possible events
+					event_k.clear();
+					event_mol_init.clear();
+					event_mol_fin.clear();
+					
+					for (unsigned int charge_i; charge_i<curr_mol.size(); charge_i++){
+						for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
+							double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
+							
+							event_k.push_back(k_tmp);
+							event_mol_init.push_back(charge_i);
+							event_mol_fin.push_back(jj);
+							
+						}
+					}
+					
+					// Sum of transfer rates of all the events
+					sum_k = 0.0;
+					for (unsigned int event=0; event<event_k.size(); event++){
+						sum_k += event_k[event];
 					}
 				}
 				
-				// Sum of transfer rates
-				double sum_k = 0.0;
-				for (int event=0; event<event_k.size(k_tmp); event++){
-					sum_k += event_k[event];
+				else{
+					exit_loop = false;
 				}
 				
-				// TO DO : choisir un autre événement si l'autre n'est pas possible
 				// Choose an event randomly
 				double random_k = Rand_0_1() * sum_k;
 				double partial_sum_k = 0.0;
 				
 				// Find this event in the list
-				for (int event=0; event<event_k.size(k_tmp); event++){
+				exit_loop = false;
+				
+				for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
 					partial_sum_k += event_k[event];
 					
 					if (partial_sum_k > random_k){
 						
 						// Calculate the new position in the grid
-						int tmp_pos_a = pos_a[event_mol_init[event]] + neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][jj];
-						int tmp_pos_b = pos_b[event_mol_init[event]] + neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][jj];
-						int tmp_pos_c = pos_c[event_mol_init[event]] + neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][jj];
+						int tmp_pos_a = pos_a[event_mol_init[event]] + neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
+						int tmp_pos_b = pos_b[event_mol_init[event]] + neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
+						int tmp_pos_c = pos_c[event_mol_init[event]] + neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
 						
 						// No PBC in this case
 						//tmp_pos_a = tmp_pos_a % n_mini_grid_a;
 						//tmp_pos_b = tmp_pos_b % n_mini_grid_b;
 						//tmp_pos_c = tmp_pos_c % n_mini_grid_c;
-											
+						
 						// Search the corresponding next molecule
+						int tmp_curr_mol = 0;
 						for (int ii=0; ii<n_mol; ii++){
-							if (neigh_label[i][curr_mol[event_mol_init[event]]][jj] == mol_label[curr_mol[event_mol_init[event]]]){
-								int tmp_curr_mol = ii;
+							if (neigh_label[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == mol_label[ii]){
+								tmp_curr_mol = ii;
 								break;
 							}
 						}
 						
+						// Do not jump if the charge goes out of the system
+						if (tmp_pos_a < 0 || tmp_pos_b < 0 || tmp_pos_c < 0){
+							previous_jump_ok = false;
+							exit_loop = true;
+						}
+						
 						// Do not jump if the next molecule is occupied
-						if (grid_occ[tmp_pos_a][tmp_pos_b][tmp_pos_c][tmp_curr_mol] == true){
-							break;
+						else if (grid_occ[abs(tmp_pos_a)][abs(tmp_pos_b)][abs(tmp_pos_c)][tmp_curr_mol] == true){
+							previous_jump_ok = false;
+							exit_loop = true;
 						}
 						
 						else{
 							
 							// Calculate the total time
-							total_time += -(sum_k)*log(Rand_0_1());
+							total_time_try.back() += -(sum_k)*log(Rand_0_1());
 							
 							// Calculate the distance traveled by the charge and the total distance
-							double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][jj] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][jj] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][jj] * uF_z)*1E-8;
+							double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_z)*1E-8;
 							dist[event_mol_init[event]] += event_dist;
-							total_dist += event_dist;
+							total_dist_try.back() += event_dist;
 							
 							// Calculate the number of jumps for each charge
 							jump[event_mol_init[event]] += 1.0;
@@ -1063,9 +933,10 @@ void MC_BKL(string output_folder){
 							pos_c[event_mol_init[event]] = tmp_pos_c;
 							curr_mol[event_mol_init[event]] = tmp_curr_mol;
 							
-							// Check if the charge traveled more than the distance specified
+							// Check if the charge arrived at the end of the grid
 							if (pos_a[event_mol_init[event]] >= n_mini_grid_a){
 								
+								// The charge is removed
 								pos_a.erase(pos_a.begin()+event_mol_init[event]);
 								pos_b.erase(pos_b.begin()+event_mol_init[event]);
 								pos_c.erase(pos_c.begin()+event_mol_init[event]);
@@ -1076,26 +947,43 @@ void MC_BKL(string output_folder){
 								grid_occ[pos_a[event_mol_init[event]]][pos_b[event_mol_init[event]]][pos_c[event_mol_init[event]]][curr_mol[event_mol_init[event]]] = true;
 							}
 							
-							break;
+							previous_jump_ok = true;
+							exit_loop = true;
 						}
 					}
 				}
 			}
+			
+			// Print summary for the current try
+			pFile=fopen(OUT_SIMU.str().c_str(), "a");
+			if (pFile==NULL) { 
+				cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+				exit (1);
+			}
+			fprintf(pFile,"Frame = %d\n", i);
+			fprintf(pFile,"Try = %d\n", charge_try);
+			fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+			fprintf(pFile,"Number of Charges = %d\n", n_charges);
+			fprintf(pFile,"Total Time = %e\n", total_time_try.back());
+			fprintf(pFile,"Total Distance = %e\n", total_dist_try.back());
+			fprintf(pFile,"Mu_try = %lf\n", total_dist_try.back()/(total_time_try.back()*F_norm));
+			fclose(pFile);			
+
 		}
 
+		// Calculates the average travel time and distance for the frame
+		double total_time_av = 0.0; 
+		double total_dist_av = 0.0; 
+		double dbl_n_try = n_try;
 		
-		// TO DO!!!
-		
-		// Calculates the average travel time for the frame
-		double av_travel_time = 0.0; 
-		double temp_nbre_try = total_time.size();
-		for(unsigned int charge_try=0; charge_try<total_time.size(); charge_try++) {
-			av_travel_time = av_travel_time + total_time[charge_try];
+		for(unsigned int charge_try=0; charge_try<n_try; charge_try++) {
+			total_time_av = total_time_av + total_time_try[charge_try];
+			total_dist_av = total_dist_av + total_dist_try[charge_try];
 		}
-		av_travel_time = av_travel_time/temp_nbre_try;
+		total_time_av = total_time_av/dbl_n_try;
+		total_dist_av = total_dist_av/dbl_n_try;
 		
-		// Calculates the mobility for the frame
-		mu_frame.push_back(dist_tot/(av_travel_time*F_norm));
+		mu_frame.push_back(total_dist_av/(total_time_av*F_norm));
 
 		// Writes a summary for the frame
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
@@ -1105,20 +993,20 @@ void MC_BKL(string output_folder){
 		}
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of charges = %d\n", total_time.size());
-		fprintf(pFile,"Average Travel Time = %e\n", av_travel_time);
-		fprintf(pFile,"Distance = %e\n", dist_tot);
-		fprintf(pFile,"mu = %lf\n", mu_frame.back());
+		fprintf(pFile,"Number of tries = %d\n", n_try);
+		fprintf(pFile,"Average Time = %e\n", total_time_av);
+		fprintf(pFile,"Average Distance = %e\n", total_dist_av);
+		fprintf(pFile,"Mobility of the Frame = %lf\n", mu_frame.back());
 		fclose(pFile);
 	}
 	
 	// Calculates the average on all the frames
 	double mu_moy = 0.0; 
-	double temp_nbre_frame = n_frame;
+	double dbl_n_frame = n_frame;
 	for(int i=0; i<n_frame; i++) {
 		mu_moy = mu_moy + mu_frame[i];
 	}
-	mu_moy = mu_moy/temp_nbre_frame;
+	mu_moy = mu_moy/dbl_n_frame;
 	
 	// Writes the final mobility
 	pFile=fopen(OUT_SIMU.str().c_str(), "a");
@@ -1127,7 +1015,7 @@ void MC_BKL(string output_folder){
 		exit (1);
 	}
 	fprintf(pFile,"\n==================\n==================\n");
-	fprintf(pFile,"mu_av = %lf\n",mu_moy);
+	fprintf(pFile,"mu_av = %lf\n", mu_moy);
 	fclose(pFile);
 	
 }
@@ -1248,7 +1136,7 @@ int main(int argc, char **argv){
 			Inverse_Clear_k(false);
 			k.clear();
 			
-			MC_FRM(output_folder);
+			MC_BKL(output_folder);
 			
 			// Clear everything (not necessary) and set to reference values
 			neigh_label.clear(); neigh_label = neigh_label_ref;
