@@ -59,6 +59,7 @@ vector< vector<double> > E_0, E_1;
 vector< vector< vector<double> > > d_x, d_y, d_z;
 vector< vector< vector<double> > > dE;
 vector< vector< vector<double> > > k, k_inv;
+vector< vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > > V;
 string charge;
 
 double theta_deg, phi_deg, theta_rad, phi_rad;
@@ -502,11 +503,131 @@ void Calcul_DeltaE(bool print_results){
 	}
 }
 
+void Calcul_V(bool print_results){
+	
+	double *CM_1_Cart, *CM_1_Frac, *CM_2_Cart, *CM_2_Frac, Dist_Cart, Dist_Frac;
+	new double CM_1_Cart[3];
+	new double CM_1_Frac[3];
+	new double CM_2_Cart[3];
+	new double CM_2_Frac[3];
+	new double Dist_Cart[3];
+	new double Dist_Frac[3];
+	
+	// Generate the vector
+	V.clear();
+	
+	for (int i=0; i<n_frame; i++){
+		V.push_back( vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > () );					
+		
+		for (int ii=0; ii<n_mol; ii++){
+			V[i].push_back( vector< vector< vector< vector< vector< vector< vector<double> > > > > > > () );
+			
+			CM_1_Cart[0] = CM_x[i][ii];
+			CM_1_Cart[1] = CM_y[i][ii];
+			CM_1_Cart[2] = CM_z[i][ii];
+			Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac, i);
+			
+			for (int jj=ii+1; jj<n_mol; jj++){
+				V[i][ii].push_back( vector< vector< vector< vector< vector< vector<double> > > > > > () );
+				
+				CM_2_Cart[0] = CM_x[i][jj];
+				CM_2_Cart[1] = CM_y[i][jj];
+				CM_2_Cart[2] = CM_z[i][jj];
+				Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac, i);
+				
+				for (int a1=0; a1<n_mini_grid_a; a1++){
+					V[i][ii][jj].push_back( vector< vector< vector< vector< vector<double> > > > > () );
+					
+					for (int b1=0; b1<n_mini_grid_b; b1++){
+						V[i][ii][jj][a1].push_back( vector< vector< vector< vector<double> > > > () );
+						
+						for (int c1=0; c1<n_mini_grid_c; c1++){
+							V[i][ii][jj][a1][b1].push_back( vector< vector< vector<double> > > () );
+							
+							for (int a2; a2<n_mini_grid_a; a2++){
+								V[i][ii][jj][a1][b1][c1].push_back( vector< vector<double> > () );
+								
+								for (int b2; b2<n_mini_grid_b; b2++){
+									V[i][ii][jj][a1][b1][c1][a2].push_back( vector<double> () );
+									
+									for (int c2; c2<n_mini_grid_c; c2++){
+										V[i][ii][jj][a1][b1][c1][a2][b2].push_back( 0.0 );
+										
+										
+										
+										
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+		
+	delete [] CM_1_Cart[3];
+	delete [] CM_1_Frac[3];
+	delete [] CM_2_Cart[3];
+	delete [] CM_2_Frac[3];
+	delete [] Dist_Cart[3];
+	delete [] Dist_Frac[3];
+	
+	// Print part
+	if (print_results){
+		
+		for (int i=0; i<n_frame; i++){
+			cout << "frame " << i << endl;
+			for (int ii=0; ii<n_mol; ii++){
+				cout << "molecule " << mol_label[ii] << endl;
+				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+					cout << neigh_label[i][ii][jj] << " " << dE[i][ii][jj] << endl;
+				}
+			}
+		}
+	}
+}
+
+
+
 // =============================================================================
 // ------------------- Physical parameters between neighbors -------------------
 // =============================================================================
 
 double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp){
+	
+	double S, CST1, CST2;
+	S = LAMBDA_I/H_OMEGA;
+	CST1 = (2*PI/H_BAR)*(1.0/(sqrt(4*PI*LAMBDA_S*K_BOLTZ*T)));
+	CST2 = 4*LAMBDA_S*K_BOLTZ*T;
+	
+	double dG0 = 0.0;	
+	double k_tmp = 0.0;
+	
+	// CHECK SIGN!
+	if (charge.compare("e") == 0)
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	if (charge.compare("h") == 0)
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	dG0 = dG0 + dE_tmp;
+	
+	for (int n=0; n<50; n++){
+		k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+	}
+	
+	if (charge.compare("e") == 0)
+		k_tmp = CST1 * pow(J_L_tmp,2) * k_tmp;
+	
+	if (charge.compare("h") == 0)
+		k_tmp = CST1 * pow(J_H_tmp,2) * k_tmp;
+		
+	return k_tmp;
+	
+}
+
+double Marcus_Levich_Jortner_rate_electro(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, int pos_a_tmp, int pos_b_tmp, int pos_c_tmp){
 	
 	double S, CST1, CST2;
 	S = LAMBDA_I/H_OMEGA;
@@ -848,7 +969,7 @@ void MC_BKL(string output_folder){
 					
 					for (unsigned int charge_i; charge_i<curr_mol.size(); charge_i++){
 						for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
-							double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
+							double k_tmp = Marcus_Levich_Jortner_rate_electro(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
 							
 							event_k.push_back(k_tmp);
 							event_mol_init.push_back(charge_i);
@@ -862,6 +983,8 @@ void MC_BKL(string output_folder){
 					for (unsigned int event=0; event<event_k.size(); event++){
 						sum_k += event_k[event];
 					}
+					
+					exit_loop = false;
 				}
 				
 				else{
@@ -873,7 +996,6 @@ void MC_BKL(string output_folder){
 				double partial_sum_k = 0.0;
 				
 				// Find this event in the list
-				exit_loop = false;
 				
 				for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
 					partial_sum_k += event_k[event];
@@ -914,7 +1036,7 @@ void MC_BKL(string output_folder){
 						else{
 							
 							// Calculate the total time
-							total_time_try.back() += -(sum_k)*log(Rand_0_1());
+							total_time_try.back() += -log(Rand_0_1())/(sum_k);
 							
 							// Calculate the distance traveled by the charge and the total distance
 							double event_dist = (d_x[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_x + d_y[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_y + d_z[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] * uF_z)*1E-8;
@@ -1151,6 +1273,8 @@ int main(int argc, char **argv){
 			
 		}
 	}
+	
+	V.clear();
 	
 	// Get stop time
 	t_stop = time(NULL);
