@@ -360,10 +360,16 @@ if __name__ == '__main__':
 		project.pbc_number += '0'
 	project.pbc_number += '\n'
 	
-	# ==========================
-	#     File type analysis
-	# ==========================
+	# ===================================================
+	#     Pre-calculation check and file type analysis
+	# ===================================================
 	(project.file_type, project.ext) = FileTypeCheck(project.file_type)
+	
+	# Check if there are 
+	if len(ls(project.input_dir, project.ext)) == 0:
+		if verb > 0:
+			print "[ERROR] Could not find any %s file in folder %s! Exiting..." % (project.ext, project.input_dir)
+		sys.exit(1)
 	
 	project.input_cluster = 'project%s%s%sinput%sMD' % (os.sep, project.project_name, os.sep, os.sep)
 	try:
@@ -387,10 +393,13 @@ if __name__ == '__main__':
 	
 	if verb > 2:
 		print "[INFO] Work in progress..."
+		
 	for file in ls(project.input_dir, project.ext):
+		
 		# ==========================
 		#     Input data analysis
 		# ==========================
+		
 		if verb > 2:
 			print "[INFO] Analyzing file %s" % (file)
 		filename_base = os.path.splitext(file)[0]
@@ -439,6 +448,7 @@ if __name__ == '__main__':
 		# ======================================
 		# Analyzing the specified molecule lists
 		# ======================================
+		
 		project.molecules_to_analyze_full = list_manipulation.MoleculesList(project.molecules_to_analyze, data.n_mol)
 		project.molecules_for_J_full = list_manipulation.MoleculesList(project.molecules_for_J, data.n_mol)
 		if verb > 2:
@@ -464,7 +474,7 @@ if __name__ == '__main__':
 		# Creating .xyz files
 		# ===================
 		
-		if verb>2:
+		if verb > 2:
 			print "[INFO] Writing output files. This may take some time..."
 		write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
 		write_cluster_files.CreateCELL(data, cell, project, filename_base)

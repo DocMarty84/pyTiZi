@@ -34,9 +34,11 @@
 
 using namespace std;
 
-double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
-double H_BAR = 6.58211899e-16; // h/2PI in eV
-double PI = 3.141592653589793;
+const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
+const double H_BAR = 6.58211899e-16; // h/2PI in eV
+const double EPSILON_0 = 8.854187817e-14; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
+const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
+const double PI = 3.141592653589793;
 
 vector< vector<double> > CM_x, CM_y, CM_z; // Center of masses
 
@@ -505,13 +507,22 @@ void Calcul_DeltaE(bool print_results){
 
 void Calcul_V(bool print_results){
 	
-	double *CM_1_Cart, *CM_1_Frac, *CM_2_Cart, *CM_2_Frac, Dist_Cart, Dist_Frac;
-	new double CM_1_Cart[3];
-	new double CM_1_Frac[3];
-	new double CM_2_Cart[3];
-	new double CM_2_Frac[3];
-	new double Dist_Cart[3];
-	new double Dist_Frac[3];
+	const double CST1 = 1.0/(4.0*PI*EPSILON_0*EPSILON_R);
+	
+	const double CUTOFF = 100; //Cutoff in Angstrom
+	const double CUTOFF_2 = pow(CUTOFF,2); //Cutoff in Angstrom
+	
+	double DIST, DIST_2;
+	
+	double *CM_1_Cart, *CM_1_Frac, *CM_1_Frac_ref, *CM_2_Cart, *CM_2_Frac, *CM_2_Frac_ref, *Dist_Cart, *Dist_Frac;
+	CM_1_Cart = new double[3];
+	CM_1_Frac = new double[3];
+	CM_1_Frac_ref = new double[3];
+	CM_2_Cart = new double[3];
+	CM_2_Frac = new double[3];
+	CM_2_Frac_ref = new double[3];
+	Dist_Cart = new double[3];
+	Dist_Frac = new double[3];
 	
 	// Generate the vector
 	V.clear();
@@ -525,7 +536,7 @@ void Calcul_V(bool print_results){
 			CM_1_Cart[0] = CM_x[i][ii];
 			CM_1_Cart[1] = CM_y[i][ii];
 			CM_1_Cart[2] = CM_z[i][ii];
-			Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac, i);
+			Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac_ref, i);
 			
 			for (int jj=ii+1; jj<n_mol; jj++){
 				V[i][ii].push_back( vector< vector< vector< vector< vector< vector<double> > > > > > () );
@@ -533,7 +544,7 @@ void Calcul_V(bool print_results){
 				CM_2_Cart[0] = CM_x[i][jj];
 				CM_2_Cart[1] = CM_y[i][jj];
 				CM_2_Cart[2] = CM_z[i][jj];
-				Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac, i);
+				Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac_ref, i);
 				
 				for (int a1=0; a1<n_mini_grid_a; a1++){
 					V[i][ii][jj].push_back( vector< vector< vector< vector< vector<double> > > > > () );
@@ -544,6 +555,10 @@ void Calcul_V(bool print_results){
 						for (int c1=0; c1<n_mini_grid_c; c1++){
 							V[i][ii][jj][a1][b1].push_back( vector< vector< vector<double> > > () );
 							
+							CM_1_Frac[0] = CM_1_Frac_ref[0] + double(a1);
+							CM_1_Frac[1] = CM_1_Frac_ref[1] + double(b1);
+							CM_1_Frac[2] = CM_1_Frac_ref[2] + double(c1);
+							
 							for (int a2; a2<n_mini_grid_a; a2++){
 								V[i][ii][jj][a1][b1][c1].push_back( vector< vector<double> > () );
 								
@@ -551,11 +566,27 @@ void Calcul_V(bool print_results){
 									V[i][ii][jj][a1][b1][c1][a2].push_back( vector<double> () );
 									
 									for (int c2; c2<n_mini_grid_c; c2++){
-										V[i][ii][jj][a1][b1][c1][a2][b2].push_back( 0.0 );
+																				
+										CM_2_Frac[0] = CM_2_Frac_ref[0] + double(a2);
+										CM_2_Frac[1] = CM_2_Frac_ref[1] + double(b2);
+										CM_2_Frac[2] = CM_2_Frac_ref[2] + double(c2);
 										
+										Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
+										Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];
+										Dist_Frac[2] = CM_2_Frac[2] - CM_1_Frac[2];
 										
+										Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
 										
+										DIST_2 = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
+										DIST = sqrt(DIST_2);
 										
+										if ( DIST_2 < CUTOFF_2){
+											V[i][ii][jj][a1][b1][c1][a2][b2].push_back( CST1/DIST );
+										}
+										
+										else {
+											V[i][ii][jj][a1][b1][c1][a2][b2].push_back( 0.0 );
+										}
 									}
 								}
 							}
@@ -566,22 +597,41 @@ void Calcul_V(bool print_results){
 		}
 	}
 		
-	delete [] CM_1_Cart[3];
-	delete [] CM_1_Frac[3];
-	delete [] CM_2_Cart[3];
-	delete [] CM_2_Frac[3];
-	delete [] Dist_Cart[3];
-	delete [] Dist_Frac[3];
+	delete [] CM_1_Cart;
+	delete [] CM_1_Frac;
+	delete [] CM_1_Frac_ref;
+	delete [] CM_2_Cart;
+	delete [] CM_2_Frac;
+	delete [] CM_2_Frac_ref;
+	delete [] Dist_Cart;
+	delete [] Dist_Frac;
 	
 	// Print part
 	if (print_results){
-		
+
 		for (int i=0; i<n_frame; i++){
 			cout << "frame " << i << endl;
+			
 			for (int ii=0; ii<n_mol; ii++){
-				cout << "molecule " << mol_label[ii] << endl;
-				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-					cout << neigh_label[i][ii][jj] << " " << dE[i][ii][jj] << endl;
+				cout << "molecules " << mol_label[ii];	
+				
+				for (int jj=ii+1; jj<n_mol; jj++){
+					cout << " and " << mol_label[jj] << endl;
+					
+					for (int a1=0; a1<n_mini_grid_a; a1++){	
+						for (int b1=0; b1<n_mini_grid_b; b1++){
+							for (int c1=0; c1<n_mini_grid_c; c1++){				
+								for (int a2; a2<n_mini_grid_a; a2++){
+									for (int b2; b2<n_mini_grid_b; b2++){									
+										for (int c2; c2<n_mini_grid_c; c2++){
+											cout << a1 << " " << b1 << " " << c1 << " | " << a2 << " " << b2 << " " << c2 << " | " << V[i][ii][jj][a1][b1][c1][a2][b2][c2] << endl;
+																					
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -608,7 +658,7 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 	if (charge.compare("e") == 0)
 		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
 		
-	if (charge.compare("h") == 0)
+	else if (charge.compare("h") == 0)
 		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
 		
 	dG0 = dG0 + dE_tmp;
@@ -620,22 +670,35 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 	if (charge.compare("e") == 0)
 		k_tmp = CST1 * pow(J_L_tmp,2) * k_tmp;
 	
-	if (charge.compare("h") == 0)
+	else if (charge.compare("h") == 0)
 		k_tmp = CST1 * pow(J_H_tmp,2) * k_tmp;
 		
 	return k_tmp;
 	
 }
 
-double Marcus_Levich_Jortner_rate_electro(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, int pos_a_tmp, int pos_b_tmp, int pos_c_tmp){
+double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, vector<int> curr_mol_tmp, vector<int> pos_a_tmp, vector<int> pos_b_tmp, vector<int> pos_c_tmp, unsigned int charge_i_tmp){
 	
 	double S, CST1, CST2;
 	S = LAMBDA_I/H_OMEGA;
 	CST1 = (2*PI/H_BAR)*(1.0/(sqrt(4*PI*LAMBDA_S*K_BOLTZ*T)));
 	CST2 = 4*LAMBDA_S*K_BOLTZ*T;
 	
+	double dV = 0.0;
 	double dG0 = 0.0;	
 	double k_tmp = 0.0;
+	
+	for (unsigned int charge_i = 0; charge_i<pos_a_tmp.size(); charge_i++){
+		if (charge_i < charge_i_tmp)
+			dV += V[i][curr_mol_tmp[charge_i]][curr_mol_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]];
+		
+		else if (charge_i > charge_i_tmp)
+			dV += V[i][curr_mol_tmp[charge_i_tmp]][curr_mol_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]];
+	
+		//else
+		//	pass;
+	
+	}
 	
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -969,7 +1032,7 @@ void MC_BKL(string output_folder){
 					
 					for (unsigned int charge_i; charge_i<curr_mol.size(); charge_i++){
 						for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
-							double k_tmp = Marcus_Levich_Jortner_rate_electro(d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], pos_a[charge_i], pos_b[charge_i], pos_c[charge_i]);
+							double k_tmp = Marcus_Levich_Jortner_rate_electro(i, d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], curr_mol, pos_a, pos_b, pos_c, charge_i);
 							
 							event_k.push_back(k_tmp);
 							event_mol_init.push_back(charge_i);
@@ -1210,9 +1273,12 @@ int main(int argc, char **argv){
 	Read_CM(input_file, input_folder, false);
 	Read_E_av(input_file, input_folder, false);
 	
-	// Calcul distances and DeltaE
+	// Calculates distances and DeltaE
 	Calcul_Dist(false);
 	Calcul_DeltaE(false);
+	
+	// Calculates the electrostatic interactions for the grid
+	Calcul_V(false);
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
