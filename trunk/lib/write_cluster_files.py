@@ -512,7 +512,9 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'g++ CZ_input_zindo_mc.cpp -O2 -lm -o $RESULTS_DIR/CZ_input_zindo_mc\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
-	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\' | awk -F \'\/\' \'{ print $2 }\'`\n\n'
+#	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\' | awk -F \'\/\' \'{ print $2 }\'`\n\n'
+	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'.xyz\' \'{ print $1 }\' | awk -F \'/\' \'{ print $2 }\'`\n\n'
+
 
 	tmp += 'cd $OUTPUT_DIR\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
@@ -523,7 +525,7 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
 	tmp += '		cd $SYSTEM\n'
-	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g`; do\n'
+	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g | awk -F \'/\' \'{ print $2 }\'`; do\n'
 	tmp += '			if [[ -d $FRAME ]]; then\n'
 	tmp += '				cd $FRAME\n'
 	tmp += '				for x in `find . -maxdepth 1 -name "*.out"`; do\n'

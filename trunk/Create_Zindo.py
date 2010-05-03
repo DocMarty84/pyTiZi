@@ -365,7 +365,7 @@ if __name__ == '__main__':
 	# ===================================================
 	(project.file_type, project.ext) = FileTypeCheck(project.file_type)
 	
-	# Check if there are 
+	# Check if there are files for this type
 	if len(ls(project.input_dir, project.ext)) == 0:
 		if verb > 0:
 			print "[ERROR] Could not find any %s file in folder %s! Exiting..." % (project.ext, project.input_dir)
