@@ -36,7 +36,7 @@ using namespace std;
 
 const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
 const double H_BAR = 6.58211899e-16; // h/2PI in eV
-const double EPSILON_0 = 8.854187817e-14; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
+const double EPSILON_0 = (8.854187817e-12/(1e-10))*(1.602176487e-19) ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double PI = 3.141592653589793;
 
@@ -62,6 +62,7 @@ vector< vector< vector<double> > > d_x, d_y, d_z;
 vector< vector< vector<double> > > dE;
 vector< vector< vector<double> > > k, k_inv;
 vector< vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > > V;
+double *********V_test;
 string charge;
 
 double theta_deg, phi_deg, theta_rad, phi_rad;
@@ -152,6 +153,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
 		input >> LAMBDA_I >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
+		input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> n_charges;
 		input >> F_norm;
 		
 		//Generate vectors
@@ -192,6 +194,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		cout << n_frame << " " << n_mol << endl;
 		cout << snap_delay << endl;
 		cout << LAMBDA_I << " " << LAMBDA_S << " " << T << " " << H_OMEGA << " " << dist_tot << " " << n_try << " " << endl;
+		cout << n_mini_grid_a << " " << n_mini_grid_b << " " << n_mini_grid_c << " " << n_charges << endl;
 		cout << F_norm << endl;		
 
 			for (int i=0; i<n_frame; i++){
@@ -527,49 +530,68 @@ void Calcul_V(bool print_results){
 	// Generate the vector
 	V.clear();
 	
+	V_test = new double********[n_frame];
+		
 	for (int i=0; i<n_frame; i++){
-		V.push_back( vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > () );					
+		//V.push_back( vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > () );	
+		
+		V_test[i] = new double*******[n_mol];
 		
 		for (int ii=0; ii<n_mol; ii++){
-			V[i].push_back( vector< vector< vector< vector< vector< vector< vector<double> > > > > > > () );
+			//V[i].push_back( vector< vector< vector< vector< vector< vector< vector<double> > > > > > > () );
+			
+			V_test[i][ii] = new double******[n_mol];
 			
 			CM_1_Cart[0] = CM_x[i][ii];
 			CM_1_Cart[1] = CM_y[i][ii];
 			CM_1_Cart[2] = CM_z[i][ii];
 			Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac_ref, i);
 			
-			for (int jj=ii+1; jj<n_mol; jj++){
-				V[i][ii].push_back( vector< vector< vector< vector< vector< vector<double> > > > > > () );
+			//for (int jj=ii+1; jj<n_mol; jj++){
+				//V[i][ii].push_back( vector< vector< vector< vector< vector< vector<double> > > > > > () );
+				
+			for (int jj=0; jj<n_mol; jj++){
+				V_test[i][ii][jj] = new double*****[n_mini_grid_a];
 				
 				CM_2_Cart[0] = CM_x[i][jj];
 				CM_2_Cart[1] = CM_y[i][jj];
 				CM_2_Cart[2] = CM_z[i][jj];
 				Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac_ref, i);
 				
-				for (int a1=0; a1<n_mini_grid_a; a1++){
-					V[i][ii][jj].push_back( vector< vector< vector< vector< vector<double> > > > > () );
+				for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){
+					//V[i][ii][jj].push_back( vector< vector< vector< vector< vector<double> > > > > () );
 					
-					for (int b1=0; b1<n_mini_grid_b; b1++){
-						V[i][ii][jj][a1].push_back( vector< vector< vector< vector<double> > > > () );
+					V_test[i][ii][jj][a_ii] = new double****[n_mini_grid_b];
+					
+					for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
+						//V[i][ii][jj][a_ii].push_back( vector< vector< vector< vector<double> > > > () );
 						
-						for (int c1=0; c1<n_mini_grid_c; c1++){
-							V[i][ii][jj][a1][b1].push_back( vector< vector< vector<double> > > () );
+						V_test[i][ii][jj][a_ii][b_ii] = new double***[n_mini_grid_c];
+						
+						for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){
+							//V[i][ii][jj][a_ii][b_ii].push_back( vector< vector< vector<double> > > () );
 							
-							CM_1_Frac[0] = CM_1_Frac_ref[0] + double(a1);
-							CM_1_Frac[1] = CM_1_Frac_ref[1] + double(b1);
-							CM_1_Frac[2] = CM_1_Frac_ref[2] + double(c1);
+							V_test[i][ii][jj][a_ii][b_ii][c_ii] = new double**[n_mini_grid_a];
 							
-							for (int a2; a2<n_mini_grid_a; a2++){
-								V[i][ii][jj][a1][b1][c1].push_back( vector< vector<double> > () );
+							CM_1_Frac[0] = CM_1_Frac_ref[0] + double(a_ii);
+							CM_1_Frac[1] = CM_1_Frac_ref[1] + double(b_ii);
+							CM_1_Frac[2] = CM_1_Frac_ref[2] + double(c_ii);
+							
+							for (int a_jj=0; a_jj<n_mini_grid_a; a_jj++){
+								//V[i][ii][jj][a_ii][b_ii][c_ii].push_back( vector< vector<double> > () );
 								
-								for (int b2; b2<n_mini_grid_b; b2++){
-									V[i][ii][jj][a1][b1][c1][a2].push_back( vector<double> () );
+								V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj] = new double*[n_mini_grid_b];
+								
+								for (int b_jj=0; b_jj<n_mini_grid_b; b_jj++){
+									//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj].push_back( vector<double> () );
 									
-									for (int c2; c2<n_mini_grid_c; c2++){
+									V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj] = new double[n_mini_grid_c];
+									
+									for (int c_jj=0; c_jj<n_mini_grid_c; c_jj++){
 																				
-										CM_2_Frac[0] = CM_2_Frac_ref[0] + double(a2);
-										CM_2_Frac[1] = CM_2_Frac_ref[1] + double(b2);
-										CM_2_Frac[2] = CM_2_Frac_ref[2] + double(c2);
+										CM_2_Frac[0] = CM_2_Frac_ref[0] + double(a_jj);
+										CM_2_Frac[1] = CM_2_Frac_ref[1] + double(b_jj);
+										CM_2_Frac[2] = CM_2_Frac_ref[2] + double(c_jj);
 										
 										Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
 										Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];
@@ -580,12 +602,20 @@ void Calcul_V(bool print_results){
 										DIST_2 = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
 										DIST = sqrt(DIST_2);
 										
-										if ( DIST_2 < CUTOFF_2){
-											V[i][ii][jj][a1][b1][c1][a2][b2].push_back( CST1/DIST );
+										if (ii == jj){
+											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = numeric_limits<double>::max();
+										}
+										
+										else if ( DIST_2 < CUTOFF_2){
+											//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj].push_back( CST1/DIST );
+											
+											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = CST1/DIST;
 										}
 										
 										else {
-											V[i][ii][jj][a1][b1][c1][a2][b2].push_back( 0.0 );
+											//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj].push_back( 0.0 );
+											
+											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = 0.0;
 										}
 									}
 								}
@@ -613,18 +643,19 @@ void Calcul_V(bool print_results){
 			cout << "frame " << i << endl;
 			
 			for (int ii=0; ii<n_mol; ii++){
-				cout << "molecules " << mol_label[ii];	
+				//cout << "molecules " << mol_label[ii];	
 				
-				for (int jj=ii+1; jj<n_mol; jj++){
-					cout << " and " << mol_label[jj] << endl;
+				//for (int jj=ii+1; jj<n_mol; jj++){
+				for (int jj=0; jj<n_mol; jj++){
+					cout << mol_label[ii] << " and " << mol_label[jj] << endl;
 					
-					for (int a1=0; a1<n_mini_grid_a; a1++){	
-						for (int b1=0; b1<n_mini_grid_b; b1++){
-							for (int c1=0; c1<n_mini_grid_c; c1++){				
-								for (int a2; a2<n_mini_grid_a; a2++){
-									for (int b2; b2<n_mini_grid_b; b2++){									
-										for (int c2; c2<n_mini_grid_c; c2++){
-											cout << a1 << " " << b1 << " " << c1 << " | " << a2 << " " << b2 << " " << c2 << " | " << V[i][ii][jj][a1][b1][c1][a2][b2][c2] << endl;
+					for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){							
+						for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
+							for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){				
+								for (int a_jj=0; a_jj<n_mini_grid_a; a_jj++){
+									for (int b_jj=0; b_jj<n_mini_grid_b; b_jj++){									
+										for (int c_jj=0; c_jj<n_mini_grid_c; c_jj++){
+											cout << a_ii << " " << b_ii << " " << c_ii << " | " << a_jj << " " << b_jj << " " << c_jj << " | " << V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] << endl;
 																					
 										}
 									}
@@ -688,12 +719,13 @@ double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp,
 	double dG0 = 0.0;	
 	double k_tmp = 0.0;
 	
+	// Calcul DeltaV
 	for (unsigned int charge_i = 0; charge_i<pos_a_tmp.size(); charge_i++){
 		if (charge_i < charge_i_tmp)
-			dV += V[i][curr_mol_tmp[charge_i]][curr_mol_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]];
+			dV += V_test[i][curr_mol_tmp[charge_i]][curr_mol_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]];
 		
 		else if (charge_i > charge_i_tmp)
-			dV += V[i][curr_mol_tmp[charge_i_tmp]][curr_mol_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]];
+			dV += V_test[i][curr_mol_tmp[charge_i_tmp]][curr_mol_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]];
 	
 		//else
 		//	pass;
@@ -707,7 +739,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp,
 	if (charge.compare("h") == 0)
 		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
 		
-	dG0 = dG0 + dE_tmp;
+	dG0 = dG0 + dE_tmp + dV;
 	
 	for (int n=0; n<50; n++){
 		k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
@@ -1278,7 +1310,7 @@ int main(int argc, char **argv){
 	Calcul_DeltaE(false);
 	
 	// Calculates the electrostatic interactions for the grid
-	Calcul_V(false);
+	Calcul_V(true);
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
@@ -1287,7 +1319,7 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > dE_ref = dE;
 	
 	for (int i=90; i<91; i=i+15){
-		for (int j=0; j<360; j=j+15){
+		for (int j=0; j<1; j=j+15){
 			
 			cout << "[INFO] Running simulation for phi = " << j << endl;
 			
@@ -1341,6 +1373,33 @@ int main(int argc, char **argv){
 	}
 	
 	V.clear();
+	
+	
+	for (int i=0; i<n_frame; i++){
+		for (int ii=0; ii<n_mol; ii++){
+			for (int jj=ii+1; jj<n_mol; jj++){
+				for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){
+					for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
+						for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){
+							for (int a_jj; a_jj<n_mini_grid_a; a_jj++){
+								for (int b_jj; b_jj<n_mini_grid_b; b_jj++){
+									delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj];
+								}
+								delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj];
+							}
+							delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii];
+						}
+						delete [] V_test[i][ii][jj][a_ii][b_ii];
+					}
+					delete [] V_test[i][ii][jj][a_ii];
+				}
+				delete [] V_test[i][ii][jj];
+			}
+			delete [] V_test[i][ii];
+		}
+		delete [] V_test[i];
+	}
+	delete [] V_test;
 	
 	// Get stop time
 	t_stop = time(NULL);

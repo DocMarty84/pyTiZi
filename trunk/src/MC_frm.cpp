@@ -593,7 +593,7 @@ void Inverse_Clear_k(bool print_results){
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				
 				if (k[i][ii][jj] < 1E+08)
-					k_inv[i][ii].push_back(numeric_limits<double>::max());
+					k_inv[i][ii].push_back(numeric_limits<double>::min());
 				else
 					k_inv[i][ii].push_back(1.0/k[i][ii][jj]);
 			}
