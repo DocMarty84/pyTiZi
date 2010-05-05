@@ -40,8 +40,6 @@ const double EPSILON_0 = (8.854187817e-12/(1e-10))*(1.602176487e-19) ; //Epsilon
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double PI = 3.141592653589793;
 
-vector< vector<double> > CM_x, CM_y, CM_z; // Center of masses
-
 bool pbc[3]; // Periodic boundary conditions
 vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg; // Cell parameters
 vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, temp_gamma_cos, temp_beta_term, temp_gamma_term; // Parameters for fractional coordinates
@@ -50,32 +48,29 @@ int n_frame, n_mol; // Number of frame and molecule
 double snap_delay;
 double LAMBDA_I, LAMBDA_S, T, H_OMEGA, dist_tot;
 unsigned int n_try, n_charges;
+int n_mini_grid_a, n_mini_grid_b, n_mini_grid_c;
 double F_norm;
-vector<int> mol_label;
-vector< vector< vector<int> > > neigh_label;
-vector< vector< vector<double> > > J_H;
-vector< vector< vector<double> > > J_L;
+string charge;
 
+vector<int> mol_label;
+vector< vector<double> > CM_x, CM_y, CM_z; // Center of masses
 vector< vector<double> > E_0, E_1;
 
+vector<int> box_a, box_b, box_c; // Position of the mini-grids
+vector< vector<bool> > grid_occ;
+vector< vector<int> > box_neigh_a, box_neigh_b, box_neigh_c, box_neigh_label; // Neighbor of each mini-grid
+
+vector< vector< vector<int> > > neigh_label;
 vector< vector< vector<double> > > d_x, d_y, d_z;
 vector< vector< vector<double> > > dE;
+vector< vector< vector<double> > > J_H, J_L;
+vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
 vector< vector< vector<double> > > k, k_inv;
+
 vector< vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > > V;
-double *********V_test;
-string charge;
 
 double theta_deg, phi_deg, theta_rad, phi_rad;
 double F_x, F_y, F_z;
-
-int n_mini_grid_a;
-int n_mini_grid_b;
-int n_mini_grid_c;
-
-// Vector for the change in mini-grid
-vector< vector< vector<int> > > neigh_jump_vec_a;
-vector< vector< vector<int> > > neigh_jump_vec_b;
-vector< vector< vector<int> > > neigh_jump_vec_c;
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -379,10 +374,6 @@ void Calcul_Dist(bool print_results){
 	Dist_Frac = new double[3];
 	vec = new double[3];
 	
-	vector< vector< vector<int> > > neigh_jump_vec_a;
-	vector< vector< vector<int> > > neigh_jump_vec_b;
-	vector< vector< vector<int> > > neigh_jump_vec_c;
-	
 	d_x.clear(); d_y.clear(); d_z.clear();
 	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();
 	
@@ -508,168 +499,65 @@ void Calcul_DeltaE(bool print_results){
 	}
 }
 
-void Calcul_V(bool print_results){
-	
+double Calcul_DeltaV(int i, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_grid_tmp){
+		
 	const double CST1 = 1.0/(4.0*PI*EPSILON_0*EPSILON_R);
 	
 	const double CUTOFF = 100; //Cutoff in Angstrom
 	const double CUTOFF_2 = pow(CUTOFF,2); //Cutoff in Angstrom
 	
-	double DIST, DIST_2;
+	double DIST, DIST_2, V_electro = 0.0;
 	
-	double *CM_1_Cart, *CM_1_Frac, *CM_1_Frac_ref, *CM_2_Cart, *CM_2_Frac, *CM_2_Frac_ref, *Dist_Cart, *Dist_Frac;
+	double *CM_1_Cart, *CM_1_Frac, *CM_2_Cart, *CM_2_Frac, *Dist_Cart, *Dist_Frac;
 	CM_1_Cart = new double[3];
 	CM_1_Frac = new double[3];
-	CM_1_Frac_ref = new double[3];
 	CM_2_Cart = new double[3];
 	CM_2_Frac = new double[3];
-	CM_2_Frac_ref = new double[3];
 	Dist_Cart = new double[3];
 	Dist_Frac = new double[3];
 	
-	// Generate the vector
-	V.clear();
+	CM_1_Cart[0] = CM_x[i][curr_mol_tmp[charge_i_tmp]];
+	CM_1_Cart[1] = CM_y[i][curr_mol_tmp[charge_i_tmp]];
+	CM_1_Cart[2] = CM_z[i][curr_mol_tmp[charge_i_tmp]];
+	Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac, i);
 	
-	V_test = new double********[n_frame];
-		
-	for (int i=0; i<n_frame; i++){
-		//V.push_back( vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > () );	
-		
-		V_test[i] = new double*******[n_mol];
-		
-		for (int ii=0; ii<n_mol; ii++){
-			//V[i].push_back( vector< vector< vector< vector< vector< vector< vector<double> > > > > > > () );
+	CM_1_Frac[0] += double(box_a[curr_grid_tmp[charge_i_tmp]]);
+	CM_1_Frac[1] += double(box_b[curr_grid_tmp[charge_i_tmp]]);
+	CM_1_Frac[2] += double(box_c[curr_grid_tmp[charge_i_tmp]]);
+	
+	for (unsigned int charge_i = 0; charge_i < curr_mol_tmp.size(); charge_i++){
+		if (charge_i != charge_i_tmp){
+			CM_2_Cart[0] = CM_x[i][curr_mol_tmp[charge_i]];
+			CM_2_Cart[1] = CM_y[i][curr_mol_tmp[charge_i]];
+			CM_2_Cart[2] = CM_z[i][curr_mol_tmp[charge_i]];
+			Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac, i);
 			
-			V_test[i][ii] = new double******[n_mol];
+			CM_2_Frac[0] += double(box_a[curr_grid_tmp[charge_i]]);
+			CM_2_Frac[1] += double(box_b[curr_grid_tmp[charge_i]]);
+			CM_2_Frac[2] += double(box_c[curr_grid_tmp[charge_i]]);
 			
-			CM_1_Cart[0] = CM_x[i][ii];
-			CM_1_Cart[1] = CM_y[i][ii];
-			CM_1_Cart[2] = CM_z[i][ii];
-			Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac_ref, i);
+			Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
+			Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];
+			Dist_Frac[2] = CM_2_Frac[2] - CM_1_Frac[2];
+			Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
 			
-			//for (int jj=ii+1; jj<n_mol; jj++){
-				//V[i][ii].push_back( vector< vector< vector< vector< vector< vector<double> > > > > > () );
-				
-			for (int jj=0; jj<n_mol; jj++){
-				V_test[i][ii][jj] = new double*****[n_mini_grid_a];
-				
-				CM_2_Cart[0] = CM_x[i][jj];
-				CM_2_Cart[1] = CM_y[i][jj];
-				CM_2_Cart[2] = CM_z[i][jj];
-				Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac_ref, i);
-				
-				for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){
-					//V[i][ii][jj].push_back( vector< vector< vector< vector< vector<double> > > > > () );
-					
-					V_test[i][ii][jj][a_ii] = new double****[n_mini_grid_b];
-					
-					for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
-						//V[i][ii][jj][a_ii].push_back( vector< vector< vector< vector<double> > > > () );
-						
-						V_test[i][ii][jj][a_ii][b_ii] = new double***[n_mini_grid_c];
-						
-						for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){
-							//V[i][ii][jj][a_ii][b_ii].push_back( vector< vector< vector<double> > > () );
-							
-							V_test[i][ii][jj][a_ii][b_ii][c_ii] = new double**[n_mini_grid_a];
-							
-							CM_1_Frac[0] = CM_1_Frac_ref[0] + double(a_ii);
-							CM_1_Frac[1] = CM_1_Frac_ref[1] + double(b_ii);
-							CM_1_Frac[2] = CM_1_Frac_ref[2] + double(c_ii);
-							
-							for (int a_jj=0; a_jj<n_mini_grid_a; a_jj++){
-								//V[i][ii][jj][a_ii][b_ii][c_ii].push_back( vector< vector<double> > () );
-								
-								V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj] = new double*[n_mini_grid_b];
-								
-								for (int b_jj=0; b_jj<n_mini_grid_b; b_jj++){
-									//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj].push_back( vector<double> () );
-									
-									V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj] = new double[n_mini_grid_c];
-									
-									for (int c_jj=0; c_jj<n_mini_grid_c; c_jj++){
-																				
-										CM_2_Frac[0] = CM_2_Frac_ref[0] + double(a_jj);
-										CM_2_Frac[1] = CM_2_Frac_ref[1] + double(b_jj);
-										CM_2_Frac[2] = CM_2_Frac_ref[2] + double(c_jj);
-										
-										Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
-										Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];
-										Dist_Frac[2] = CM_2_Frac[2] - CM_1_Frac[2];
-										
-										Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
-										
-										DIST_2 = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
-										DIST = sqrt(DIST_2);
-										
-										if (ii == jj){
-											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = numeric_limits<double>::max();
-										}
-										
-										else if ( DIST_2 < CUTOFF_2){
-											//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj].push_back( CST1/DIST );
-											
-											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = CST1/DIST;
-										}
-										
-										else {
-											//V[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj].push_back( 0.0 );
-											
-											V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] = 0.0;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			DIST_2 = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
+			DIST = sqrt(DIST_2);
+			
+			if (DIST_2 > CUTOFF_2)
+				V_electro += CST1/DIST;
 		}
 	}
-		
+	
 	delete [] CM_1_Cart;
 	delete [] CM_1_Frac;
-	delete [] CM_1_Frac_ref;
 	delete [] CM_2_Cart;
 	delete [] CM_2_Frac;
-	delete [] CM_2_Frac_ref;
 	delete [] Dist_Cart;
 	delete [] Dist_Frac;
 	
-	// Print part
-	if (print_results){
-
-		for (int i=0; i<n_frame; i++){
-			cout << "frame " << i << endl;
-			
-			for (int ii=0; ii<n_mol; ii++){
-				//cout << "molecules " << mol_label[ii];	
-				
-				//for (int jj=ii+1; jj<n_mol; jj++){
-				for (int jj=0; jj<n_mol; jj++){
-					cout << mol_label[ii] << " and " << mol_label[jj] << endl;
-					
-					for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){							
-						for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
-							for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){				
-								for (int a_jj=0; a_jj<n_mini_grid_a; a_jj++){
-									for (int b_jj=0; b_jj<n_mini_grid_b; b_jj++){									
-										for (int c_jj=0; c_jj<n_mini_grid_c; c_jj++){
-											cout << a_ii << " " << b_ii << " " << c_ii << " | " << a_jj << " " << b_jj << " " << c_jj << " | " << V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj][c_jj] << endl;
-																					
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+	return V_electro;
 }
-
-
 
 // =============================================================================
 // ------------------- Physical parameters between neighbors -------------------
@@ -708,7 +596,7 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 	
 }
 
-double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, vector<int> curr_mol_tmp, vector<int> pos_a_tmp, vector<int> pos_b_tmp, vector<int> pos_c_tmp, unsigned int charge_i_tmp){
+double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, vector<int> curr_mol_tmp, vector<int> curr_grid_tmp, unsigned int charge_i_tmp){
 	
 	double S, CST1, CST2;
 	S = LAMBDA_I/H_OMEGA;
@@ -720,17 +608,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, double d_x_tmp, double d_y_tmp,
 	double k_tmp = 0.0;
 	
 	// Calcul DeltaV
-	for (unsigned int charge_i = 0; charge_i<pos_a_tmp.size(); charge_i++){
-		if (charge_i < charge_i_tmp)
-			dV += V_test[i][curr_mol_tmp[charge_i]][curr_mol_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]];
-		
-		else if (charge_i > charge_i_tmp)
-			dV += V_test[i][curr_mol_tmp[charge_i_tmp]][curr_mol_tmp[charge_i]][pos_a_tmp[charge_i_tmp]][pos_b_tmp[charge_i_tmp]][pos_c_tmp[charge_i_tmp]][pos_a_tmp[charge_i]][pos_b_tmp[charge_i]][pos_c_tmp[charge_i]];
-	
-		//else
-		//	pass;
-	
-	}
+	dV = Calcul_DeltaV(i, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
 	
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -863,6 +741,54 @@ void Inverse_Clear_k(bool print_results){
 }
 
 // =============================================================================
+// ------------------------------- Grid building -------------------------------
+// =============================================================================
+
+void Build_Grid(bool print_results) {
+	
+	int n_grid = n_mini_grid_a*n_mini_grid_b*n_mini_grid_c;
+	
+	for (int a=0; a<n_mini_grid_a; a++){
+		for (int b=0; b<n_mini_grid_b; b++){
+			for (int c=0; c<n_mini_grid_c; c++){
+				box_a.push_back(a);
+				box_b.push_back(b);
+				box_c.push_back(c);
+
+			}
+		}
+	}
+	
+	for (int x=0; x<n_grid; x++){
+		box_neigh_label.push_back( vector< int > () );
+		box_neigh_a.push_back( vector< int > () );
+		box_neigh_b.push_back( vector< int > () );
+		box_neigh_c.push_back( vector< int > () );
+		
+		for (int y=0; y<n_grid; y++){
+			if ((abs(box_a[y]-box_a[x]) == 1 && abs(box_b[y]-box_b[x]) == 0 && abs(box_c[y]-box_c[x]) == 0) || (abs(box_a[y]-box_a[x]) == 0 && abs(box_b[y]-box_b[x]) == 1 && abs(box_c[y]-box_c[x]) == 0) || (abs(box_a[y]-box_a[x]) == 0 && abs(box_b[y]-box_b[x]) == 0 && abs(box_c[y]-box_c[x]) == 1)){
+				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
+				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
+				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
+				box_neigh_label[x].push_back( y );
+				
+			}
+		}
+	}
+	
+	if (print_results){
+		
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			cout << "mini-grid " << x << endl;			
+			for (unsigned int xx=0; xx<box_neigh_label[x].size(); xx++){
+				cout << box_neigh_label[x][xx] << " " << box_neigh_a[x][xx] << " " << box_neigh_b[x][xx] << " " << box_neigh_c[x][xx] << endl;
+			}
+		}
+	}
+}
+
+
+// =============================================================================
 // --------------------------------- Print part --------------------------------
 // =============================================================================
 
@@ -922,9 +848,9 @@ int Choose_Mol_RND(int frame){
 	return mol;
 }
 
-void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid_occ, int *pos){ 
+void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
-	int pos_a, pos_b, pos_c, mol; 
+	int pos_a, pos_b, pos_c, mol, box; 
 	
 	//double k_sum;
 	
@@ -939,25 +865,26 @@ void Dispatch_Mol_RND(int frame, vector< vector< vector< vector<bool> > > > grid
 		//for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
 		//	k_sum = k_sum + k_inv[frame][mol][jj];
 		//}
+		
+		// Find the number of the corresponding mini-grid
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			if (pos_a == box_a[x] && pos_b == box_b[x] && pos_c == box_c[x]){
+				box = x;
+				break;
+			}
+		}
 	}
-	while(neigh_label[frame][mol].size() == 0 || grid_occ[pos_a][pos_b][pos_c][mol] == true);
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
 	
-	pos[0] = pos_a;
-	pos[1] = pos_b;
-	pos[2] = pos_c;
-	pos[3] = mol;
-	
+	pos[0] = mol;
+	pos[1] = box;
 }
 
 // BKL algorithm
 void MC_BKL(string output_folder){
 	
-	// Grid of charges
-	vector< vector< vector< vector<bool> > > > grid_occ;
-	
 	// Variables for each charge
-	vector<int> pos_a, pos_b, pos_c; // Position in the grid
-	vector<int> curr_mol; // Number of the molecule in the mini-grid
+	vector<int> curr_mol, curr_grid; // Number of the molecule in the mini-grid, and number of this mini-grid
 	vector<double> dist, jump; // Distance and number of jumps for each charge
 	
 	// Variables for a chosen event
@@ -1004,37 +931,28 @@ void MC_BKL(string output_folder){
 			// Generate the grid
 			grid_occ.clear();
 					
-			for (int a=0; a<n_mini_grid_a; a++){
-				grid_occ.push_back( vector< vector< vector<bool> > > ());
+			for (int ii=0; ii<n_mol; ii++){
+				grid_occ.push_back( vector<bool> ());
 				
-				for (int b=0; b<n_mini_grid_b; b++){
-					grid_occ[a].push_back( vector< vector<bool> > ());
-				
-					for (int c=0; c<n_mini_grid_c; c++){
-						grid_occ[a][b].push_back( vector<bool> ());
-				
-						for (int n=0; n<n_mol; n++){
-							grid_occ[a][b][c].push_back( false );
-				
-						}
-					}
+				for (unsigned int x=0; x<box_neigh_label.size(); x++){
+					grid_occ[ii].push_back( false );
 				}
 			}
 
 			// Put the charges in the grid
-			pos_a.clear(); pos_b.clear(); pos_c.clear();
 			curr_mol.clear();
-
+			curr_grid.clear();
 			int *pos;
-			pos = new int[4];
-			for (unsigned int charge_i; charge_i<n_charges; charge_i++){
+			pos = new int[2];
+			
+			for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
 				Dispatch_Mol_RND(i, grid_occ, pos);
 				
-				pos_a.push_back(pos[0]);
-				pos_b.push_back(pos[1]);
-				pos_c.push_back(pos[2]);
-				curr_mol.push_back(pos[3]);
+				curr_mol.push_back(pos[0]);
+				curr_grid.push_back(pos[1]);
+				grid_occ[pos[0]][pos[1]] = true;
 			}
+			
 			delete [] pos;
 
 			// Set distances, number of jumps and the travel time to zero
@@ -1043,7 +961,7 @@ void MC_BKL(string output_folder){
 			
 			dist.clear();
 			jump.clear(); 
-			for (unsigned int charge_i; charge_i<n_charges; charge_i++){
+			for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
 				dist.push_back(0.0);
 				jump.push_back(0.0);
 			}
@@ -1062,9 +980,9 @@ void MC_BKL(string output_folder){
 					event_mol_init.clear();
 					event_mol_fin.clear();
 					
-					for (unsigned int charge_i; charge_i<curr_mol.size(); charge_i++){
+					for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
 						for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
-							double k_tmp = Marcus_Levich_Jortner_rate_electro(i, d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], curr_mol, pos_a, pos_b, pos_c, charge_i);
+							double k_tmp = Marcus_Levich_Jortner_rate_electro(i, d_x[i][curr_mol[charge_i]][jj], d_y[i][curr_mol[charge_i]][jj], d_z[i][curr_mol[charge_i]][jj], dE[i][curr_mol[charge_i]][jj], J_H[i][curr_mol[charge_i]][jj], J_L[i][curr_mol[charge_i]][jj], curr_mol, curr_grid, charge_i);
 							
 							event_k.push_back(k_tmp);
 							event_mol_init.push_back(charge_i);
@@ -1091,25 +1009,47 @@ void MC_BKL(string output_folder){
 				double partial_sum_k = 0.0;
 				
 				// Find this event in the list
-				
 				for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
 					partial_sum_k += event_k[event];
 					
 					if (partial_sum_k > random_k){
 						
+						// =======================================
+						//
+						// Summary of variables:
+						// ---------------------
+						//
+						// event_mol_init[event]: index of the charge of the event (= charge_i)
+						// event_mol_fin[event]: index of the neighbor of the molecule where the chosen charge is (= jj)
+						// curr_mol[event_mol_init[event]]: index of the molecule where the chosen charge is (= ii)
+						// curr_grid[event_mol_init[event]]: index of the mini-grid where the chosen charge is (= x)
+						//
+						// =======================================
+				
+				
 						// Calculate the new position in the grid
-						int tmp_pos_a = pos_a[event_mol_init[event]] + neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
-						int tmp_pos_b = pos_b[event_mol_init[event]] + neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
-						int tmp_pos_c = pos_c[event_mol_init[event]] + neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]];
+						int tmp_curr_mol = 0; // Expected final molecule index
+						int tmp_curr_grid = 0; // Expected final mini-grid index
+						bool out_of_system = true;
 						
-						// No PBC in this case
-						//tmp_pos_a = tmp_pos_a % n_mini_grid_a;
-						//tmp_pos_b = tmp_pos_b % n_mini_grid_b;
-						//tmp_pos_c = tmp_pos_c % n_mini_grid_c;
+						// Find next mini-grid
+						if (neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == 0 && neigh_jump_vec_b[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == 0 && neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == 0){
+							tmp_curr_grid = curr_grid[event_mol_init[event]];
+							out_of_system = false;
+						}
 						
-						// Search the corresponding next molecule
-						int tmp_curr_mol = 0;
-						for (int ii=0; ii<n_mol; ii++){
+						else {
+							for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_mol_init[event]]].size(); xx++){
+								if (neigh_jump_vec_a[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == box_neigh_a[curr_grid[event_mol_init[event]]][xx] && neigh_jump_vec_b[i][curr_grid[event_mol_init[event]]][event_mol_fin[event]] == box_neigh_b[curr_grid[event_mol_init[event]]][xx] && neigh_jump_vec_c[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == box_neigh_c[curr_grid[event_mol_init[event]]][xx]){
+									tmp_curr_grid = box_neigh_label[curr_grid[event_mol_init[event]]][xx];
+									out_of_system = false;
+									break;
+								}
+							}
+						}
+						
+						// Find next molecule
+						for (int ii=0; ii<n_mol && out_of_system == false; ii++){
 							if (neigh_label[i][curr_mol[event_mol_init[event]]][event_mol_fin[event]] == mol_label[ii]){
 								tmp_curr_mol = ii;
 								break;
@@ -1117,13 +1057,13 @@ void MC_BKL(string output_folder){
 						}
 						
 						// Do not jump if the charge goes out of the system
-						if (tmp_pos_a < 0 || tmp_pos_b < 0 || tmp_pos_c < 0){
+						if (out_of_system){
 							previous_jump_ok = false;
 							exit_loop = true;
 						}
 						
 						// Do not jump if the next molecule is occupied
-						else if (grid_occ[abs(tmp_pos_a)][abs(tmp_pos_b)][abs(tmp_pos_c)][tmp_curr_mol] == true){
+						else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
 							previous_jump_ok = false;
 							exit_loop = true;
 						}
@@ -1142,26 +1082,23 @@ void MC_BKL(string output_folder){
 							jump[event_mol_init[event]] += 1.0;
 							
 							// Set the occupancy of the grid
-							grid_occ[pos_a[event_mol_init[event]]][pos_b[event_mol_init[event]]][pos_c[event_mol_init[event]]][curr_mol[event_mol_init[event]]] = false;
+							grid_occ[curr_mol[event_mol_init[event]]][curr_grid[event_mol_init[event]]] = false;
 							
 							// Set the new position in the grid from temp values
-							pos_a[event_mol_init[event]] = tmp_pos_a;
-							pos_b[event_mol_init[event]] = tmp_pos_b;
-							pos_c[event_mol_init[event]] = tmp_pos_c;
+							curr_grid[event_mol_init[event]] = tmp_curr_grid;
 							curr_mol[event_mol_init[event]] = tmp_curr_mol;
 							
-							// Check if the charge arrived at the end of the grid
-							if (pos_a[event_mol_init[event]] >= n_mini_grid_a){
+							// Check if the charge reached the end of the grid
+							if (box_a[event_mol_init[event]] >= n_mini_grid_a){
 								
 								// The charge is removed
-								pos_a.erase(pos_a.begin()+event_mol_init[event]);
-								pos_b.erase(pos_b.begin()+event_mol_init[event]);
-								pos_c.erase(pos_c.begin()+event_mol_init[event]);
 								curr_mol.erase(curr_mol.begin()+event_mol_init[event]);
+								curr_grid.erase(curr_grid.begin()+event_mol_init[event]);
 								
 							}
+							
 							else{
-								grid_occ[pos_a[event_mol_init[event]]][pos_b[event_mol_init[event]]][pos_c[event_mol_init[event]]][curr_mol[event_mol_init[event]]] = true;
+								grid_occ[curr_mol[event_mol_init[event]]][curr_grid[event_mol_init[event]]] = true;
 							}
 							
 							previous_jump_ok = true;
@@ -1310,7 +1247,10 @@ int main(int argc, char **argv){
 	Calcul_DeltaE(false);
 	
 	// Calculates the electrostatic interactions for the grid
-	Calcul_V(true);
+	//Calcul_V(true);
+	
+	// Build the grid
+	Build_Grid(true);
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
@@ -1372,34 +1312,7 @@ int main(int argc, char **argv){
 		}
 	}
 	
-	V.clear();
-	
-	
-	for (int i=0; i<n_frame; i++){
-		for (int ii=0; ii<n_mol; ii++){
-			for (int jj=ii+1; jj<n_mol; jj++){
-				for (int a_ii=0; a_ii<n_mini_grid_a; a_ii++){
-					for (int b_ii=0; b_ii<n_mini_grid_b; b_ii++){
-						for (int c_ii=0; c_ii<n_mini_grid_c; c_ii++){
-							for (int a_jj; a_jj<n_mini_grid_a; a_jj++){
-								for (int b_jj; b_jj<n_mini_grid_b; b_jj++){
-									delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj][b_jj];
-								}
-								delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii][a_jj];
-							}
-							delete [] V_test[i][ii][jj][a_ii][b_ii][c_ii];
-						}
-						delete [] V_test[i][ii][jj][a_ii][b_ii];
-					}
-					delete [] V_test[i][ii][jj][a_ii];
-				}
-				delete [] V_test[i][ii][jj];
-			}
-			delete [] V_test[i][ii];
-		}
-		delete [] V_test[i];
-	}
-	delete [] V_test;
+	//V.clear();
 	
 	// Get stop time
 	t_stop = time(NULL);
