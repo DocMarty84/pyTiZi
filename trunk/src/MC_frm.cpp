@@ -562,6 +562,10 @@ void Full_Matrix(){
 						d_y[i][ii].insert(d_y[i][ii].begin(), -d_y[i][ll][jj]);
 						d_z[i][ii].insert(d_z[i][ii].begin(), -d_z[i][ll][jj]);
 						
+						neigh_jump_vec_a[i][ii].insert(neigh_jump_vec_a[i][ii].begin(), -neigh_jump_vec_a[i][ll][jj]);
+						neigh_jump_vec_b[i][ii].insert(neigh_jump_vec_b[i][ii].begin(), -neigh_jump_vec_b[i][ll][jj]);
+						neigh_jump_vec_c[i][ii].insert(neigh_jump_vec_c[i][ii].begin(), -neigh_jump_vec_c[i][ll][jj]);
+						
 						dE[i][ii].insert(dE[i][ii].begin(), -dE[i][ll][jj]);
 						
 						J_H[i][ii].insert(J_H[i][ii].begin(), J_H[i][ll][jj]);
@@ -906,6 +910,7 @@ int main(int argc, char **argv){
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
+	vector< vector< vector<int> > > neigh_jump_vec_a_ref = neigh_jump_vec_a, neigh_jump_vec_b_ref = neigh_jump_vec_b, neigh_jump_vec_c_ref = neigh_jump_vec_c;
 	vector< vector< vector<double> > > J_H_ref = J_H, J_L_ref = J_L;
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
 	vector< vector< vector<double> > > dE_ref = dE;
@@ -952,6 +957,9 @@ int main(int argc, char **argv){
 			
 			// Clear everything (not necessary) and set to reference values
 			neigh_label.clear(); neigh_label = neigh_label_ref;
+			neigh_jump_vec_a.clear(); neigh_jump_vec_a = neigh_jump_vec_a_ref;
+			neigh_jump_vec_b.clear(); neigh_jump_vec_b = neigh_jump_vec_b_ref;
+			neigh_jump_vec_c.clear(); neigh_jump_vec_c = neigh_jump_vec_c_ref;
 			J_H.clear(); J_H = J_H_ref;
 			J_L.clear(); J_L = J_L_ref;
 			d_x.clear(); d_x = d_x_ref;
