@@ -36,7 +36,8 @@ using namespace std;
 
 const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
 const double H_BAR = 6.58211899e-16; // h/2PI in eV
-const double EPSILON_0 = (8.854187817e-12/(1e-10))*(1.602176487e-19) ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
+//const double EPSILON_0 = (8.854187817e-12/(1e-10))*(1.602176487e-19) ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
+const double EPSILON_0 = 55.3e-4 ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double PI = 3.141592653589793;
 
@@ -638,7 +639,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	double k_tmp = 0.0;
 	
 	// Calcul DeltaV
-	dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
+	//dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
 
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -800,7 +801,7 @@ void Build_Grid(bool print_results) {
 		box_neigh_c.push_back( vector< int > () );
 		
 		for (int y=0; y<n_grid; y++){
-			if ((abs(box_a[y]-box_a[x]) == 1 && abs(box_b[y]-box_b[x]) == 0 && abs(box_c[y]-box_c[x]) == 0) || (abs(box_a[y]-box_a[x]) == 0 && abs(box_b[y]-box_b[x]) == 1 && abs(box_c[y]-box_c[x]) == 0) || (abs(box_a[y]-box_a[x]) == 0 && abs(box_b[y]-box_b[x]) == 0 && abs(box_c[y]-box_c[x]) == 1)){
+			if ((abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) && (abs(box_a[y]-box_a[x]) != 0 || abs(box_b[y]-box_b[x]) != 0 || abs(box_c[y]-box_c[x]) != 0)){
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
 				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
@@ -962,6 +963,9 @@ void MC_BKL(string output_folder){
 				
 		for (unsigned int charge_try=0; charge_try<n_try; charge_try++){
 			
+			cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << charge_try+1 << "/" << n_try << endl;
+
+			
 			// Generate the grid
 			grid_occ.clear();
 					
@@ -1036,7 +1040,7 @@ void MC_BKL(string output_folder){
 							if (tmp_neigh_index != tmp_mol_index){
 								k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
 							}
-							
+
 							event_k.push_back(k_tmp);
 							event_charge.push_back(charge_i);
 							event_mol_index.push_back(tmp_mol_index);
@@ -1065,12 +1069,8 @@ void MC_BKL(string output_folder){
 				// Find this event in the list
 				for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
 					partial_sum_k += event_k[event];
-					printf("%e/%e\n", partial_sum_k, random_k);
-					//cout << partial_sum_k << "/" << random_k << endl;
 					
 					if (partial_sum_k > random_k){
-						
-						cout << "jump ok " << event << endl;
 						
 						// =======================================
 						//
@@ -1085,28 +1085,32 @@ void MC_BKL(string output_folder){
 						//
 						// =======================================
 				
-				
 						// Calculate the new position in the grid
 						int tmp_curr_mol = 0; // Expected final molecule index
 						int tmp_curr_grid = 0; // Expected final mini-grid index
+						int tmp_curr_grid_a = 0;
 						bool out_of_system = true;
 						
 						// Find next mini-grid
 						if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
 							tmp_curr_grid = curr_grid[event_charge[event]];
+							tmp_curr_grid_a = box_a[tmp_curr_grid];
 							out_of_system = false;
+							
 						}
 						
 						else {
 							for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_charge[event]]].size(); xx++){
-								if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][curr_grid[event_charge[event]]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
+								if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
 									tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
+									tmp_curr_grid_a = box_a[tmp_curr_grid];
 									out_of_system = false;
 									break;
 								}
+								
 							}
 						}
-						
+							
 						// Find next molecule
 						tmp_curr_mol = event_neigh_index[event];
 						//for (int ii=0; ii<n_mol && out_of_system == false; ii++){
@@ -1120,12 +1124,14 @@ void MC_BKL(string output_folder){
 						if (out_of_system){
 							previous_jump_ok = false;
 							exit_loop = true;
+							//printf("out of system\n");
 						}
 						
 						// Do not jump if the next molecule is occupied
 						else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
 							previous_jump_ok = false;
 							exit_loop = true;
+							//printf("occupied\n");
 						}
 						
 						else{
@@ -1137,7 +1143,7 @@ void MC_BKL(string output_folder){
 							double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
 							dist[event_charge[event]] += event_dist;
 							total_dist_try.back() += event_dist;
-							
+												
 							// Calculate the number of jumps for each charge
 							jump[event_charge[event]] += 1.0;
 							
@@ -1149,7 +1155,7 @@ void MC_BKL(string output_folder){
 							curr_mol[event_charge[event]] = tmp_curr_mol;
 							
 							// Check if the charge reached the end of the grid
-							if (box_a[event_charge[event]] >= n_mini_grid_a){
+							if (tmp_curr_grid_a >= n_mini_grid_a-1){
 								
 								// The charge is removed
 								curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -1158,7 +1164,7 @@ void MC_BKL(string output_folder){
 							}
 							
 							else{
-								grid_occ[event_mol_index[event]][curr_grid[event_charge[event]]] = true;
+								grid_occ[tmp_curr_mol][tmp_curr_grid] = true;
 							}
 							
 							previous_jump_ok = true;
@@ -1320,7 +1326,7 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > dE_ref = dE;				
 		
 	for (int i=90; i<91; i=i+15){
-		for (int j=0; j<1; j=j+15){
+		for (int j=180; j<181; j=j+15){
 			
 			cout << "[INFO] Running simulation for phi = " << j << endl;
 			
