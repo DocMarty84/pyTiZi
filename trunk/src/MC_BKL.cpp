@@ -36,8 +36,7 @@ using namespace std;
 
 const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
 const double H_BAR = 6.58211899e-16; // h/2PI in eV
-//const double EPSILON_0 = (8.854187817e-12/(1e-10))*(1.602176487e-19) ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
-const double EPSILON_0 = 55.3e-4 ; //Epsilon_0 (Vacuum permittivity in A.s/(V.cm))
+const double EPSILON_0 = (0.5)*(137.035999084)*(1/4.13566733e-15)*(1/299792458e10) ; //Epsilon_0 (Vacuum permittivity in e/(V.Ang))
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double PI = 3.141592653589793;
 
@@ -639,7 +638,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	double k_tmp = 0.0;
 	
 	// Calcul DeltaV
-	//dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
+	dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
 
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -647,7 +646,9 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 		
 	if (charge.compare("h") == 0)
 		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
-		
+	
+	//printf("%e %e\n", dG0, dV);	
+	
 	dG0 = dG0 + dE_tmp + dV;
 	
 	for (int n=0; n<50; n++){
@@ -890,7 +891,8 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 	//double k_sum;
 	
 	do {
-		pos_a = rand()%n_mini_grid_a;
+		//pos_a = rand()%n_mini_grid_a;
+		pos_a = 0;
 		pos_b = rand()%n_mini_grid_b;
 		pos_c = rand()%n_mini_grid_c;
 		mol = rand()%n_mol;
@@ -1186,7 +1188,7 @@ void MC_BKL(string output_folder){
 			fprintf(pFile,"Number of Charges = %d\n", n_charges);
 			fprintf(pFile,"Total Time = %e\n", total_time_try.back());
 			fprintf(pFile,"Total Distance = %e\n", total_dist_try.back());
-			fprintf(pFile,"Mu_try = %lf\n", total_dist_try.back()/(total_time_try.back()*F_norm));
+			fprintf(pFile,"Mu_try = %lf\n", total_dist_try.back()/(double(n_charges)*total_time_try.back()*F_norm));
 			fclose(pFile);			
 
 		}
@@ -1203,7 +1205,7 @@ void MC_BKL(string output_folder){
 		total_time_av = total_time_av/dbl_n_try;
 		total_dist_av = total_dist_av/dbl_n_try;
 		
-		mu_frame.push_back(total_dist_av/(total_time_av*F_norm));
+		mu_frame.push_back(total_dist_av/(double(n_charges)*total_time_av*F_norm));
 
 		// Writes a summary for the frame
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
@@ -1326,7 +1328,7 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > dE_ref = dE;				
 		
 	for (int i=90; i<91; i=i+15){
-		for (int j=180; j<181; j=j+15){
+		for (int j=0; j<1; j=j+15){
 			
 			cout << "[INFO] Running simulation for phi = " << j << endl;
 			
@@ -1381,9 +1383,7 @@ int main(int argc, char **argv){
 			
 		}
 	}
-	
-	//V.clear();
-	
+		
 	// Get stop time
 	t_stop = time(NULL);
 	timeinfo_stop = asctime(localtime(&t_stop));
