@@ -34,32 +34,40 @@
 
 using namespace std;
 
+// Various constants
 const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
 const double H_BAR = 6.58211899e-16; // h/2PI in eV
-const double EPSILON_0 = (0.5)*(137.035999084)*(1/4.13566733e-15)*(1/299792458e10) ; //Epsilon_0 (Vacuum permittivity in e/(V.Ang))
-const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
+const double EPSILON_0 = (0.5)*(137.035999084)*(1.0/4.13566733e-15)*(1.0/299792458e10) ; //Epsilon_0 (Vacuum permittivity in e/(V.Ang))
 const double PI = 3.141592653589793;
+const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
+const double CUTOFF_ELECTRO = 150; //Cutoff for electrostatic interactions in Angstrom
 
-bool pbc[3]; // Periodic boundary conditions
-vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg; // Cell parameters
-vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, temp_gamma_cos, temp_beta_term, temp_gamma_term; // Parameters for fractional coordinates
-
+// Variables read in the input file
 int n_frame, n_mol; // Number of frame and molecule
 double snap_delay;
 double LAMBDA_I, LAMBDA_S, T, H_OMEGA, dist_tot;
 unsigned int n_try, n_charges;
 int n_mini_grid_a, n_mini_grid_b, n_mini_grid_c;
-double F_norm;
+double F_norm; 
+string F_dir;
 string charge;
 
+// Variables for the unit cell parameters
+bool pbc[3]; // Periodic boundary conditions
+vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg; // Cell parameters
+vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, temp_gamma_cos, temp_beta_term, temp_gamma_term; // Parameters for fractional coordinates
+
+// Variables for each molecule
 vector<int> mol_label;
 vector< vector<double> > CM_x, CM_y, CM_z; // Center of masses
 vector< vector<double> > E_0, E_1;
 
+// Variables for the grid
 vector<int> box_a, box_b, box_c; // Position of the mini-grids
 vector< vector<bool> > grid_occ;
 vector< vector<int> > box_neigh_a, box_neigh_b, box_neigh_c, box_neigh_label; // Neighbor of each mini-grid
 
+// Variables for neighbors
 vector< vector< vector<int> > > neigh_label;
 vector< vector< vector<double> > > d_x, d_y, d_z;
 vector< vector< vector<double> > > dE;
@@ -67,8 +75,7 @@ vector< vector< vector<double> > > J_H, J_L;
 vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
 vector< vector< vector<double> > > k, k_inv;
 
-vector< vector< vector< vector< vector< vector< vector< vector< vector<double> > > > > > > > > V;
-
+// Variables for the electric field direction
 double theta_deg, phi_deg, theta_rad, phi_rad;
 double F_x, F_y, F_z;
 
@@ -502,9 +509,7 @@ void Calcul_DeltaE(bool print_results){
 double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_grid_tmp){
 		
 	const double CST1 = 1.0/(4.0*PI*EPSILON_0*EPSILON_R);
-	
-	const double CUTOFF = 100; //Cutoff in Angstrom
-	const double CUTOFF_2 = pow(CUTOFF,2); //Cutoff in Angstrom
+	const double CUTOFF_2 = pow(CUTOFF_ELECTRO,2); //Cutoff electro square
 	
 	double dist, dist_neigh, dist_2, dist_neigh_2;
 	double V_mol = 0.0, V_neigh = 0.0, V_electro = 0.0;
@@ -833,9 +838,11 @@ void Print_Summary(string output_folder) {
 	stringstream OUT_TOT, T, P;
 	double uF_x, uF_y, uF_z;
   
-	T << theta_deg;
-	P << phi_deg;
-	OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
+	//T << theta_deg;
+	//P << phi_deg;
+	//OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
+
+	OUT_TOT << output_folder << "/info_tot_" << F_dir.c_str() << ".dat";
 
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
@@ -891,10 +898,24 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 	//double k_sum;
 	
 	do {
-		//pos_a = rand()%n_mini_grid_a;
-		pos_a = 0;
-		pos_b = rand()%n_mini_grid_b;
-		pos_c = rand()%n_mini_grid_c;
+		if (F_dir.compare("a") == 0) {
+			pos_a = 0;
+			pos_b = rand()%n_mini_grid_b;
+			pos_c = rand()%n_mini_grid_c;
+		}
+		
+		else if (F_dir.compare("b") == 0) {
+			pos_a = rand()%n_mini_grid_a;
+			pos_b = 0;
+			pos_c = rand()%n_mini_grid_c;
+		}
+		
+		else if (F_dir.compare("c") == 0) {
+			pos_a = rand()%n_mini_grid_a;
+			pos_b = rand()%n_mini_grid_b;
+			pos_c = 0;
+		}		
+		
 		mol = rand()%n_mol;
 		
 		//k_sum = 0.0;
@@ -942,10 +963,13 @@ void MC_BKL(string output_folder){
 	// Check if it's possible to write output files
 	stringstream OUT_SIMU, OUT_ERROR, T, P;
   
-	T << theta_deg;
-	P << phi_deg;
-	OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
-	OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
+	// T << theta_deg;
+	// P << phi_deg;
+	// OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
+	// OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
+	
+	OUT_SIMU << output_folder << "/simu_" << F_dir.c_str() << ".out";
+	OUT_ERROR << output_folder << "/error_" << F_dir.c_str() << ".out";
   
 	FILE * pFile;
 
@@ -958,6 +982,19 @@ void MC_BKL(string output_folder){
 	
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
+		
+	// Print summary for the current try
+	pFile=fopen(OUT_SIMU.str().c_str(), "a");
+	if (pFile==NULL) { 
+		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+		exit (1);
+	}
+	fprintf(pFile,"===============================================================================\n");
+	fprintf(pFile,"Frame = %d\n", i);
+	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number of Charges = %d\n", n_charges);
+	fprintf(pFile,"-------------------------------------------------------------------------------\n");
+	fclose(pFile);	
 		
 		// Clear the total distance and time of the previous frame
 		total_time_try.clear();
@@ -1090,13 +1127,15 @@ void MC_BKL(string output_folder){
 						// Calculate the new position in the grid
 						int tmp_curr_mol = 0; // Expected final molecule index
 						int tmp_curr_grid = 0; // Expected final mini-grid index
-						int tmp_curr_grid_a = 0;
+						int tmp_curr_grid_a = 0, tmp_curr_grid_b = 0, tmp_curr_grid_c = 0;
 						bool out_of_system = true;
 						
 						// Find next mini-grid
 						if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
 							tmp_curr_grid = curr_grid[event_charge[event]];
 							tmp_curr_grid_a = box_a[tmp_curr_grid];
+							tmp_curr_grid_b = box_b[tmp_curr_grid];
+							tmp_curr_grid_c = box_c[tmp_curr_grid];
 							out_of_system = false;
 							
 						}
@@ -1106,6 +1145,8 @@ void MC_BKL(string output_folder){
 								if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
 									tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
 									tmp_curr_grid_a = box_a[tmp_curr_grid];
+									tmp_curr_grid_b = box_b[tmp_curr_grid];
+									tmp_curr_grid_c = box_c[tmp_curr_grid];
 									out_of_system = false;
 									break;
 								}
@@ -1157,7 +1198,7 @@ void MC_BKL(string output_folder){
 							curr_mol[event_charge[event]] = tmp_curr_mol;
 							
 							// Check if the charge reached the end of the grid
-							if (tmp_curr_grid_a >= n_mini_grid_a-1){
+							if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
 								
 								// The charge is removed
 								curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -1182,13 +1223,10 @@ void MC_BKL(string output_folder){
 				cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
 				exit (1);
 			}
-			fprintf(pFile,"Frame = %d\n", i);
-			fprintf(pFile,"Try = %d\n", charge_try);
-			fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-			fprintf(pFile,"Number of Charges = %d\n", n_charges);
-			fprintf(pFile,"Total Time = %e\n", total_time_try.back());
-			fprintf(pFile,"Total Distance = %e\n", total_dist_try.back());
-			fprintf(pFile,"Mu_try = %lf\n", total_dist_try.back()/(double(n_charges)*total_time_try.back()*F_norm));
+			fprintf(pFile,"Time_try_%d = %e\n", charge_try, total_time_try.back());
+			fprintf(pFile,"Distance_try_%d = %e\n", charge_try, total_dist_try.back());
+			fprintf(pFile,"Mu_try_%d = %lf\n", charge_try, total_dist_try.back()/(double(n_charges)*total_time_try.back()*F_norm));
+			fprintf(pFile,"-------------------------------------------------------------------------------\n");
 			fclose(pFile);			
 
 		}
@@ -1213,12 +1251,11 @@ void MC_BKL(string output_folder){
 			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
 			exit (1);
 		}
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fprintf(pFile,"Number of tries = %d\n", n_try);
 		fprintf(pFile,"Average Time = %e\n", total_time_av);
 		fprintf(pFile,"Average Distance = %e\n", total_dist_av);
-		fprintf(pFile,"Mobility of the Frame = %lf\n", mu_frame.back());
+		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame.back());
 		fclose(pFile);
 	}
 	
@@ -1262,7 +1299,7 @@ int main(int argc, char **argv){
 	string input_folder = ".";
 	string output_folder = ".";
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -1288,6 +1325,10 @@ int main(int argc, char **argv){
 	  			
 			case 'c':
 				charge = optarg;
+	  			break;
+	  			
+	  		case 'd':
+				F_dir = optarg;
 	  			break;
 			}
 	}
@@ -1327,19 +1368,66 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
 	vector< vector< vector<double> > > dE_ref = dE;				
 		
-	for (int i=90; i<91; i=i+15){
-		for (int j=0; j<1; j=j+15){
+//	for (int i=90; i<91; i=i+15){
+//		for (int j=0; j<1; j=j+15){
 			
-			cout << "[INFO] Running simulation for phi = " << j << endl;
+//			cout << "[INFO] Running simulation for phi = " << j << endl;
+
+			// theta_deg = i; phi_deg = j;
 			
-			theta_deg = i; phi_deg = j;
-			
-			theta_rad = 2 * PI * i; theta_rad = theta_rad/360.0;
-      		phi_rad = 2 * PI * j; phi_rad = phi_rad/360.0;
+			// theta_rad = 2 * PI * i; theta_rad = theta_rad/360.0;
+      		// phi_rad = 2 * PI * j; phi_rad = phi_rad/360.0;
       		
-			F_x = sin(theta_rad); F_x = F_x * cos(phi_rad); 
-			F_y = sin(theta_rad); F_y = F_y * sin(phi_rad); 
-			F_z = cos(theta_rad); 
+			// F_x = sin(theta_rad); F_x = F_x * cos(phi_rad); 
+			// F_y = sin(theta_rad); F_y = F_y * sin(phi_rad); 
+			// F_z = cos(theta_rad); 
+
+			double *F_tmp_frac, *F_tmp_cart;
+			F_tmp_frac = new double[3];
+			F_tmp_cart = new double[3];
+
+			if (F_dir.compare("a") == 0) {
+				if (charge.compare("e") == 0) 
+					F_tmp_frac[0] = 1.0;
+				else  
+					F_tmp_frac[0] = -1.0;
+				F_tmp_frac[1] = 0.0;
+				F_tmp_frac[2] = 0.0;
+			}
+				
+			else if (F_dir.compare("b") == 0) {
+				F_tmp_frac[0] = 0.0;
+				if (charge.compare("e") == 0) 
+					F_tmp_frac[1] = 1.0;
+				else  
+					F_tmp_frac[1] = -1.0;
+				F_tmp_frac[2] = 0.0;
+			}
+				
+			else if (F_dir.compare("c") == 0) {
+				F_tmp_frac[0] = 0.0;
+				F_tmp_frac[1] = 0.0;
+				if (charge.compare("e") == 0) 
+					F_tmp_frac[2] = 1.0;
+				else  
+					F_tmp_frac[2] = -1.0;
+			}
+			
+			else {
+				cerr << "[ERROR] Direction of the electric field not specified! Exiting..." << endl;
+				exit(1);
+			}
+			
+			cout << "[INFO] Electric field is along the '" << F_dir << "' direction." << endl;
+			
+			Fractional_To_Cartesian(F_tmp_frac, F_tmp_cart, 0);
+			
+			double F_norm_tmp = sqrt(pow(F_tmp_cart[0],2) + pow(F_tmp_cart[1],2) + pow(F_tmp_cart[2],2));
+			F_x = F_tmp_cart[0]/F_norm_tmp;
+			F_y = F_tmp_cart[1]/F_norm_tmp;
+			F_z = F_tmp_cart[2]/F_norm_tmp;
+			
+			delete [] F_tmp_frac; delete [] F_tmp_cart;
 			
 			if (fabs(F_x) < 1E-10) F_x = 0.0;
 			if (fabs(F_y) < 1E-10) F_y = 0.0;
@@ -1381,8 +1469,8 @@ int main(int argc, char **argv){
 			k.clear();
 			k_inv.clear();
 			
-		}
-	}
+//		}
+//	}
 		
 	// Get stop time
 	t_stop = time(NULL);
@@ -1394,7 +1482,7 @@ int main(int argc, char **argv){
 	cout << "[INFO] Calculation took " << t_stop-t_start << " seconds." << endl << endl;
 	cout << "===============================================================================" << endl;
 	cout << "-------------------- Exiting normally, everything was ok! ---------------------" << endl;
-	cout << "===============================================================================" << endl;
+	cout << "===============================================================================\n" << endl;
 	
 	return 0;
 }
