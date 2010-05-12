@@ -45,7 +45,7 @@ const double CUTOFF_ELECTRO = 150; //Cutoff for electrostatic interactions in An
 // Variables read in the input file
 int n_frame, n_mol; // Number of frame and molecule
 double snap_delay;
-double LAMBDA_I, LAMBDA_S, T, H_OMEGA, dist_tot;
+double LAMBDA_I, LAMBDA_I_H, LAMBDA_I_E, LAMBDA_S, T, H_OMEGA, dist_tot;
 unsigned int n_try, n_charges;
 int n_mini_grid_a, n_mini_grid_b, n_mini_grid_c;
 double F_norm; 
@@ -1333,18 +1333,23 @@ int main(int argc, char **argv){
 			}
 	}
 	
-	// Check that the charge is specified
-	if (charge.compare("e") == 0)
-		cout << "[INFO] The charge is an electron." << endl;
-		
-	else if (charge.compare("h") == 0)
-		cout << "[INFO] The charge is a hole." << endl;
+	// Check that the charge and the direction of the electric field are specified
+	if (charge.compare("e") == 0 || charge.compare("h") == 0)
+		cout << "[INFO] The charge is: " << charge << endl;
 		
 	else {
-		cerr << "[ERROR] Charge (-c e or -c h) not specified! Exiting..." << endl;
+		cerr << "[ERROR] Charge not specified! Please use -c {e,h}. Exiting..." << endl;
 		exit(1);
 	}
 	
+	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
+		cout << "[INFO] Electric field is along the '" << F_dir << "' direction." << endl;
+		
+	else {
+		cerr << "[ERROR] Direction of the electric field not specified! Please use -d {a,b,c}. Exiting..." << endl;
+		exit(1);
+	}
+
 	// Read the required files
 	Read_MC(input_file, input_folder, false);
 	Read_CELL(input_file, input_folder, false);
@@ -1354,10 +1359,7 @@ int main(int argc, char **argv){
 	// Calculates distances and DeltaE
 	Calcul_Dist(false);
 	Calcul_DeltaE(false);
-	
-	// Calculates the electrostatic interactions for the grid
-	//Calcul_V(true);
-	
+
 	// Build the grid
 	Build_Grid(false);
 	
@@ -1382,44 +1384,50 @@ int main(int argc, char **argv){
 			// F_y = sin(theta_rad); F_y = F_y * sin(phi_rad); 
 			// F_z = cos(theta_rad); 
 
+			// Calculates the electric field unit vector
 			double *F_tmp_frac, *F_tmp_cart;
 			F_tmp_frac = new double[3];
 			F_tmp_cart = new double[3];
 
 			if (F_dir.compare("a") == 0) {
-				if (charge.compare("e") == 0) 
+				if (charge.compare("e") == 0) {
 					F_tmp_frac[0] = 1.0;
-				else  
+					LAMBDA_I = LAMBDA_I_E;
+				}
+				else {
 					F_tmp_frac[0] = -1.0;
+					LAMBDA_I = LAMBDA_I_H;
+				}
 				F_tmp_frac[1] = 0.0;
 				F_tmp_frac[2] = 0.0;
 			}
 				
 			else if (F_dir.compare("b") == 0) {
 				F_tmp_frac[0] = 0.0;
-				if (charge.compare("e") == 0) 
+				if (charge.compare("e") == 0) {
 					F_tmp_frac[1] = 1.0;
-				else  
+					LAMBDA_I = LAMBDA_I_E;
+				}
+				else {
 					F_tmp_frac[1] = -1.0;
+					LAMBDA_I = LAMBDA_I_H;
+				}
 				F_tmp_frac[2] = 0.0;
 			}
 				
 			else if (F_dir.compare("c") == 0) {
 				F_tmp_frac[0] = 0.0;
 				F_tmp_frac[1] = 0.0;
-				if (charge.compare("e") == 0) 
+				if (charge.compare("e") == 0) {
 					F_tmp_frac[2] = 1.0;
-				else  
+					LAMBDA_I = LAMBDA_I_E;
+				}
+				else {
 					F_tmp_frac[2] = -1.0;
+					LAMBDA_I = LAMBDA_I_H;
+				}
 			}
-			
-			else {
-				cerr << "[ERROR] Direction of the electric field not specified! Exiting..." << endl;
-				exit(1);
-			}
-			
-			cout << "[INFO] Electric field is along the '" << F_dir << "' direction." << endl;
-			
+						
 			Fractional_To_Cartesian(F_tmp_frac, F_tmp_cart, 0);
 			
 			double F_norm_tmp = sqrt(pow(F_tmp_cart[0],2) + pow(F_tmp_cart[1],2) + pow(F_tmp_cart[2],2));
@@ -1437,7 +1445,7 @@ int main(int argc, char **argv){
 			F_y = F_y * F_norm; 
 			F_z = F_z * F_norm;
 			
-			// Calculate transfer rates and the full matrix
+			// Calculate transfer rates and the full matrix, mostly for information
 			Calcul_k(false);
 			Full_Matrix();
 	
