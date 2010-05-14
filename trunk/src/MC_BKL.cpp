@@ -17,6 +17,7 @@
  *******************************************************************************
  */
 
+// C++ libraries
 #include <iostream> //Entrées-sorties standard
 #include <fstream> //Entrées-sorties sur fichiers
 #include <string> //Chaines de caracteres
@@ -24,13 +25,16 @@
 #include <iomanip> //Manipulation des sorties, par exemple format scientifique
 #include <sstream> //Pour les conversion entre types de variables
 #include <vector>
-#include <math.h>
+#include <algorithm>
+
+// C libraries
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <math.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <algorithm>
 
 using namespace std;
 
@@ -154,7 +158,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
-		input >> LAMBDA_I >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
+		input >> LAMBDA_I_H >> LAMBDA_I_E >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
 		input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> n_charges;
 		input >> F_norm;
 		
@@ -842,7 +846,7 @@ void Print_Summary(string output_folder) {
 	//P << phi_deg;
 	//OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
 
-	OUT_TOT << output_folder << "/info_tot_" << F_dir.c_str() << ".dat";
+	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << " " << F_dir.c_str() << ".dat";
 
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
@@ -968,8 +972,8 @@ void MC_BKL(string output_folder){
 	// OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
 	// OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
 	
-	OUT_SIMU << output_folder << "/simu_" << F_dir.c_str() << ".out";
-	OUT_ERROR << output_folder << "/error_" << F_dir.c_str() << ".out";
+	OUT_SIMU << output_folder << "/simu_" << charge.c_str() << " " << F_dir.c_str() << ".out";
+	OUT_ERROR << output_folder << "/error_" << charge.c_str() << " " << F_dir.c_str() << ".out";
   
 	FILE * pFile;
 
@@ -1184,8 +1188,8 @@ void MC_BKL(string output_folder){
 							
 							// Calculate the distance traveled by the charge and the total distance
 							double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
-							dist[event_charge[event]] += event_dist;
-							total_dist_try.back() += event_dist;
+							dist[event_charge[event]] += event_dist/double(curr_mol.size());
+							total_dist_try.back() += event_dist/double(curr_mol.size());
 												
 							// Calculate the number of jumps for each charge
 							jump[event_charge[event]] += 1.0;
@@ -1225,7 +1229,7 @@ void MC_BKL(string output_folder){
 			}
 			fprintf(pFile,"Time_try_%d = %e\n", charge_try, total_time_try.back());
 			fprintf(pFile,"Distance_try_%d = %e\n", charge_try, total_dist_try.back());
-			fprintf(pFile,"Mu_try_%d = %lf\n", charge_try, total_dist_try.back()/(double(n_charges)*total_time_try.back()*F_norm));
+			fprintf(pFile,"Mu_try_%d = %lf\n", charge_try, total_dist_try.back()/(total_time_try.back()*F_norm));
 			fprintf(pFile,"-------------------------------------------------------------------------------\n");
 			fclose(pFile);			
 
@@ -1243,7 +1247,7 @@ void MC_BKL(string output_folder){
 		total_time_av = total_time_av/dbl_n_try;
 		total_dist_av = total_dist_av/dbl_n_try;
 		
-		mu_frame.push_back(total_dist_av/(double(n_charges)*total_time_av*F_norm));
+		mu_frame.push_back(total_dist_av/(total_time_av*F_norm));
 
 		// Writes a summary for the frame
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
