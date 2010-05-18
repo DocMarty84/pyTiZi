@@ -611,6 +611,7 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 	
 	double dG0 = 0.0;	
 	double k_tmp = 0.0;
+	double k_inter = 0.0;
 	
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -621,9 +622,17 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp
 		
 	dG0 = dG0 + dE_tmp;
 	
-	for (int n=0; n<50; n++){
-		k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+	//for (int n=0; n<50; n++){
+	//	k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+	//}
+	
+	int n = 0;
+	do {
+		k_inter = exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+		k_tmp += k_inter;
+		n++;
 	}
+	while (k_inter > numeric_limits<double>::min());
 	
 	if (charge.compare("e") == 0)
 		k_tmp = CST1 * pow(J_L_tmp,2) * k_tmp;
@@ -645,6 +654,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	double dV = 0.0;
 	double dG0 = 0.0;	
 	double k_tmp = 0.0;
+	double k_inter = 0.0;
 	
 	// Calcul DeltaV
 	dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
@@ -660,9 +670,17 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	
 	dG0 = dG0 + dE_tmp + dV;
 	
-	for (int n=0; n<50; n++){
-		k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+	//for (int n=0; n<50; n++){
+	//	k_tmp = k_tmp + exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+	//}
+	
+	int n = 0;
+	do {
+		k_inter = exp(-S)*(pow(S,n)/Facto(n))*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(CST2));
+		k_tmp += k_inter;
+		n++;
 	}
+	while (k_inter > numeric_limits<double>::min());
 	
 	if (charge.compare("e") == 0)
 		k_tmp = CST1 * pow(J_L_tmp,2) * k_tmp;
@@ -1188,9 +1206,15 @@ void MC_BKL(string output_folder){
 							
 							// Calculate the distance traveled by the charge and the total distance
 							double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
-							dist[event_charge[event]] += event_dist/double(curr_mol.size());
+							dist[event_charge[event]] += event_dist;
 							total_dist_try.back() += event_dist/double(curr_mol.size());
-												
+							// Note:
+							// We divide here by the number of charges in the system, 
+							// so there is no problem afterwards because the number of charges
+							// in the system change. Indeed:
+							// <x> = (1/n) * sum_i x_i = sum_i (x_i/n)
+										
+
 							// Calculate the number of jumps for each charge
 							jump[event_charge[event]] += 1.0;
 							
