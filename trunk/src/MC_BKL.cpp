@@ -83,6 +83,10 @@ vector< vector< vector<double> > > k, k_inv;
 double theta_deg, phi_deg, theta_rad, phi_rad;
 double F_x, F_y, F_z;
 
+// Constants for the MLJ theory
+double S, MLJ_CST1, MLJ_CST2; 
+vector <double> MLJ_CST3;
+
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
 // =============================================================================
@@ -602,6 +606,97 @@ double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_nu
 // ------------------- Physical parameters between neighbors -------------------
 // =============================================================================
 
+void Marcus_Levich_Jortner_CST(){
+		
+	S = LAMBDA_I/H_OMEGA;
+	MLJ_CST1 = (2*PI/H_BAR)*(1.0/(sqrt(4*PI*LAMBDA_S*K_BOLTZ*T)));
+	MLJ_CST2 = 4*LAMBDA_S*K_BOLTZ*T;
+	
+	int n=0;
+	double fact = Facto(n);
+	double tmp = exp(-S)*(pow(S,n)/fact);
+	
+	while (fact < numeric_limits<double>::max()) {
+		MLJ_CST3.push_back(tmp);
+		n++;
+		fact *= n;
+		tmp = exp(-S)*(pow(S,n)/(fact));
+	}
+}
+
+double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp){
+	
+	double dG0 = 0.0;	
+	
+	// CHECK SIGN!
+	if (charge.compare("e") == 0)
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	else if (charge.compare("h") == 0)
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	dG0 = dG0 + dE_tmp;
+	
+	int n = 0;
+	double k_tmp = 0.0;
+	double k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	
+	while (k_inter > numeric_limits<double>::min()) {
+		k_tmp += k_inter;
+		n++;
+		k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	}
+	
+	if (charge.compare("e") == 0)
+		k_tmp = MLJ_CST1 * pow(J_L_tmp,2) * k_tmp;
+	
+	else if (charge.compare("h") == 0)
+		k_tmp = MLJ_CST1 * pow(J_H_tmp,2) * k_tmp;
+		
+	return k_tmp;
+	
+}
+
+double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp, double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp, vector<int> curr_mol_tmp, vector<int> curr_grid_tmp, unsigned int charge_i_tmp){
+	
+	double dV = 0.0;
+	double dG0 = 0.0;	
+	
+	// Calcul DeltaV
+	dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp, curr_grid_tmp);
+
+	// CHECK SIGN!
+	if (charge.compare("e") == 0)
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	else if (charge.compare("h") == 0)
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+	
+	//printf("%e %e\n", dG0, dV);	
+	
+	dG0 = dG0 + dE_tmp + dV;
+	
+	int n = 0;
+	double k_tmp = 0.0;
+	double k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	
+	while (k_inter > numeric_limits<double>::min()) {
+		k_tmp += k_inter;
+		n++;
+		k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	}
+	
+	if (charge.compare("e") == 0)
+		k_tmp = MLJ_CST1 * pow(J_L_tmp,2) * k_tmp;
+	
+	else if (charge.compare("h") == 0)
+		k_tmp = MLJ_CST1 * pow(J_H_tmp,2) * k_tmp;
+		
+	return k_tmp;
+	
+}
+
+/*
 double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp){
 	
 	double S, CST1, CST2;
@@ -691,6 +786,7 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	return k_tmp;
 	
 }
+*/
 
 // Calculates transfer rates between molecules
 void Calcul_k(bool print_results){
@@ -864,7 +960,7 @@ void Print_Summary(string output_folder) {
 	//P << phi_deg;
 	//OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
 
-	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << " " << F_dir.c_str() << ".dat";
+	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << "_" << F_dir.c_str() << ".dat";
 
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
@@ -990,8 +1086,8 @@ void MC_BKL(string output_folder){
 	// OUT_SIMU << output_folder << "/simu_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
 	// OUT_ERROR << output_folder << "/error_" << T.str().c_str() << "_" << P.str().c_str() << ".out";
 	
-	OUT_SIMU << output_folder << "/simu_" << charge.c_str() << " " << F_dir.c_str() << ".out";
-	OUT_ERROR << output_folder << "/error_" << charge.c_str() << " " << F_dir.c_str() << ".out";
+	OUT_SIMU << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
+	OUT_ERROR << output_folder << "/error_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
   
 	FILE * pFile;
 
@@ -1024,8 +1120,9 @@ void MC_BKL(string output_folder){
 				
 		for (unsigned int charge_try=0; charge_try<n_try; charge_try++){
 			
-			cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << charge_try+1 << "/" << n_try << endl;
-
+			if (charge_try % 10 ==0) {
+				cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << charge_try+1 << "/" << n_try << endl;
+			}
 			
 			// Generate the grid
 			grid_occ.clear();
@@ -1474,6 +1571,7 @@ int main(int argc, char **argv){
 			F_z = F_z * F_norm;
 			
 			// Calculate transfer rates and the full matrix, mostly for information
+			Marcus_Levich_Jortner_CST(); // Calculates constants
 			Calcul_k(false);
 			Full_Matrix();
 	
