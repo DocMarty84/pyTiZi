@@ -42,7 +42,7 @@ using namespace std;
 const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
 const double H_BAR = 6.58211899e-16; // h/2PI in eV
 const double EPSILON_0 = (0.5)*(137.035999084)*(1.0/4.13566733e-15)*(1.0/299792458e10) ; //Epsilon_0 (Vacuum permittivity in e/(V.Ang))
-const double PI = 3.141592653589793;
+const double PI = 3.14159265358979323846;
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double CUTOFF_ELECTRO = 150; //Cutoff for electrostatic interactions in Angstrom
 
@@ -351,8 +351,8 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 		
 		// Read E (same for all the frames)
 		for(int ii=0; ii<n_mol; ii++){
-			input >> tmp >> tmp >> E_0_tmp >> E_1_tmp;
-
+			input >> tmp >> E_0_tmp >> E_1_tmp;
+			
 			for (int i=0; i<n_frame; i++) {
 				E_0[i].push_back(E_0_tmp);
 				E_1[i].push_back(E_1_tmp);
@@ -1016,6 +1016,39 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 	//double k_sum;
 	
 	do {
+		pos_a = rand()%n_mini_grid_a;
+		pos_b = rand()%n_mini_grid_b;
+		pos_c = rand()%n_mini_grid_c;
+
+		mol = rand()%n_mol;
+		
+		//k_sum = 0.0;
+		//
+		//for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
+		//	k_sum = k_sum + k_inv[frame][mol][jj];
+		//}
+		
+		// Find the number of the corresponding mini-grid
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			if (pos_a == box_a[x] && pos_b == box_b[x] && pos_c == box_c[x]){
+				box = x;
+				break;
+			}
+		}
+	}
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	
+	pos[0] = mol;
+	pos[1] = box;
+}
+
+void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){ 
+	
+	int pos_a, pos_b, pos_c, mol, box; 
+	
+	//double k_sum;
+	
+	do {
 		if (F_dir.compare("a") == 0) {
 			pos_a = 0;
 			pos_b = rand()%n_mini_grid_b;
@@ -1067,8 +1100,8 @@ void MC_BKL(string output_folder){
 	vector<double> event_k; // Transfer rate
 	vector<int> event_charge, event_mol_index, event_neigh_num, event_neigh_index; // Initial molecule and neighbor
 	
-	// Total time and distance, for each try
-	vector<double> total_time_try, total_dist_try;
+	// Total time and distance
+	double total_time_try, total_dist_try;
 	
 	// Average mobility for each frame
 	vector<double> mu_frame;
@@ -1101,274 +1134,277 @@ void MC_BKL(string output_folder){
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
 		
-	// Print summary for the current try
-	pFile=fopen(OUT_SIMU.str().c_str(), "a");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-		exit (1);
-	}
-	fprintf(pFile,"===============================================================================\n");
-	fprintf(pFile,"Frame = %d\n", i);
-	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-	fprintf(pFile,"Number of Charges = %d\n", n_charges);
-	fprintf(pFile,"-------------------------------------------------------------------------------\n");
-	fclose(pFile);	
+		// ---------------------------------------------------------------------
 		
-		// Clear the total distance and time of the previous frame
-		total_time_try.clear();
-		total_dist_try.clear();
+		// Print summary for the current try
+		pFile=fopen(OUT_SIMU.str().c_str(), "a");
+		if (pFile==NULL) { 
+			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
+		fprintf(pFile,"===============================================================================\n");
+		fprintf(pFile,"Frame = %d\n", i);
+		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"-------------------------------------------------------------------------------\n");
+		fclose(pFile);	
+		
+		// ---------------------------------------------------------------------
+		
+		// Generate the grid
+		grid_occ.clear();
 				
-		for (unsigned int charge_try=0; charge_try<n_try; charge_try++){
+		for (int ii=0; ii<n_mol; ii++){
+			grid_occ.push_back( vector<bool> ());
 			
-			if (charge_try % 10 ==0) {
-				cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << charge_try+1 << "/" << n_try << endl;
+			for (unsigned int x=0; x<box_neigh_label.size(); x++){
+				grid_occ[ii].push_back( false );
 			}
-			
-			// Generate the grid
-			grid_occ.clear();
-					
-			for (int ii=0; ii<n_mol; ii++){
-				grid_occ.push_back( vector<bool> ());
-				
-				for (unsigned int x=0; x<box_neigh_label.size(); x++){
-					grid_occ[ii].push_back( false );
-				}
-			}
+		}
 
-			// Put the charges in the grid
-			curr_mol.clear();
-			curr_grid.clear();
-			int *pos;
-			pos = new int[2];
+		// ---------------------------------------------------------------------
+
+		// Put the charges in the grid
+		curr_mol.clear();
+		curr_grid.clear();
+		int *pos;
+		pos = new int[2];
+		
+		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
+			Dispatch_Mol_RND(i, grid_occ, pos);
 			
-			for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-				Dispatch_Mol_RND(i, grid_occ, pos);
+			curr_mol.push_back(pos[0]);
+			curr_grid.push_back(pos[1]);
+			grid_occ[pos[0]][pos[1]] = true;
+		}
+
+		delete [] pos;
+		
+		// ---------------------------------------------------------------------
+
+		// Set distances, number of jumps and the travel time to zero
+		total_time_try = 0.0;
+		total_dist_try = 0.0;
+
+		dist.clear();
+		jump.clear(); 
+		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
+			dist.push_back(0.0);
+			jump.push_back(0.0);
+		}
+
+		bool previous_jump_ok = true;
+		bool exit_loop = false;
+		double sum_k = 0.0;
+		
+		// ---------------------------------------------------------------------
+
+		unsigned int charge_try = 0;
+		while (charge_try<n_try*n_charges){	
+			
+			// Calculates the transfer rates
+			if (previous_jump_ok){
 				
-				curr_mol.push_back(pos[0]);
-				curr_grid.push_back(pos[1]);
-				grid_occ[pos[0]][pos[1]] = true;
-			}
-			
-			delete [] pos;
-			
-			// Set distances, number of jumps and the travel time to zero
-			total_time_try.push_back(0.0);
-			total_dist_try.push_back(0.0);
-			
-			dist.clear();
-			jump.clear(); 
-			for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-				dist.push_back(0.0);
-				jump.push_back(0.0);
-			}
-			
-			bool previous_jump_ok = true;
-			bool exit_loop = false;
-			double sum_k = 0.0;
-			
-			while (curr_mol.size()>0){
+				// List all the possible events
+				event_k.clear();
+				event_charge.clear();
+				event_mol_index.clear();
+				event_neigh_num.clear(); 
+				event_neigh_index.clear();
 				
-				// Calculates the transfer rates
-				if (previous_jump_ok){
+				for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
 					
-					// List all the possible events
-					event_k.clear();
-					event_charge.clear();
-					event_mol_index.clear();
-					event_neigh_num.clear(); 
-					event_neigh_index.clear();
-					
-					for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
+					int tmp_mol_index = curr_mol[charge_i];
+											
+					for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
 						
-						int tmp_mol_index = curr_mol[charge_i];
-												
-						for (unsigned int jj=0; jj<neigh_label[i][curr_mol[charge_i]].size(); jj++){
-							
-							// Find index of neighbor
-							int tmp_neigh_num = jj;
-							int tmp_neigh_index = tmp_mol_index;
-							for (int ii=0; ii<n_mol; ii++){
-								if (neigh_label[i][curr_mol[charge_i]][jj] == mol_label[ii]){
-									tmp_neigh_index = ii;
-									break;
-								}
+						// Find index of neighbor
+						int tmp_neigh_num = jj;
+						int tmp_neigh_index = tmp_mol_index;
+						for (int ii=0; ii<n_mol; ii++){
+							if (neigh_label[i][tmp_mol_index][jj] == mol_label[ii]){
+								tmp_neigh_index = ii;
+								break;
 							}
-							
-							double k_tmp = numeric_limits<double>::min();
-							if (tmp_neigh_index != tmp_mol_index){
-								k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
-							}
-
-							event_k.push_back(k_tmp);
-							event_charge.push_back(charge_i);
-							event_mol_index.push_back(tmp_mol_index);
-							event_neigh_num.push_back(jj);
-							event_neigh_index.push_back(tmp_neigh_index);
 						}
+						
+						double k_tmp = numeric_limits<double>::min();
+						if (tmp_neigh_index != tmp_mol_index){
+							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+						}
+
+						event_k.push_back(k_tmp);
+						event_charge.push_back(charge_i);
+						event_mol_index.push_back(tmp_mol_index);
+						event_neigh_num.push_back(jj);
+						event_neigh_index.push_back(tmp_neigh_index);
+					}
+				}
+				
+				// Sum of transfer rates of all the events
+				sum_k = 0.0;
+				for (unsigned int event=0; event<event_k.size(); event++){
+					sum_k += event_k[event];
+				}
+				
+				exit_loop = false;
+			}
+			
+			else{
+				exit_loop = false;
+			}
+			
+			// Choose an event randomly
+			double random_k = Rand_0_1() * sum_k;
+			double partial_sum_k = 0.0;
+			
+			// Find this event in the list
+			for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
+				partial_sum_k += event_k[event];
+				
+				if (partial_sum_k > random_k){
+					
+					// =======================================
+					//
+					// Summary of variables:
+					// ---------------------
+					//
+					// event_charge[event]: index of the charge of the event (= charge_i)
+					// event_mol_index[event]: index of the molecule where the chosen charge is (= ii)
+					// event_neigh_num[event]: number of the neighbor of the molecule where the chosen charge is (= jj)
+					// event_neigh_index[event]: index of the molecule where the chosen charge is going to jump (= ii for the neighbor)
+					// curr_mol[event_charge[event]]: index of the molecule where the chosen charge is (= ii)
+					// curr_grid[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
+					//
+					// =======================================
+			
+					// Calculate the new position in the grid
+					int tmp_curr_mol = 0; // Expected final molecule index
+					int tmp_curr_grid = 0; // Expected final mini-grid index
+					int tmp_curr_grid_a = 0, tmp_curr_grid_b = 0, tmp_curr_grid_c = 0;
+					bool out_of_system = true;
+					
+					// Find next mini-grid
+					if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
+						tmp_curr_grid = curr_grid[event_charge[event]];
+						tmp_curr_grid_a = box_a[tmp_curr_grid];
+						tmp_curr_grid_b = box_b[tmp_curr_grid];
+						tmp_curr_grid_c = box_c[tmp_curr_grid];
+						out_of_system = false;
+						
 					}
 					
-					// Sum of transfer rates of all the events
-					sum_k = 0.0;
-					for (unsigned int event=0; event<event_k.size(); event++){
-						sum_k += event_k[event];
+					else {
+						for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_charge[event]]].size(); xx++){
+							if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
+								tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
+								tmp_curr_grid_a = box_a[tmp_curr_grid];
+								tmp_curr_grid_b = box_b[tmp_curr_grid];
+								tmp_curr_grid_c = box_c[tmp_curr_grid];
+								out_of_system = false;
+								break;
+							}
+							
+						}
+					}
+						
+					// Find next molecule
+					tmp_curr_mol = event_neigh_index[event];
+					
+					// Do not jump if the charge goes out of the system
+					if (out_of_system){
+						previous_jump_ok = false;
+						exit_loop = true;
+						//printf("out of system\n");
 					}
 					
-					exit_loop = false;
-				}
-				
-				else{
-					exit_loop = false;
-				}
-				
-				// Choose an event randomly
-				double random_k = Rand_0_1() * sum_k;
-				double partial_sum_k = 0.0;
-				
-				// Find this event in the list
-				for (unsigned int event=0; event<event_k.size() && exit_loop == false; event++){
-					partial_sum_k += event_k[event];
+					// Do not jump if the next molecule is occupied
+					else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
+						previous_jump_ok = false;
+						exit_loop = true;
+						//printf("occupied\n");
+					}
 					
-					if (partial_sum_k > random_k){
+					else{
 						
-						// =======================================
-						//
-						// Summary of variables:
-						// ---------------------
-						//
-						// event_charge[event]: index of the charge of the event (= charge_i)
-						// event_neigh_num[event]: number of the neighbor of the molecule where the chosen charge is (= jj)
-						// event_neigh_index[event]: index of the molecule where the chosen charge is going to jump (= ii for the neighbor)
-						// curr_mol[event_charge[event]]: index of the molecule where the chosen charge is (= ii)
-						// curr_grid[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
-						//
-						// =======================================
-				
-						// Calculate the new position in the grid
-						int tmp_curr_mol = 0; // Expected final molecule index
-						int tmp_curr_grid = 0; // Expected final mini-grid index
-						int tmp_curr_grid_a = 0, tmp_curr_grid_b = 0, tmp_curr_grid_c = 0;
-						bool out_of_system = true;
+						// Calculate the total time
+						total_time_try += -log(Rand_0_1())/(sum_k);
 						
-						// Find next mini-grid
-						if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
-							tmp_curr_grid = curr_grid[event_charge[event]];
-							tmp_curr_grid_a = box_a[tmp_curr_grid];
-							tmp_curr_grid_b = box_b[tmp_curr_grid];
-							tmp_curr_grid_c = box_c[tmp_curr_grid];
-							out_of_system = false;
+						// Calculate the distance traveled by the charge and the total distance
+						double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
+						dist[event_charge[event]] += event_dist;
+						total_dist_try += event_dist/double(curr_mol.size());
+						// Note:
+						// We divide here by the number of charges in the system, 
+						// so there is no problem afterwards if the number of charges
+						// in the system change. Indeed:
+						// <x> = (1/n) * sum_i x_i = sum_i (x_i/n)
+									
+						// Calculate the number of jumps for each charge
+						jump[event_charge[event]] += 1.0;
+						
+						// Set the occupancy of the grid
+						grid_occ[event_mol_index[event]][curr_grid[event_charge[event]]] = false;
+						
+						// Set the new position in the grid from temp values
+						curr_grid[event_charge[event]] = tmp_curr_grid;
+						curr_mol[event_charge[event]] = tmp_curr_mol;
+						
+						// Check if the charge reached the end of the grid
+						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
 							
-						}
-						
-						else {
-							for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_charge[event]]].size(); xx++){
-								if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
-									tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
-									tmp_curr_grid_a = box_a[tmp_curr_grid];
-									tmp_curr_grid_b = box_b[tmp_curr_grid];
-									tmp_curr_grid_c = box_c[tmp_curr_grid];
-									out_of_system = false;
-									break;
+							// The charge is removed
+							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
+							// curr_grid.erase(curr_grid.begin()+event_charge[event]);
+							
+							// The charge appears at the beginning of the system
+							int *pos;
+							pos = new int[2];
+							
+							Dispatch_Mol_begin(i, grid_occ, pos);
+							
+							curr_grid[event_charge[event]] = pos[1];
+							curr_mol[event_charge[event]] = pos[0];
+							grid_occ[pos[0]][pos[1]] = true;
+							
+							delete [] pos;
+							
+							// Print summary for the current try in the file
+							if ((charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
+								pFile=fopen(OUT_SIMU.str().c_str(), "a");
+								if (pFile==NULL) { 
+									cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+									exit (1);
 								}
-								
+								fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
+								fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
+								fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
+								fprintf(pFile,"-------------------------------------------------------------------------------\n");
+								fclose(pFile);
 							}
-						}
 							
-						// Find next molecule
-						tmp_curr_mol = event_neigh_index[event];
-						//for (int ii=0; ii<n_mol && out_of_system == false; ii++){
-						//	if (neigh_label[i][event_mol_index[event]][event_neigh_num[event]] == mol_label[ii]){
-						//		tmp_curr_mol = ii;
-						//		break;
-						//	}
-						//}
-						
-						// Do not jump if the charge goes out of the system
-						if (out_of_system){
-							previous_jump_ok = false;
-							exit_loop = true;
-							//printf("out of system\n");
-						}
-						
-						// Do not jump if the next molecule is occupied
-						else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
-							previous_jump_ok = false;
-							exit_loop = true;
-							//printf("occupied\n");
+							// Print info on standard output
+							if ((charge_try/n_charges) % 10 == 0 && (charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
+								cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << (charge_try/n_charges) << "/" << n_try << endl;
+							}
+							
+							charge_try++;
+							
 						}
 						
 						else{
-							
-							// Calculate the total time
-							total_time_try.back() += -log(Rand_0_1())/(sum_k);
-							
-							// Calculate the distance traveled by the charge and the total distance
-							double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
-							dist[event_charge[event]] += event_dist;
-							total_dist_try.back() += event_dist/double(curr_mol.size());
-							// Note:
-							// We divide here by the number of charges in the system, 
-							// so there is no problem afterwards because the number of charges
-							// in the system change. Indeed:
-							// <x> = (1/n) * sum_i x_i = sum_i (x_i/n)
-										
-
-							// Calculate the number of jumps for each charge
-							jump[event_charge[event]] += 1.0;
-							
-							// Set the occupancy of the grid
-							grid_occ[event_mol_index[event]][curr_grid[event_charge[event]]] = false;
-							
-							// Set the new position in the grid from temp values
-							curr_grid[event_charge[event]] = tmp_curr_grid;
-							curr_mol[event_charge[event]] = tmp_curr_mol;
-							
-							// Check if the charge reached the end of the grid
-							if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
-								
-								// The charge is removed
-								curr_mol.erase(curr_mol.begin()+event_charge[event]);
-								curr_grid.erase(curr_grid.begin()+event_charge[event]);
-								
-							}
-							
-							else{
-								grid_occ[tmp_curr_mol][tmp_curr_grid] = true;
-							}
-							
-							previous_jump_ok = true;
-							exit_loop = true;
+							grid_occ[tmp_curr_mol][tmp_curr_grid] = true;
 						}
+						
+						previous_jump_ok = true;
+						exit_loop = true;
 					}
 				}
 			}
-			
-			// Print summary for the current try
-			pFile=fopen(OUT_SIMU.str().c_str(), "a");
-			if (pFile==NULL) { 
-				cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-				exit (1);
-			}
-			fprintf(pFile,"Time_try_%d = %e\n", charge_try, total_time_try.back());
-			fprintf(pFile,"Distance_try_%d = %e\n", charge_try, total_dist_try.back());
-			fprintf(pFile,"Mu_try_%d = %lf\n", charge_try, total_dist_try.back()/(total_time_try.back()*F_norm));
-			fprintf(pFile,"-------------------------------------------------------------------------------\n");
-			fclose(pFile);			
-
 		}
 
-		// Calculates the average travel time and distance for the frame
-		double total_time_av = 0.0; 
-		double total_dist_av = 0.0; 
-		double dbl_n_try = n_try;
-		
-		for(unsigned int charge_try=0; charge_try<n_try; charge_try++) {
-			total_time_av = total_time_av + total_time_try[charge_try];
-			total_dist_av = total_dist_av + total_dist_try[charge_try];
-		}
-		total_time_av = total_time_av/dbl_n_try;
-		total_dist_av = total_dist_av/dbl_n_try;
-		
-		mu_frame.push_back(total_dist_av/(total_time_av*F_norm));
+		// Calculates the final mobility for the frame
+		mu_frame.push_back(total_dist_try/(total_time_try*F_norm));
 
 		// Writes a summary for the frame
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
@@ -1378,8 +1414,8 @@ void MC_BKL(string output_folder){
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fprintf(pFile,"Number of tries = %d\n", n_try);
-		fprintf(pFile,"Average Time = %e\n", total_time_av);
-		fprintf(pFile,"Average Distance = %e\n", total_dist_av);
+		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
+		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
 		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame.back());
 		fclose(pFile);
 	}
@@ -1579,9 +1615,9 @@ int main(int argc, char **argv){
 			Print_Summary(output_folder);
 			
 			// Clear some tables
-			//J_H.clear();
-			//J_L.clear();
-			//dE.clear();
+			// J_H.clear();
+			// J_L.clear();
+			// dE.clear();
 			
 			// Calculates 1/k and clear the k table
 			Inverse_Clear_k(false);
