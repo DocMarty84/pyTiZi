@@ -440,6 +440,40 @@ if __name__ == '__main__':
 			# Making a link between qs and data
 			data = qs
 			cell = box
+			
+		if project.file_type == "pdb":
+			file_pdb = "%s%s%s.pdb" % (project.input_dir, os.sep, filename_base)
+			
+			# Getting informations about the size of the system and cell parameters
+			(n_frame, n_mol, n_atom, a, b, c, alpha, beta, gamma) = read_input_MD.Read_PDB_File_First(file_pdb, verb)
+			if verb > 2:
+				print "[INFO] %s file read for the first time!" % (file_pdb)
+							
+			# Create MolecularSystem and SimulationBox
+			box = molecular_system.SimulationBox(n_frame, a, b, c, alpha, beta, gamma)
+			if verb > 2:
+				print "[INFO] Generation of simulation box done!"
+			qs = molecular_system.MolecularSystem(n_frame, n_mol, [n_atom])
+			if verb > 2:
+				print "[INFO] Generation of molecular system done!"
+
+			# Reading the coordinates
+			read_input_MD.Read_PDB_File_Second(file_pdb, qs, verb)
+			if verb > 2:
+				print "[INFO] %s file read for the second time!" % (file_pdb)
+			
+			# Calculating quantities for the MolecularSystem and SimulationBox
+			box.Parameters_For_Orthogonalization()
+			if verb > 2:	
+				print "[INFO] Parameters For Orthogonalization calculated!"
+				print "[INFO] Calculation of Center of Masses. This may take some time..."
+			qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			if verb > 2:	
+				print "[INFO] Centers of Masses calculated!"
+			
+			# Making a link between qs and data
+			data = qs
+			cell = box
 		
 		# =============================
 		# Include here other file types

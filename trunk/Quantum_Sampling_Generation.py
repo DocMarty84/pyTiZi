@@ -29,7 +29,7 @@ if __name__ == '__main__':
 	"""
 	t1 = time.clock()
 	
-	filename_base = "anthracene_UNIT_CELL_MIN"
+	filename_base = "DT-TTF"
 	file_vec = "%s.vec" % (filename_base)
 	file_xyz = "%s.xyz" % (filename_base)
 	file_add = "%s.add" % (filename_base)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 #				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 				
 				# Create VBHF input files
-#				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 				# Create ME input files
 #				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)

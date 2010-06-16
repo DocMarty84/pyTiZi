@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 
 class InstructionsData(object):
 	""" Class containing all intruction for the simulation """
@@ -101,6 +102,8 @@ def grep(string,list):
 def FileTypeCheck(file_type):
 	if file_type == "tinker":
 		return ("tinker", ".arc")
+	elif file_type == "pdb":
+		return ("pdb", ".pdb")
 	else:
 		print "[ERROR] File type not recognized. Aborting..."
 		sys.exit(1)

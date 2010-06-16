@@ -3,100 +3,145 @@ import numpy as np
 import sys
 import read_various
 
-def Calculate_Number_Atom_Mol_PDB(name):
-	""" Calculate the number of different molecules in a pdb file """
+def Read_PDB_File_First(name, verb=2):
+	""" Calculate the number of frames/molecules/atoms in a PDB file,
+	    and reads the box parameters. """
 	try:
 		finput = open(name, 'r')
 	except:
-		print "Could not open %s" % (name)
+		if verb > 0:
+			print "[ERROR] Could not open %s" % (name)
 		sys.exit(1)
 	
+	first_frame = True
+	
+	n_frame = 0
 	n_mol = 0
 	n_atom = []
 	tmp = 0
 	
+	a_tmp = []
+	b_tmp = []
+	c_tmp = []
+	alpha_tmp = []
+	beta_tmp = []
+	gamma_tmp = []
+	
 	while 1:
 		line = finput.readline()
 		words1 = line.split()
-		if words1[0] == "ATOM":
-			line = finput.readline()
-			words2 = line.split()
+		
+		if words1[0] == "END_OF_FILE":
+			break
 			
-			while words2[0] != "TER" and int(words1[4]) == int(words2[4]):
-				tmp += 1
+		elif words1[0] == "REMARK":
+			pass
+		
+		elif words1[0] == "CRYST":
+			a_tmp.append(float(words1[1]))
+			b_tmp.append(float(words1[2]))
+			c_tmp.append(float(words1[3]))
+			alpha_tmp.append(float(words1[4]))
+			beta_tmp.append(float(words1[5]))
+			gamma_tmp.append(float(words1[6]))
+			n_frame += 1
+		
+		elif words1[0] == "ATOM" and first_frame:
+			tmp = 1
+			n_mol = 1
+			
+			while True:
 				line = finput.readline()
 				words2 = line.split()
-				
-			tmp += 1	
-			n_mol += 1
-			n_atom.append(tmp)
-			tmp = 1
 			
-			if words2[0] == "TER":
-				break
-	
-	return n_mol, n_atom
+				if words2[0] == "ATOM" and int(words1[4]) == int(words2[4]):
+					tmp += 1
+					
+				elif words2[0] == "ATOM" and int(words1[4]) != int(words2[4]):
+					n_atom.append(tmp)
+					words1 = words2[:]
+					n_mol += 1
+					tmp = 1
+					
+				elif words2[0] == "TER":
+					n_atom.append(tmp)
+					first_frame = False
+					break
 
-def Read_PDB_Interface(name, mol1, mol2):
-	""" Read a PDB file (suppose 2 kind of molecules) """
-	atomic_masses = Read_Atomic_Masses()
+		else:
+			pass
+			
+	finput.close()
+	
+	a = np.zeros((n_frame), float)
+	b = np.zeros((n_frame), float)
+	c = np.zeros((n_frame), float)
+	alpha = np.zeros((n_frame), float)
+	beta = np.zeros((n_frame), float)
+	gamma = np.zeros((n_frame), float)
+	
+	for i in xrange(n_frame):
+		a[i] = a_tmp[i]
+		b[i] = b_tmp[i]
+		c[i] = c_tmp[i]
+		alpha[i] = alpha_tmp[i]
+		beta[i] = beta_tmp[i]
+		gamma[i] = gamma_tmp[i]
+	
+	return n_frame, n_mol, n_atom[0], a, b, c, alpha, beta, gamma
+
+def Read_PDB_File_Second(name, mol, verb=2):
+	""" Read the coordinates in a PDB file """
+	atomic_numbers = read_various.Read_Atomic_Numbers()
+	atomic_masses = read_various.Read_Atomic_Masses()
+	atomic_valences = read_various.Read_Atomic_Valences()
 	
 	try:
 		finput = open(name, 'r')
 	except:
-		print "Could not open %s" % (name)
-		sys. exit(1)
+		if verb > 0:
+			print "[ERROR] Could not open %s" % (name)
+		sys.exit(1)
+		
+	i = -1
 		
 	while 1:		
 		line = finput.readline()
 		words = line.split()
-		first_word = words[0].strip(string.punctuation + string.whitespace)
-		if first_word == "REMARK":
-			pass
-
-		elif first_word == "CRYST":
-			box.a = float(words[1])
-			box.b = float(words[2])
-			box.c = float(words[3])
-			box.alpha_deg = float(words[4])
-			box.beta_deg = float(words[5])
-			box.gamma_deg = float(words[6])
-			box.DegtoRad()
-
-		elif first_word == "ATOM":
-			first_atom_line = True
-			for i in xrange(mol1.n_frame):
-				for ii in xrange(mol1.n_mol):
-					for iii in xrange(mol1.n_atom[ii]):
-						if not first_atom_line:
-							line = finput.readline()
-							words = line.split()
-						mol1.symbol[i][ii][iii] = words[2].strip(string.punctuation + string.whitespace)
-						mol1.x[i, ii, iii] = float(words[5])
-						mol1.y[i, ii, iii] = float(words[6])
-						mol1.z[i, ii, iii] = float(words[7])
-						mol1.atomic_mass[i, ii, iii] = atomic_masses[mol1.symbol[i][ii][iii]]
-						first_atom_line = False
-#						print mol1.symbol[i][ii][iii], mol1.atomic_mass[i, ii, iii], mol1.x[i, ii, iii], mol1.y[i, ii, iii], mol1.z[i, ii, iii]
-					mol1.mol_number[i, ii] = int(words[4])
-					
-			for j in xrange(mol2.n_frame):
-				for jj in xrange(mol2.n_mol):
-					for jjj in xrange(mol2.n_atom[jj]):
-						line = finput.readline()
-						words = line.split()
-						mol2.symbol[j][jj][jjj] = words[2].strip(string.punctuation + string.whitespace)
-						mol2.x[j, jj, jjj] = float(words[5])
-						mol2.y[j, jj, jjj] = float(words[6])
-						mol2.z[j, jj, jjj] = float(words[7])
-						mol2.atomic_mass[j, jj, jjj] = atomic_masses[mol2.symbol[j][jj][jjj]]
-#						print mol2.symbol[j][jj][jjj], mol2.atomic_mass[j, jj, jjj], mol2.x[j, jj, jjj], mol2.y[j, jj, jjj], mol2.z[j, jj, jjj]
-					mol2.mol_number[j, jj] = int(words[4])
-		elif first_word == "TER":
+		
+		if words[0] == "END_OF_FILE":
+			finput.close()
 			break
 			
+		elif words[0] == "CRYST":
+			i += 1
+			if verb > 3 and i%10 == 0:
+				print "[INFO] Reading frame %d/%d" %(i, mol.n_frame)
+			
+		elif words[0] == "REMARK":
+			pass
+		
+		elif words[0] == "ATOM":
+			first_atom_line = True
+			for ii in xrange(mol.n_mol):
+				for iii in xrange(mol.n_atom[ii]):
+					if not first_atom_line:
+						line = finput.readline()
+						words = line.split()
+					mol.symbol[i][ii][iii] = words[2][0]
+					mol.x[i, ii, iii] = float(words[5])
+					mol.y[i, ii, iii] = float(words[6])
+					mol.z[i, ii, iii] = float(words[7])
+					mol.atomic_number[i, ii, iii] = atomic_numbers[mol.symbol[i][ii][iii]] 
+					mol.atomic_mass[i, ii, iii] = atomic_masses[mol.symbol[i][ii][iii]] 
+					mol.atomic_valence[i, ii, iii] = atomic_valences[mol.symbol[i][ii][iii]]
+					
+					first_atom_line = False
+			
+		else:
+			pass
+			
 	finput.close()
-	print "Reading of input file done!"
 
 def Read_TINKER_add_File(name, verb=2):
 	try:

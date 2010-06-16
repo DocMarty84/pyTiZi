@@ -41,7 +41,7 @@ def CreateXYZ(data, cell, project, filename_base, verb=2):
 		for ii in project.molecules_to_analyze_full:
 			tmp += 'molecule %d\n' % (ii)
 			for iii in xrange(data.n_atom[ii]):
-				tmp += '%4s %5d %10f %5d %12f %12f %12f\n'\
+				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
 				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
 		if ( i%100 == 0 ):
 			foutput.writelines(tmp)
