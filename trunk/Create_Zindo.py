@@ -433,7 +433,10 @@ if __name__ == '__main__':
 			if verb > 2:	
 				print "[INFO] Parameters For Orthogonalization calculated!"
 				print "[INFO] Calculation of Center of Masses. This may take some time..."
-			qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			try:
+				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			except:
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"
 			
@@ -467,7 +470,11 @@ if __name__ == '__main__':
 			if verb > 2:	
 				print "[INFO] Parameters For Orthogonalization calculated!"
 				print "[INFO] Calculation of Center of Masses. This may take some time..."
-			qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			try:
+				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			except:
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+			
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"
 			
@@ -510,10 +517,14 @@ if __name__ == '__main__':
 		
 		if verb > 2:
 			print "[INFO] Writing output files. This may take some time..."
-		write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
 		write_cluster_files.CreateCELL(data, cell, project, filename_base)
 		write_cluster_files.CreateCM(data, project, filename_base)
 		write_cluster_files.CreateZIN(project, filename_base)
+		try:
+			write_cluster_files.CreateXYZ_MT(data, cell, project, filename_base, verb)
+		except:
+			write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
+		
 		
 	# =====================
 	# Script files creation
@@ -525,6 +536,7 @@ if __name__ == '__main__':
 	write_cluster_files.ScriptZINDOLaunch(project)
 	write_cluster_files.ScriptZINDOCollectDirect(data, project)
 
+	"""
 	try:
 		import tarfile
 		
@@ -542,7 +554,7 @@ if __name__ == '__main__':
 	except:
 		if verb > 1:
 			print "[WARNING] Could not create project%s%s.tar.gz file.\n" % (os.sep, project.project_name)	
-
+	"""
 
 	t2 = time.clock()
 	if verb > 2:

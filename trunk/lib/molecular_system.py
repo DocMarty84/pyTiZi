@@ -142,6 +142,71 @@ class MolecularSystem(object):
 #				print M_TOT, self.CM_x[i,ii], self.CM_y[i,ii], self.CM_z[i,ii]
 			if ( i%100 == 0 and verb>3):
 				print "[INFO] CM of frame %d calculated!" % (i)
+				
+				
+	def Center_of_Masses_MT(self, molecules=[0], verb=2):
+		import multiprocessing
+		
+		if molecules[0] == 0:
+			mol = xrange(self.n_mol)
+		else:
+			mol = molecules
+			
+		mutex = multiprocessing.Lock()
+		ps = []
+		
+		parent_1, child_1 = multiprocessing.Pipe()
+		parent_2, child_2 = multiprocessing.Pipe()
+
+		p = multiprocessing.Process(target = self.Center_of_Masses_MT_thread, args = (mutex, child_1, mol, 0, int(self.n_frame/2), verb))
+		ps.append(p)
+		p.start()
+
+		p = multiprocessing.Process(target = self.Center_of_Masses_MT_thread, args = (mutex, child_2, mol, int(self.n_frame/2), self.n_frame, verb))
+		ps.append(p)
+		p.start()
+		
+		res_thr1 = parent_1.recv()
+		res_thr2 = parent_2.recv()
+		
+		for x in ps:
+			p.join()
+			
+		self.n_electrons[0:int(self.n_frame/2)] = res_thr1[0][:]
+		self.CM_x[0:int(self.n_frame/2)] = res_thr1[1][:]
+		self.CM_y[0:int(self.n_frame/2)] = res_thr1[2][:]
+		self.CM_z[0:int(self.n_frame/2)] = res_thr1[3][:]
+		
+		self.n_electrons[int(self.n_frame/2):] = res_thr2[0][:]
+		self.CM_x[int(self.n_frame/2):] = res_thr2[1][:]
+		self.CM_y[int(self.n_frame/2):] = res_thr2[2][:]
+		self.CM_z[int(self.n_frame/2):] = res_thr2[3][:]
+			
+		#self.Center_of_Masses_MT_thread(mutex, mol, 0, self.n_frame, verb)
+			
+	def Center_of_Masses_MT_thread(self, mutex, child, mol, frame_i, frame_f, verb):	
+		#mutex.acquire()
+
+		for i in xrange(frame_i, frame_f, 1):
+			for ii in mol:
+				M_TOT = 0.0
+				for iii in xrange(self.n_atom[ii]):
+					self.n_electrons[i,ii] += self.atomic_valence[i, ii, iii]
+					self.CM_x[i,ii] += self.atomic_mass[i, ii, iii] * self.x[i, ii, iii]
+					self.CM_y[i,ii] += self.atomic_mass[i, ii, iii] * self.y[i, ii, iii]
+					self.CM_z[i,ii] += self.atomic_mass[i, ii, iii] * self.z[i, ii, iii]
+					M_TOT += self.atomic_mass[i, ii, iii]
+				self.CM_x[i,ii] = self.CM_x[i,ii]/M_TOT
+				self.CM_y[i,ii] = self.CM_y[i,ii]/M_TOT
+				self.CM_z[i,ii] = self.CM_z[i,ii]/M_TOT
+		#				print M_TOT, self.CM_x[i,ii], self.CM_y[i,ii], self.CM_z[i,ii]
+			if ( i%100 == 0 and verb>3):
+				print "[INFO] CM of frame %d calculated!" % (i)
+		
+		child.send([self.n_electrons[frame_i:frame_f], self.CM_x[frame_i:frame_f], self.CM_y[frame_i:frame_f], self.CM_z[frame_i:frame_f]])
+		child.close()
+
+		#mutex.release()
 
 class Neighbors_System(object):
 	""" Class with tables specifying if two molecules are neighbor_search.

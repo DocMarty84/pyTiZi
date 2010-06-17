@@ -51,6 +51,88 @@ def CreateXYZ(data, cell, project, filename_base, verb=2):
 	
 	foutput.write(tmp)
 	foutput.close()
+	
+def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
+	""" Create the .xyz file containing the coordinates of all the atoms
+		in the system.
+	"""
+	import multiprocessing
+	
+	file = '%s%s%s.xyz' % (project.input_cluster, os.sep, filename_base)
+	try:
+		foutput = open(file, 'w')
+	except:
+		if verb>0:
+			print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+		
+	tmp = '%d %d\n' % (data.n_frame, len(project.molecules_to_analyze_full))
+	for ii in project.molecules_to_analyze_full:
+		tmp += '%d ' % (data.n_atom[ii])
+	tmp += '\n'	
+	foutput.writelines(tmp)
+	tmp = ''
+	
+	frame_0 = 0
+	frame_1 = 50
+	frame_2 = 100
+	
+	while frame_1 < data.n_frame and frame_2 < data.n_frame:
+		ps = []
+		
+		parent_1, child_1 = multiprocessing.Pipe()
+		parent_2, child_2 = multiprocessing.Pipe()
+
+		p = multiprocessing.Process(target = CreateXYZ_MT_thread, args = (child_1, data, cell, project, frame_0, frame_1, verb))
+		ps.append(p)
+		p.start()
+
+		p = multiprocessing.Process(target = CreateXYZ_MT_thread, args = (child_2, data, cell, project, frame_1, frame_2, verb))
+		ps.append(p)
+		p.start()
+		
+		res_thr1 = parent_1.recv()
+		res_thr2 = parent_2.recv()
+		
+		for x in ps:
+			p.join()
+			
+		foutput.writelines(res_thr1)
+		foutput.writelines(res_thr2)
+		
+		if frame_0%100 == 0 and verb > 3:
+			print "[INFO] Writing frame %d in the file %s" % (frame_0, file)
+		
+		frame_0 = frame_2
+		frame_1 = frame_0 + 50
+		frame_2 = frame_0 + 100
+			
+		
+	tmp = ''	
+	for i in xrange(frame_0, data.n_frame, 1):
+		tmp += 'frame %d\n' % (i)
+		for ii in project.molecules_to_analyze_full:
+			tmp += 'molecule %d\n' % (ii)
+			for iii in xrange(data.n_atom[ii]):
+				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
+				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
+
+	foutput.write(tmp)
+				
+	foutput.close()
+	
+def CreateXYZ_MT_thread(child, data, cell, project, frame_i, frame_f, verb=2):
+	tmp = ''	
+	for i in xrange(frame_i, frame_f, 1):
+		tmp += 'frame %d\n' % (i)
+		for ii in project.molecules_to_analyze_full:
+			tmp += 'molecule %d\n' % (ii)
+			for iii in xrange(data.n_atom[ii]):
+				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
+				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
+
+	child.send(tmp)
+	child.close()
 
 def CreateCELL(data, cell, project, filename_base):
 	""" Create the .cell file containing the cell parameters related
