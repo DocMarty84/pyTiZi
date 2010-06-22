@@ -262,6 +262,7 @@ def ScriptFileCreation(project):
 	
 	tmp += 'done\n\n'
 
+	tmp += 'mv $SCRATCH_DIR/*.nb $INPUT_DIR/MD\n'
 	tmp += 'rm -rf $SCRATCH_DIR/*\n'
 	
 	file = 'project%s%s%s01.file_creation.sh' % (os.sep, project.project_name, os.sep)
@@ -306,6 +307,7 @@ def ScriptFileCreationDirect(project):
 
 	tmp += 'for FILE in `find . -name "*.xyz"`\n'
 	tmp += 'do\n'
+	tmp += '	cd $INPUT_DIR/MD\n'
 	tmp += '	NAME=`echo $FILE | cut -d "." -f2 | cut -d "/" -f2`\n'
 	tmp += '	echo "Currently analyzing file $NAME..."\n'
 	tmp += '	mkdir -p $NAME\n\n'
