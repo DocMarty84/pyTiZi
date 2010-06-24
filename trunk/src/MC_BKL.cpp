@@ -17,6 +17,8 @@
  *******************************************************************************
  */
 
+#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
+
 // C++ libraries
 #include <iostream> //Entrées-sorties standard
 #include <fstream> //Entrées-sorties sur fichiers
@@ -86,6 +88,12 @@ double F_x, F_y, F_z;
 // Constants for the MLJ theory
 double S, MLJ_CST1, MLJ_CST2; 
 vector <double> MLJ_CST3;
+
+// Variables for MT
+bool MT = 1;
+vector<double> event_k_1, event_k_2; // Transfer rate
+vector<int> event_charge_1, event_mol_index_1, event_neigh_num_1, event_neigh_index_1, event_charge_2, event_mol_index_2, event_neigh_num_2, event_neigh_index_2; // Initial molecule and neighbor
+
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -163,7 +171,8 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
 		input >> LAMBDA_I_H >> LAMBDA_I_E >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
-		input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> n_charges;
+		//input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> n_charges;
+		input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> tmp;
 		input >> F_norm;
 		
 		//Generate vectors
@@ -969,16 +978,24 @@ void Print_Summary(string output_folder) {
 	FILE * pFile;
 
 	pFile = fopen(OUT_TOT.str().c_str(), "w");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_TOT.str().c_str() << "! Exiting..." << endl;
-		exit (1);
+	if (pFile==NULL) {
+		int wait = 0; 
+		while (wait<10 && pFile==NULL){
+			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+			usleep(10*(wait+1)*(wait+1));
+			pFile = fopen(OUT_TOT.str().c_str(), "w");
+			wait++;
+		}
+		if (wait==10 && pFile==NULL){
+			cerr << "[ERROR] Impossible to write " << OUT_TOT.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
 	}
-
 	fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n\n", uF_x, uF_y, uF_z);
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile,"Frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile,"Molecule %d | %d neighbors\n", mol_label[ii], neigh_label[i][ii].size());
+			fprintf(pFile,"Molecule %d | %d neighbors\n", mol_label[ii], int(neigh_label[i][ii].size()));
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				fprintf(pFile,"%6d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %14.5e\n", neigh_label[i][ii][jj], d_x[i][ii][jj], d_y[i][ii][jj], d_z[i][ii][jj], dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj], k[i][ii][jj]);
 			}
@@ -1011,7 +1028,7 @@ int Choose_Mol_RND(int frame){
 
 void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
-	int pos_a, pos_b, pos_c, mol, box; 
+	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
 	
 	//double k_sum;
 	
@@ -1044,7 +1061,7 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 
 void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
-	int pos_a, pos_b, pos_c, mol, box; 
+	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
 	
 	//double k_sum;
 	
@@ -1065,7 +1082,7 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 			pos_a = rand()%n_mini_grid_a;
 			pos_b = rand()%n_mini_grid_b;
 			pos_c = 0;
-		}		
+		}	
 		
 		mol = rand()%n_mol;
 		
@@ -1087,6 +1104,47 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 	
 	pos[0] = mol;
 	pos[1] = box;
+}
+
+void MC_BKL_Loop_MT(int frame, unsigned int charge_0, unsigned int charge_f, vector<int> curr_mol, vector<int> curr_grid, int thr){
+	for (unsigned int charge_i=charge_0; charge_i<charge_f; charge_i++){
+		
+		int tmp_mol_index = curr_mol[charge_i];
+								
+		for (unsigned int jj=0; jj<neigh_label[frame][tmp_mol_index].size(); jj++){
+			
+			// Find index of neighbor
+			int tmp_neigh_num = jj;
+			int tmp_neigh_index = tmp_mol_index;
+			for (int ii=0; ii<n_mol; ii++){
+				if (neigh_label[frame][tmp_mol_index][jj] == mol_label[ii]){
+					tmp_neigh_index = ii;
+					break;
+				}
+			}
+			
+			double k_tmp = numeric_limits<double>::min();
+			if (tmp_neigh_index != tmp_mol_index){
+				k_tmp = Marcus_Levich_Jortner_rate_electro(frame, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[frame][tmp_mol_index][jj], d_y[frame][tmp_mol_index][jj], d_z[frame][tmp_mol_index][jj], dE[frame][tmp_mol_index][jj], J_H[frame][tmp_mol_index][jj], J_L[frame][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+			}
+
+			if (thr==1) {
+				event_k_1.push_back(k_tmp);
+				event_charge_1.push_back(charge_i);
+				event_mol_index_1.push_back(tmp_mol_index);
+				event_neigh_num_1.push_back(jj);
+				event_neigh_index_1.push_back(tmp_neigh_index);
+			}
+			
+			else if (thr==2) {
+				event_k_2.push_back(k_tmp);
+				event_charge_2.push_back(charge_i);
+				event_mol_index_2.push_back(tmp_mol_index);
+				event_neigh_num_2.push_back(jj);
+				event_neigh_index_2.push_back(tmp_neigh_index);
+			}
+		}
+	}
 }
 
 // BKL algorithm
@@ -1125,9 +1183,18 @@ void MC_BKL(string output_folder){
 	FILE * pFile;
 
 	pFile = fopen(OUT_SIMU.str().c_str(), "w");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-		exit (1);
+	if (pFile==NULL) {
+		int wait = 0; 
+		while (wait<10 && pFile==NULL){
+			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+			usleep(10*(wait+1)*(wait+1));
+			pFile = fopen(OUT_SIMU.str().c_str(), "w");
+			wait++;
+		}
+		if (wait==10 && pFile==NULL){
+			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
 	}
 	fclose(pFile);
 	
@@ -1138,9 +1205,18 @@ void MC_BKL(string output_folder){
 		
 		// Print summary for the current try
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
-		if (pFile==NULL) { 
-			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-			exit (1);
+		if (pFile==NULL) {
+			int wait = 0; 
+			while (wait<10 && pFile==NULL){
+				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+				usleep(10*(wait+1)*(wait+1));
+				pFile=fopen(OUT_SIMU.str().c_str(), "a");
+				wait++;
+			}
+			if (wait==10 && pFile==NULL){
+				cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+				exit (1);
+			}
 		}
 		fprintf(pFile,"===============================================================================\n");
 		fprintf(pFile,"Frame = %d\n", i);
@@ -1205,39 +1281,92 @@ void MC_BKL(string output_folder){
 			// Calculates the transfer rates
 			if (previous_jump_ok){
 				
-				// List all the possible events
-				event_k.clear();
-				event_charge.clear();
-				event_mol_index.clear();
-				event_neigh_num.clear(); 
-				event_neigh_index.clear();
-				
-				for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
+				if (MT){
+					event_k.clear();
+					event_charge.clear();
+					event_mol_index.clear();
+					event_neigh_num.clear(); 
+					event_neigh_index.clear();
 					
-					int tmp_mol_index = curr_mol[charge_i];
-											
-					for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
+					event_k_1.clear();
+					event_charge_1.clear();
+					event_mol_index_1.clear();
+					event_neigh_num_1.clear(); 
+					event_neigh_index_1.clear();
+					
+					event_k_2.clear();
+					event_charge_2.clear();
+					event_mol_index_2.clear();
+					event_neigh_num_2.clear(); 
+					event_neigh_index_2.clear();
+										
+					boost::thread thrd1(&MC_BKL_Loop_MT, i, 0, int(curr_mol.size()/2), curr_mol, curr_grid, 1);
+					boost::thread thrd2(&MC_BKL_Loop_MT, i, int(curr_mol.size()/2), curr_mol.size(), curr_mol, curr_grid, 2);
+					thrd1.join();
+					thrd2.join();
+					
+					
+					for (unsigned int t=0; t<event_k_1.size(); t++){
+						event_k.push_back(event_k_1[t]);
+						event_charge.push_back(event_charge_1[t]);
+						event_mol_index.push_back(event_mol_index_1[t]);
+						event_neigh_num.push_back(event_neigh_num_1[t]);
+						event_neigh_index.push_back(event_neigh_index_1[t]);
 						
-						// Find index of neighbor
-						int tmp_neigh_num = jj;
-						int tmp_neigh_index = tmp_mol_index;
-						for (int ii=0; ii<n_mol; ii++){
-							if (neigh_label[i][tmp_mol_index][jj] == mol_label[ii]){
-								tmp_neigh_index = ii;
-								break;
-							}
-						}
+					}
+					
+					for (unsigned int t=0; t<event_k_2.size(); t++){
+						event_k.push_back(event_k_2[t]);
+						event_charge.push_back(event_charge_2[t]);
+						event_mol_index.push_back(event_mol_index_2[t]);
+						event_neigh_num.push_back(event_neigh_num_2[t]);
+						event_neigh_index.push_back(event_neigh_index_2[t]);
 						
-						double k_tmp = numeric_limits<double>::min();
-						if (tmp_neigh_index != tmp_mol_index){
-							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
-						}
+					}
+					
+					//merge(event_k_1.begin(), event_k_1.begin()+event_k_1.size(), event_k_2.begin(), event_k_2.begin()+event_k_2.size(), event_k.begin());
+					//merge(event_charge_1.begin(), event_charge_1.begin()+event_charge_1.size(), event_charge_2.begin(), event_charge_2.begin()+event_charge_2.size(), event_charge.begin());
+					//merge(event_mol_index_1.begin(), event_mol_index_1.begin()+event_mol_index_1.size(), event_mol_index_2.begin(), event_mol_index_2.begin()+event_mol_index_2.size(), event_mol_index.begin());
+					//merge(event_neigh_num_1.begin(), event_neigh_num_1.begin()+event_neigh_num_1.size(), event_neigh_num_2.begin(), event_neigh_num_2.begin()+event_neigh_num_2.size(), event_neigh_num.begin());
+					//merge(event_neigh_index_1.begin(), event_neigh_index_1.begin()+event_neigh_index_1.size(), event_neigh_index_2.begin(), event_neigh_index_2.begin()+event_neigh_index_2.size(), event_neigh_index.begin());
 
-						event_k.push_back(k_tmp);
-						event_charge.push_back(charge_i);
-						event_mol_index.push_back(tmp_mol_index);
-						event_neigh_num.push_back(jj);
-						event_neigh_index.push_back(tmp_neigh_index);
+				}
+				
+				else {
+					// List all the possible events
+					event_k.clear();
+					event_charge.clear();
+					event_mol_index.clear();
+					event_neigh_num.clear(); 
+					event_neigh_index.clear();
+					
+					for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
+						
+						int tmp_mol_index = curr_mol[charge_i];
+												
+						for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
+							
+							// Find index of neighbor
+							int tmp_neigh_num = jj;
+							int tmp_neigh_index = tmp_mol_index;
+							for (int ii=0; ii<n_mol; ii++){
+								if (neigh_label[i][tmp_mol_index][jj] == mol_label[ii]){
+									tmp_neigh_index = ii;
+									break;
+								}
+							}
+							
+							double k_tmp = numeric_limits<double>::min();
+							if (tmp_neigh_index != tmp_mol_index){
+								k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+							}
+
+							event_k.push_back(k_tmp);
+							event_charge.push_back(charge_i);
+							event_mol_index.push_back(tmp_mol_index);
+							event_neigh_num.push_back(jj);
+							event_neigh_index.push_back(tmp_neigh_index);
+						}
 					}
 				}
 				
@@ -1372,9 +1501,18 @@ void MC_BKL(string output_folder){
 							// Print summary for the current try in the file
 							if ((charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
 								pFile=fopen(OUT_SIMU.str().c_str(), "a");
-								if (pFile==NULL) { 
-									cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-									exit (1);
+								if (pFile==NULL) {
+									int wait = 0; 
+									while (wait<10 && pFile==NULL){
+										cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+										usleep(10*(wait+1)*(wait+1));
+										pFile=fopen(OUT_SIMU.str().c_str(), "a");
+										wait++;
+									}
+									if (wait==10 && pFile==NULL){
+										cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+										exit (1);
+									}
 								}
 								fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
 								fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
@@ -1408,9 +1546,18 @@ void MC_BKL(string output_folder){
 
 		// Writes a summary for the frame
 		pFile=fopen(OUT_SIMU.str().c_str(), "a");
-		if (pFile==NULL) { 
-			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-			exit (1);
+		if (pFile==NULL) {
+			int wait = 0; 
+			while (wait<10 && pFile==NULL){
+				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+				usleep(10*(wait+1)*(wait+1));
+				pFile=fopen(OUT_SIMU.str().c_str(), "a");
+				wait++;
+			}
+			if (wait==10 && pFile==NULL){
+				cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+				exit (1);
+			}
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fprintf(pFile,"Number of tries = %d\n", n_try);
@@ -1430,9 +1577,18 @@ void MC_BKL(string output_folder){
 	
 	// Writes the final mobility
 	pFile=fopen(OUT_SIMU.str().c_str(), "a");
-	if (pFile==NULL) { 
-		cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
-		exit (1);
+	if (pFile==NULL) {
+		int wait = 0; 
+		while (wait<10 && pFile==NULL){
+			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+			usleep(10*(wait+1)*(wait+1));
+			pFile=fopen(OUT_SIMU.str().c_str(), "a");
+			wait++;
+		}
+		if (wait==10 && pFile==NULL){
+			cerr << "[ERROR] Impossible to write " << OUT_SIMU.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
 	}
 	fprintf(pFile,"\n==================\n==================\n");
 	fprintf(pFile,"mu_av = %lf\n", mu_moy);
@@ -1460,7 +1616,7 @@ int main(int argc, char **argv){
 	string input_folder = ".";
 	string output_folder = ".";
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -1490,6 +1646,10 @@ int main(int argc, char **argv){
 	  			
 	  		case 'd':
 				F_dir = optarg;
+	  			break;
+	  			
+	  		case 'n':
+				n_charges = atoi(optarg);
 	  			break;
 			}
 	}
