@@ -315,7 +315,7 @@ void Read_J(string input_file, string result_folder){
 			ifstream input(file_J.str().c_str(), ios::in);
 			
 			if (input){
-				int mol1, mol2;
+				int mol1, mol2, mol1_index;
 				int prev_value = 0;
 				
 				input >> tmp >> mol1 >> mol2;
@@ -323,16 +323,22 @@ void Read_J(string input_file, string result_folder){
 				while (!input.eof()){
 					input >> f >> h >> l;
 
-					if (mol2 == neighbors_label[f][mol1][prev_value]){
-						J_H[f][mol1][prev_value] = h;
-						J_L[f][mol1][prev_value] = l;
+					for (int ii=0; ii<n_mol; ii++){
+						if (mol_label[ii]==mol1){
+							mol1_index = ii;
+						}
+					}
+
+					if (mol2 == neighbors_label[f][mol1_index][prev_value]){
+						J_H[f][mol1_index][prev_value] = h;
+						J_L[f][mol1_index][prev_value] = l;
 					}					
 					
 					else {
-						for (int jj=0; jj<n_neighbors[f][mol1]; jj++){
-							if (mol2 == neighbors_label[f][mol1][jj]){
-								J_H[f][mol1][jj] = h;
-								J_L[f][mol1][jj] = l;
+						for (int jj=0; jj<n_neighbors[f][mol1_index]; jj++){
+							if (mol2 == neighbors_label[f][mol1_index][jj]){
+								J_H[f][mol1_index][jj] = h;
+								J_L[f][mol1_index][jj] = l;
 								prev_value = jj;
 								break;
 							}

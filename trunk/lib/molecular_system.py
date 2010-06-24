@@ -109,6 +109,10 @@ class MolecularSystem(object):
 		self.CM_y = np.zeros((n_frame, n_mol), float)
 		self.CM_z = np.zeros((n_frame, n_mol), float)
 		self.n_electrons = np.zeros((n_frame, n_mol), int)
+		
+		for i in xrange(self.n_frame):
+			for ii in xrange(self.n_mol):
+				self.mol_number[i, ii] = ii
 	
 	def __str__(self):
 		tmp = ""

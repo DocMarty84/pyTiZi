@@ -39,7 +39,7 @@ def CreateXYZ(data, cell, project, filename_base, verb=2):
 	for i in xrange(data.n_frame):
 		tmp += 'frame %d\n' % (i)
 		for ii in project.molecules_to_analyze_full:
-			tmp += 'molecule %d\n' % (ii)
+			tmp += 'molecule %d\n' % (data.mol_number[i, ii])
 			for iii in xrange(data.n_atom[ii]):
 				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
 				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
@@ -112,7 +112,7 @@ def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
 	for i in xrange(frame_0, data.n_frame, 1):
 		tmp += 'frame %d\n' % (i)
 		for ii in project.molecules_to_analyze_full:
-			tmp += 'molecule %d\n' % (ii)
+			tmp += 'molecule %d\n' % (data.mol_number[i, ii])
 			for iii in xrange(data.n_atom[ii]):
 				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
 				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
@@ -126,7 +126,7 @@ def CreateXYZ_MT_thread(child, data, cell, project, frame_i, frame_f, verb=2):
 	for i in xrange(frame_i, frame_f, 1):
 		tmp += 'frame %d\n' % (i)
 		for ii in project.molecules_to_analyze_full:
-			tmp += 'molecule %d\n' % (ii)
+			tmp += 'molecule %d\n' % (data.mol_number[i, ii])
 			for iii in xrange(data.n_atom[ii]):
 				tmp += '%4s %5d %12f %5d %15f %15f %15f\n'\
 				% (data.symbol[i][ii][iii], data.atomic_number[i, ii, iii], data.atomic_mass[i, ii, iii], data.atomic_valence[i, ii, iii], data.x[i, ii, iii], data.y[i, ii, iii], data.z[i, ii, iii]) 
@@ -167,7 +167,7 @@ def CreateCM(data, project, filename_base):
 				a = 1
 			else:
 				a = 0
-			tmp += 'molecule %d %d ' % (ii, data.n_electrons[i, ii])
+			tmp += 'molecule %d %d ' % (data.mol_number[i, ii], data.n_electrons[i, ii])
 			tmp += '%.15f %.15f %.15f %d\n' % (data.CM_x[i, ii], data.CM_y[i, ii], data.CM_z[i, ii], a)
 
 	file = '%s%s%s.cm' % (project.input_cluster, os.sep, filename_base)
@@ -595,22 +595,22 @@ def ScriptZINDOCollectDirect(data, project):
 	tmp += 'g++ ZINDO_sign.cpp -O2 -lm -o $RESULTS_DIR/ZINDO_sign\n'
 	tmp += 'g++ CZ_input_zindo_mc.cpp -O2 -lm -o $RESULTS_DIR/CZ_input_zindo_mc\n\n'
 
-	tmp += 'cd $INPUT_DIR/MD\n'
+#	tmp += 'cd $INPUT_DIR/MD\n'
 #	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'\\\\\\\\.xyz\' \'{ print $1 }\' | awk -F \'\/\' \'{ print $2 }\'`\n\n'
-	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'.xyz\' \'{ print $1 }\' | awk -F \'/\' \'{ print $2 }\'`\n\n'
-
-
+#	tmp += 'SYSTEM_LIST=`find . -maxdepth 1 -name "*.xyz" | awk -F \'.xyz\' \'{ print $1 }\' | awk -F \'/\' \'{ print $2 }\'`\n\n'
+	
 	tmp += 'cd $OUTPUT_DIR\n'
 	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
 	tmp += '	tar xfz $x\n'
 	tmp += 'done\n\n'
 
-	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
 	tmp += '		cd $SYSTEM\n'
 	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g | awk -F \'/\' \'{ print $2 }\'`; do\n'
 	tmp += '			if [[ -d $FRAME ]]; then\n'
+	tmp += '				echo $FRAME\n'
 	tmp += '				cd $FRAME\n'
 	tmp += '				for x in `find . -maxdepth 1 -name "*.out"`; do\n'
 	tmp += '					MOL_1=`echo $x | cut -d "_" -f2`\n'
@@ -670,14 +670,14 @@ def ScriptZINDOCollectDirect(data, project):
 
 	tmp += 'echo "Creating Monte-Carlo input files..."\n'
 	tmp += 'cd $RESULTS_DIR\n'
-	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
 	tmp += '	find . -name ""$SYSTEM"_dimer_*.sign" > "$SYSTEM".list\n'
 	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r $DIR/results -t mc\n'
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Now cleaning everything..."\n'
 	tmp += 'cd $OUTPUT_DIR\n'
-	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		rm -rf $SYSTEM\n'
 	tmp += '	fi\n'
@@ -685,7 +685,7 @@ def ScriptZINDOCollectDirect(data, project):
 	
 	tmp += 'cd $RESULTS_DIR\n'
 	tmp += 'rm ZINDO_sign CZ_input_zindo_mc\n'
-	tmp += 'for SYSTEM in "$SYSTEM_LIST"; do\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
 	tmp += '	rm "$SYSTEM".list\n'
 	tmp += '	mkdir -p $SYSTEM\n'
 	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.out"`; do\n'
