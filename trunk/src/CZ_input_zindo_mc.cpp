@@ -681,7 +681,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 		output << "		cat mo.tmp >> mo.txt" << endl << endl;
 		output << "		echo ' ' >> temp2" << endl;
 		output << "		echo ' $END' >> temp2" << endl << endl;
-		output << "		" << zindo_folder << "/split/zindo-split-mod2" << endl;
+		output << "		" << zindo_folder << "/split/zindo-split-mod" << endl;
 		output << "		cat split.tmp >> split.out" << endl << endl;
 		output << "	done" << endl;
 		output << "done" << endl << endl;

@@ -74,8 +74,8 @@ def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
 	tmp = ''
 	
 	frame_0 = 0
-	frame_1 = 50
-	frame_2 = 100
+	frame_1 = 20
+	frame_2 = 40
 	
 	while frame_1 < data.n_frame and frame_2 < data.n_frame:
 		ps = []
@@ -104,8 +104,8 @@ def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
 			print "[INFO] Writing frame %d in the file %s" % (frame_0, file)
 		
 		frame_0 = frame_2
-		frame_1 = frame_0 + 50
-		frame_2 = frame_0 + 100
+		frame_1 = frame_0 + 20
+		frame_2 = frame_0 + 40
 			
 		
 	tmp = ''	
@@ -203,8 +203,17 @@ def ScriptFileCreation(project):
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
-	tmp += 'SCRATCH_DIR="%s"\n' % (project.scratch_dir_cluster)
-	tmp += 'ZINDO_DIR="%s"\n\n' % (project.zindo_dir_cluster)
+	tmp += 'ZINDO_DIR="%s"\n' % (project.zindo_dir_cluster)
+	if project.location_cluster == "joe":
+		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
+	elif project.location_cluster == "lyra" or project.location_cluster == "adam":
+		tmp += 'SCRATCH_DIR="$TMPDIR"\n\n' % (project.scratch_dir_cluster)
+		#tmp += 'SCRATCH_DIR="\\%s"\n\n' % (project.scratch_dir_cluster)
+	elif project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += 'SCRATCH_DIR="/scratch/"$PBS_JOBID""\n\n'
+	else:
+		print '[ERROR] Bad cluster location. Aborting...'
+		sys.exit(1)
 
 	tmp += 'if [[ -d $DIR ]]; then\n'
 	tmp += '	cd $DIR\n'
@@ -263,7 +272,7 @@ def ScriptFileCreation(project):
 	tmp += 'done\n\n'
 
 	tmp += 'mv $SCRATCH_DIR/*.nb $INPUT_DIR/MD\n'
-	tmp += 'rm -rf $SCRATCH_DIR/*\n'
+	tmp += 'rm -rf $SCRATCH_DIR\n'
 	
 	file = 'project%s%s%s01.file_creation.sh' % (os.sep, project.project_name, os.sep)
 	try:
@@ -375,7 +384,13 @@ def ScriptFileCreationPBS(project):
 		tmp += '#$ -M nicolas.g.martinelli@gmail.com\n\n'
  
 		tmp += 'module load common pgi\n\n'
-	
+		
+	elif project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += '#!/bin/bash\n\n'
+		tmp += '#PBS -l nodes=1:ppn=1,walltime=999:00:00,mem=1gb\n'
+		tmp += '#PBS -M nicolas.g.martinelli@gmail.com\n'
+		tmp += '#PBS -m ea\n\n'
+
 	else:
 		print '[ERROR] Bad cluster location. Aborting...'
 		sys.exit(1)
@@ -403,11 +418,19 @@ def ScriptZINDOLaunch(project):
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
-	if project.location_cluster == "lyra" or project.location_cluster == "adam":
-		tmp += 'SCRATCH_DIR="\\%s"\n\n' % (project.scratch_dir_cluster)
-	else:
+	tmp += 'ZINDO_DIR="%s"\n\n' % (project.zindo_dir_cluster)
+	if project.location_cluster == "joe":
 		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
-	tmp += 'N_PBS=12\n\n'
+	elif project.location_cluster == "lyra" or project.location_cluster == "adam":
+		tmp += 'SCRATCH_DIR="\\$TMPDIR"\n\n' % (project.scratch_dir_cluster)
+		#tmp += 'SCRATCH_DIR="\\%s"\n\n' % (project.scratch_dir_cluster)
+	elif project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += 'SCRATCH_DIR="/scratch/"\\$PBS_JOBID""\n\n'
+	else:
+		print '[ERROR] Bad cluster location. Aborting...'
+		sys.exit(1)
+		
+	tmp += 'N_PBS=6\n\n'
 
 	tmp += 'MakePBS(){\n'
 
@@ -433,6 +456,12 @@ def ScriptZINDOLaunch(project):
  		tmp += '	echo " "					>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "module load common"			>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo " "					>> $DIR/zindo_$1.pbs\n'
+
+	elif project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += '	echo "#!/bin/bash"			> $DIR/zindo_$1.pbs\n'
+		tmp += '	echo "#PBS -l nodes=1:ppn=1,walltime=999:00:00,mem=1gb\"			>> $DIR/zindo_$1.pbs\n'
+		tmp += '	echo "#PBS -M nicolas.g.martinelli@gmail.com"			>> $DIR/zindo_$1.pbs\n'
+		tmp += '	echo "#PBS -m ea"			>> $DIR/zindo_$1.pbs\n'
 	
 	else:
 		print '[ERROR] Bad cluster location. Aborting...'
