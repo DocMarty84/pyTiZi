@@ -97,6 +97,13 @@ bool MT = 1;
 vector<double> event_k_1, event_k_2; // Transfer rate
 vector<int> event_charge_1, event_mol_index_1, event_neigh_num_1, event_neigh_index_1, event_charge_2, event_mol_index_2, event_neigh_num_2, event_neigh_index_2; // Initial molecule and neighbor
 
+// Variables for Layer
+int n_layer = 4; // Total number of layers
+int layer = std::numeric_limits<int>::max(); // Layer to run the simulation
+vector<double> min_layer (n_layer, 0.0);
+vector<double> max_layer (n_layer, 0.0);
+vector< vector< vector<int> > > mol_layer;
+vector< vector<int> > list_layer;
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -486,6 +493,7 @@ void Calcul_Dist(bool print_results){
 
 // Calculates deltaE between molecules
 void Calcul_DeltaE(bool print_results){
+	cout << "[WARNING] The energies are supposed to be in kcal/mol, not eV!!!" << endl;
 	dE.clear();
 	
 	for (int i=0; i<n_frame; i++){
@@ -502,7 +510,7 @@ void Calcul_DeltaE(bool print_results){
 						
 						// CHECK!!!
 						//dE[i][ii].push_back(E_1[0][ii]+E_0[0][ll] - (E_0[0][ii]+E_1[0][ll]));
-						dE[i][ii].push_back(E_1[0][ll]+E_0[0][ii] - (E_0[0][ll]+E_1[0][ii]));
+						dE[i][ii].push_back((E_1[0][ll]+E_0[0][ii] - (E_0[0][ll]+E_1[0][ii]))/23.06056);
 						
 						break;
 					}
@@ -915,6 +923,47 @@ void Inverse_Clear_k(bool print_results){
 // ------------------------------- Grid building -------------------------------
 // =============================================================================
 
+void Find_Layer(bool print_results) {
+	min_layer[0]=-100.0; max_layer[0]=-40.0;
+	min_layer[1]=-35.0; max_layer[1]=-25.0;
+	min_layer[2]=-22.0; max_layer[2]=-12.0;
+	min_layer[3]=-10.0; max_layer[3]=10.0;
+	
+	for (int i=0; i<n_frame; i++){
+		list_layer.push_back(vector< int > ());
+		mol_layer.push_back(vector< vector<int> > ());	
+		for (int k=0; k<n_layer; k++){	
+			mol_layer[i].push_back(vector< int > ());
+		}
+	}
+
+	for (int i=0; i<n_frame; i++){
+		for (int ii=0; ii<n_mol; ii++){
+			for (int k=0; k<n_layer; k++){
+				if(CM_z[i][ii] < max_layer[k] && CM_z[i][ii] > min_layer[k]){
+					mol_layer[i][k].push_back(ii);
+					list_layer[i].push_back(k);
+				}
+			}
+		}
+	}
+	
+	if(print_results){
+		for (int i=0; i<n_frame; i++){
+			cout << endl;
+			cout << "Frame " << i+1 << endl;
+			for (int k=0; k<n_layer; k++){
+				cout << endl;
+				cout << "Layer " << k << ", with " << mol_layer[i][k].size() << " molecules" << endl;
+				for (unsigned int ii=0; ii<mol_layer[i][k].size(); ii++){
+					cout << mol_layer[i][k][ii] << " ";
+				}
+			}
+			cout << endl;
+		}
+	}
+}
+
 void Build_Grid(bool print_results) {
 	
 	int n_grid = n_mini_grid_a*n_mini_grid_b*n_mini_grid_c;
@@ -1062,6 +1111,40 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 	pos[1] = box;
 }
 
+void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ, int *pos){ 
+	
+	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
+	
+	//double k_sum;
+	
+	do {
+		pos_a = rand()%n_mini_grid_a;
+		pos_b = rand()%n_mini_grid_b;
+		pos_c = rand()%n_mini_grid_c;
+
+		//mol = rand()%n_mol;
+		mol = mol_layer[frame][layer][rand()%mol_layer[frame][layer].size()];
+	
+		//k_sum = 0.0;
+		//
+		//for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
+		//	k_sum = k_sum + k_inv[frame][mol][jj];
+		//}
+		
+		// Find the number of the corresponding mini-grid
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			if (pos_a == box_a[x] && pos_b == box_b[x] && pos_c == box_c[x]){
+				box = x;
+				break;
+			}
+		}
+	}
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	
+	pos[0] = mol;
+	pos[1] = box;
+}
+
 void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
 	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
@@ -1088,6 +1171,54 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 		}	
 		
 		mol = rand()%n_mol;
+		
+		//k_sum = 0.0;
+		//
+		//for(unsigned int jj=0; jj<neigh_label[frame][mol].size(); jj++) {
+		//	k_sum = k_sum + k_inv[frame][mol][jj];
+		//}
+		
+		// Find the number of the corresponding mini-grid
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			if (pos_a == box_a[x] && pos_b == box_b[x] && pos_c == box_c[x]){
+				box = x;
+				break;
+			}
+		}
+	}
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	
+	pos[0] = mol;
+	pos[1] = box;
+}
+
+void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ, int *pos){ 
+	
+	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
+	
+	//double k_sum;
+	
+	do {
+		if (F_dir.compare("a") == 0) {
+			pos_a = 0;
+			pos_b = rand()%n_mini_grid_b;
+			pos_c = rand()%n_mini_grid_c;
+		}
+		
+		else if (F_dir.compare("b") == 0) {
+			pos_a = rand()%n_mini_grid_a;
+			pos_b = 0;
+			pos_c = rand()%n_mini_grid_c;
+		}
+		
+		else if (F_dir.compare("c") == 0) {
+			pos_a = rand()%n_mini_grid_a;
+			pos_b = rand()%n_mini_grid_b;
+			pos_c = 0;
+		}	
+		
+		//mol = rand()%n_mol;
+		mol = mol_layer[frame][layer][rand()%mol_layer[frame][layer].size()];
 		
 		//k_sum = 0.0;
 		//
@@ -1250,7 +1381,8 @@ void MC_BKL(string output_folder){
 		pos = new int[2];
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			Dispatch_Mol_RND(i, grid_occ, pos);
+			//Dispatch_Mol_RND(i, grid_occ, pos);
+			Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
 			curr_grid.push_back(pos[1]);
@@ -1456,9 +1588,15 @@ void MC_BKL(string output_folder){
 						exit_loop = true;
 						//printf("occupied\n");
 					}
-					
+
+					// Do not jump if the charge change of layer
+					else if (list_layer[i][curr_mol[event_charge[event]]] != list_layer[i][tmp_curr_mol]){
+						previous_jump_ok = false;
+						exit_loop = true;
+					}
+
 					else{
-						
+						// cout << curr_mol[event_charge[event]] << " " << tmp_curr_grid_a << " " << event_k[event]  << endl;
 						// Calculate the total time
 						total_time_try += -log(Rand_0_1())/(sum_k);
 						
@@ -1493,7 +1631,7 @@ void MC_BKL(string output_folder){
 							int *pos;
 							pos = new int[2];
 							
-							Dispatch_Mol_begin(i, grid_occ, pos);
+							Dispatch_Mol_begin_layer(i, grid_occ, pos);
 							
 							curr_grid[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
@@ -1619,7 +1757,7 @@ int main(int argc, char **argv){
 	string input_folder = ".";
 	string output_folder = ".";
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:l:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -1654,6 +1792,10 @@ int main(int argc, char **argv){
 	  		case 'n':
 				n_charges = atoi(optarg);
 	  			break;
+	  		
+			case 'l':
+				layer = atoi(optarg);
+	  			break;
 			}
 	}
 	
@@ -1674,6 +1816,15 @@ int main(int argc, char **argv){
 		exit(1);
 	}
 
+	if (layer != std::numeric_limits<int>::max())
+		cout << "[INFO] The charges will be set in layer " << layer << endl;
+		
+	else {
+		cerr << "[ERROR] Layer not specified. Please use -l. Exiting..." << endl;
+		exit(1);
+	}
+
+
 	// Read the required files
 	Read_MC(input_file, input_folder, false);
 	Read_CELL(input_file, input_folder, false);
@@ -1685,6 +1836,7 @@ int main(int argc, char **argv){
 	Calcul_DeltaE(false);
 
 	// Build the grid
+	Find_Layer(false);
 	Build_Grid(false);
 	
 	// Save the triangular matrix
@@ -1804,6 +1956,9 @@ int main(int argc, char **argv){
 			
 //		}
 //	}
+
+	min_layer.clear(); max_layer.clear();
+	mol_layer.clear(); list_layer.clear();
 		
 	// Get stop time
 	t_stop = time(NULL);
