@@ -486,6 +486,7 @@ void Calcul_Dist(bool print_results){
 
 // Calculates deltaE between molecules
 void Calcul_DeltaE(bool print_results){
+	cout << "[WARNING] The energies are supposed to be in kcal/mol, not eV!!!" << endl;
 	dE.clear();
 	
 	for (int i=0; i<n_frame; i++){
@@ -502,7 +503,7 @@ void Calcul_DeltaE(bool print_results){
 						
 						// CHECK!!!
 						//dE[i][ii].push_back(E_1[0][ii]+E_0[0][ll] - (E_0[0][ii]+E_1[0][ll]));
-						dE[i][ii].push_back(E_1[0][ll]+E_0[0][ii] - (E_0[0][ll]+E_1[0][ii]));
+						dE[i][ii].push_back((E_1[0][ll]+E_0[0][ii] - (E_0[0][ll]+E_1[0][ii]))/23.06056);
 						
 						break;
 					}

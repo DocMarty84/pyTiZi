@@ -1596,7 +1596,7 @@ void MC_BKL(string output_folder){
 					}
 
 					else{
-						// cout << curr_mol[event_charge[event]] << " " << tmp_curr_grid_a << " " << event_k[event]  << endl;
+						
 						// Calculate the total time
 						total_time_try += -log(Rand_0_1())/(sum_k);
 						
@@ -1631,6 +1631,7 @@ void MC_BKL(string output_folder){
 							int *pos;
 							pos = new int[2];
 							
+							Dispatch_Mol_begin(i, grid_occ, pos);
 							Dispatch_Mol_begin_layer(i, grid_occ, pos);
 							
 							curr_grid[event_charge[event]] = pos[1];
