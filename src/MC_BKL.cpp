@@ -1154,6 +1154,8 @@ void MC_BKL_Loop_MT(int frame, unsigned int charge_0, unsigned int charge_f, vec
 // BKL algorithm
 void MC_BKL(string output_folder){
 	
+	cout << "[INFO] Using the BKL algorithm." << endl;
+	
 	// Variables for each charge
 	vector<int> curr_mol, curr_grid; // Number of the molecule in the mini-grid, and number of this mini-grid
 	vector<double> dist, jump; // Distance and number of jumps for each charge
@@ -1600,7 +1602,10 @@ void MC_BKL(string output_folder){
 	
 }
 
+// FRM algorithm
 void MC_FRM(string output_folder){
+	
+	cout << "[INFO] Using the FRM algorithm." << endl;
 	
 	// Variables for each charge
 	vector<int> curr_mol, curr_grid; // Number of the molecule in the mini-grid, and number of this mini-grid
@@ -1737,7 +1742,7 @@ void MC_FRM(string output_folder){
 		
 		for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
 			
-			double event_k_tmp = numeric_limits<double>::min();
+			double event_k_tmp = numeric_limits<double>::max();
 			int event_charge_tmp = 0;
 			int event_mol_index_tmp = 0;
 			int event_neigh_num_tmp = 0;
@@ -1757,27 +1762,26 @@ void MC_FRM(string output_folder){
 					}
 				}
 				
-				// Calculate 1/waiting_time
+				// Calculate waiting_time
 				double k_tmp = numeric_limits<double>::min();
 				if (tmp_neigh_index != tmp_mol_index){
 					k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
 				
 					double random_number = Rand_0_1();
-					k_tmp = -(k_tmp)/log(random_number);
+					k_tmp = -log(random_number)/(k_tmp);
 				
-				}
-				
-				// Keep the value only if k is larger
-				if (k_tmp > event_k_tmp){
-					event_k_tmp = k_tmp;
-					event_charge_tmp = charge_i;
-					event_mol_index_tmp = tmp_mol_index;
-					event_neigh_num_tmp = jj;
-					event_neigh_index_tmp = tmp_neigh_index;
+					// Keep the value only if k is larger
+					if (k_tmp < event_k_tmp){
+						event_k_tmp = k_tmp;
+						event_charge_tmp = charge_i;
+						event_mol_index_tmp = tmp_mol_index;
+						event_neigh_num_tmp = jj;
+						event_neigh_index_tmp = tmp_neigh_index;
+					}
 				}
 			}
 			
-			// Keep the highest k
+			// Keep only the highest k
 			event_k.push_back(event_k_tmp);
 			event_charge.push_back(event_charge_tmp);
 			event_mol_index.push_back(event_mol_index_tmp);
@@ -1793,17 +1797,16 @@ void MC_FRM(string output_folder){
 
 		unsigned int event = 0;
 		int charge_previously_selected = 0;
-		int tmp_mol_index_previously_selected = 0;
 		
 		unsigned int charge_try = 0;
 		while (charge_try<n_try*n_charges){	
 			
-			// Calculates the transfer rates
+			// Calculates the transfer rate for the previously selected molecule
 			if (first_calc==false){
 
 				int charge_i = charge_previously_selected;
 										
-				double event_k_tmp = numeric_limits<double>::min();
+				double event_k_tmp = numeric_limits<double>::max();
 				int event_charge_tmp = 0;
 				int event_mol_index_tmp = 0;
 				int event_neigh_num_tmp = 0;
@@ -1823,32 +1826,30 @@ void MC_FRM(string output_folder){
 						}
 					}
 					
-					// Calculate 1/waiting_time
-					double k_tmp = numeric_limits<double>::min();
+					// Calculate waiting_time
+					double k_tmp = numeric_limits<double>::max();
 					if (tmp_neigh_index != tmp_mol_index){
 						k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
 					
 						double random_number = Rand_0_1();
-						k_tmp = -(k_tmp)/log(random_number);
-					
-					}
-					
-					// Keep the value only if k is larger
-					if (k_tmp > event_k_tmp){
-						event_k_tmp = k_tmp;
-						event_charge_tmp = charge_i;
-						event_mol_index_tmp = tmp_mol_index;
-						event_neigh_num_tmp = jj;
-						event_neigh_index_tmp = tmp_neigh_index;
+						k_tmp = -log(random_number)/(k_tmp);
+				
+						// Keep the value only if k is larger
+						if (k_tmp < event_k_tmp){
+							event_k_tmp = k_tmp;
+							event_charge_tmp = charge_i;
+							event_mol_index_tmp = tmp_mol_index;
+							event_neigh_num_tmp = jj;
+							event_neigh_index_tmp = tmp_neigh_index;
+						}
 					}
 				}
-				
 				// Keep the highest k
-				event_k[tmp_mol_index_previously_selected] = event_k_tmp;
-				event_charge[tmp_mol_index_previously_selected] = event_charge_tmp;
-				event_mol_index[tmp_mol_index_previously_selected] = event_mol_index_tmp;
-				event_neigh_num[tmp_mol_index_previously_selected] = event_neigh_num_tmp;
-				event_neigh_index[tmp_mol_index_previously_selected] = event_neigh_index_tmp;
+				event_k[charge_previously_selected] = event_k_tmp;
+				event_charge[charge_previously_selected] = event_charge_tmp;
+				event_mol_index[charge_previously_selected] = event_mol_index_tmp;
+				event_neigh_num[charge_previously_selected] = event_neigh_num_tmp;
+				event_neigh_index[charge_previously_selected] = event_neigh_index_tmp;
 			}
 			
 			else{
@@ -1856,14 +1857,18 @@ void MC_FRM(string output_folder){
 			}
 			
 			// Choose the fastest event
-			double k_tmp = numeric_limits<double>::min();
-			for (event=0; event<event_k.size(); event++){
-				if(event_k[event] > k_tmp) {
-					charge_previously_selected = event_charge[event];
-					tmp_mol_index_previously_selected = curr_mol[charge_previously_selected];
+			double k_tmp = numeric_limits<double>::max();
+			for (unsigned int t=0; t<event_k.size(); t++){
+				//cout << event_k[t] << endl;
+				if(event_k[t] < k_tmp) {
+					k_tmp = event_k[t];
+					charge_previously_selected = event_charge[t];
+					event = t;
 				}
 			}
-			
+
+			//cout << event << endl;
+
 			// =======================================
 			//
 			// Summary of variables:
@@ -1931,10 +1936,28 @@ void MC_FRM(string output_folder){
 				
 				// Calculate the total time
 				total_time_try += event_k[event];
-				
+			
+				//cin.get();
+	
+				//for (unsigned int t=0; t<event_k.size(); t++){
+				//	cout << event_k[t] << endl;
+				//}
+	
+				// Substract the waiting time
+				double k_event = event_k[event];
+				for (unsigned int t=0; t<event_k.size(); t++){
+					event_k[t] = event_k[t] - k_event;
+				}
+			
+				//cout << "--" << endl;	
+				//for (unsigned int t=0; t<event_k.size(); t++){
+				//	cout << event_k[t] << endl;
+				//}
+
 				// Calculate the distance traveled by the charge and the total distance
 				double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
 				dist[event_charge[event]] += event_dist;
+				//total_dist_try += event_dist;
 				total_dist_try += event_dist/double(curr_mol.size());
 				// Note:
 				// We divide here by the number of charges in the system, 
@@ -2087,8 +2110,9 @@ int main(int argc, char **argv){
 	string input_file;
 	string input_folder = ".";
 	string output_folder = ".";
+	string method;
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -2118,10 +2142,14 @@ int main(int argc, char **argv){
 	  			
 	  		case 'd':
 				F_dir = optarg;
-	  			break;
+				break;
 	  			
 	  		case 'n':
 				n_charges = atoi(optarg);
+				break;
+	  			
+	  		case 'm':
+				method = optarg;
 	  			break;
 			}
 	}
@@ -2254,9 +2282,15 @@ int main(int argc, char **argv){
 			// Calculates 1/k and clear the k table
 			Inverse_Clear_k(false);
 			k.clear();
-			
-			MC_BKL(output_folder);
-			
+
+			if(method.compare("bkl")) {
+				MC_BKL(output_folder);
+			}
+
+			else {
+				MC_FRM(output_folder);
+			}
+
 			// Clear everything (not necessary) and set to reference values
 			neigh_label.clear(); neigh_label = neigh_label_ref;
 			neigh_jump_vec_a.clear(); neigh_jump_vec_a = neigh_jump_vec_a_ref;
