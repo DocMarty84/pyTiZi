@@ -2283,7 +2283,7 @@ int main(int argc, char **argv){
 			Inverse_Clear_k(false);
 			k.clear();
 
-			if(method.compare("bkl")) {
+			if(method.compare("bkl") == 0) {
 				MC_BKL(output_folder);
 			}
 
