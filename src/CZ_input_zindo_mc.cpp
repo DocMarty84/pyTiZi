@@ -614,7 +614,7 @@ void Write_morange(string input_file, int frame){
 		cerr << "Error opening " << output_filename.str().c_str() << endl;
 }
 
-void Write_CMD(string input_file, string zindo_folder, string output_folder, int frame, int mol_n1, int mol_n2){
+void Write_CMD(string input_file, string zindo_folder, string output_folder, string log_file, int frame, int mol_n1, int mol_n2){
 
 	stringstream output_filename;
 	stringstream s_frame, s_mol_n1, s_mol_n2;
@@ -686,7 +686,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 		output << "	done" << endl;
 		output << "done" << endl << endl;
 		output << "if [[ `wc -l split.out | awk '{print $1}'` -le 4 ]]; then" << endl;
-		output << "	echo 'Error with file " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << "' >> " << output_folder << ".log" << endl;
+		output << "	echo 'Error with file " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << "' >> " << log_file << ".log" << endl;
 		output << "fi" << endl << endl;
 		output << "mv split.out dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
 //		output << "rm *.out" << endl;
@@ -696,7 +696,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, int
 		cerr << "Error opening " << output_filename.str().c_str() << endl;	
 }
 
-void Write_ZINDO_Files(string input_file, string output_folder, string zindo_folder){
+void Write_ZINDO_Files(string input_file, string output_folder, string log_file, string zindo_folder){
 	double **mol1_cart, **mol2_cart;
 	double **mol2_frac;
 	
@@ -762,7 +762,7 @@ void Write_ZINDO_Files(string input_file, string output_folder, string zindo_fol
 					//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
 					
 					Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, jj);
-					Write_CMD(input_file, zindo_folder, output_folder, i, ii, jj);
+					Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, jj);
 					
 					for (int iii=0; iii<n_atom[ii]; iii++){	
 						delete [] mol1_cart[iii];
@@ -871,13 +871,14 @@ int main(int argc, char **argv){
 	string input_file;
 	string input_folder;
 	string output_folder;
+	string log_file;
 	string zindo_folder;
 	string result_folder;
 	
 	bool zindo = false;
 	bool mc = false;
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:z:r:t:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:L:z:r:t:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -887,6 +888,9 @@ int main(int argc, char **argv){
 	  			break;
 			case 'o':
 				output_folder = optarg;
+	  			break;
+			case 'l':
+				log_file = optarg;
 	  			break;
 			case 'z':
 				zindo_folder = optarg;
@@ -918,7 +922,7 @@ int main(int argc, char **argv){
 	
 	if (zindo){
 		Find_Neighbors_Sphere(input_file, output_folder, false);
-		Write_ZINDO_Files(input_file, output_folder, zindo_folder);
+		Write_ZINDO_Files(input_file, output_folder, log_file, zindo_folder);
 		Write_NB(input_file, input_folder);
 	}
 	

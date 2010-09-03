@@ -118,6 +118,7 @@ if __name__ == '__main__':
 				project.dir_cluster = words[1]
 				project.input_dir_cluster = "%s/input" % (project.dir_cluster)
 				project.output_dir_cluster = "%s/output" % (project.dir_cluster)
+				project.log_dir_cluster = "%s/logs" % (project.dir_cluster)
 				project.results_dir_cluster = "%s/results" % (project.dir_cluster)
 				project.dir_cluster_ok = True
 				project.input_dir_cluster_ok = True

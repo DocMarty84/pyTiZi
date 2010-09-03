@@ -17,6 +17,7 @@ class InstructionsData(object):
 		self.dir_cluster = ''
 		self.input_dir_cluster = ''
 		self.output_dir_cluster = ''
+		self.log_dir_cluster = ''
 		self.results_dir_cluster = ''
 		self.scratch_dir_cluster = ''
 		self.location_cluster = ''

@@ -203,6 +203,7 @@ def ScriptFileCreation(project):
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
+	tmp += 'LOG_DIR="%s"\n' % (project.log_dir_cluster)
 	tmp += 'ZINDO_DIR="%s"\n' % (project.zindo_dir_cluster)
 	if project.location_cluster == "joe":
 		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
@@ -224,6 +225,7 @@ def ScriptFileCreation(project):
 
 	tmp += 'mkdir -p $SCRATCH_DIR\n'
 	tmp += 'mkdir -p $OUTPUT_DIR\n'
+	tmp += 'mkdir -p $LOG_DIR\n'
 	tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
@@ -251,7 +253,7 @@ def ScriptFileCreation(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 	
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
@@ -292,6 +294,7 @@ def ScriptFileCreationDirect(project):
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
+	tmp += 'LOG_DIR="%s"\n' % (project.log_dir_cluster)
 	tmp += 'ZINDO_DIR="%s"\n\n' % (project.zindo_dir_cluster)
 
 	tmp += 'if [[ -d $DIR ]]; then\n'
@@ -302,6 +305,7 @@ def ScriptFileCreationDirect(project):
 	tmp += 'fi\n\n'
 
 	tmp += 'mkdir -p $OUTPUT_DIR\n'
+	tmp += 'mkdir -p $LOG_DIR\n'
 	tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
 
 	tmp += 'cp CZ_input_zindo_mc* $INPUT_DIR/MD\n'
@@ -330,7 +334,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
