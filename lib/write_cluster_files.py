@@ -237,7 +237,7 @@ def ScriptFileCreation(project):
 		tmp += '#pgcpp -fast -Minline=levels:10 CZ_input_zindo_mc.cpp\n'
 		tmp += '#mv a.out CZ_input_zindo_mc\n\n'
 	else:
-		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm\n\n'
+		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm -fopenmp\n\n'
 
 	tmp += 'for FILE in `find . -name "*.xyz"`\n'
 	tmp += 'do\n'
@@ -316,7 +316,7 @@ def ScriptFileCreationDirect(project):
 		tmp += '#pgcpp -fast -Minline=levels:10 CZ_input_zindo_mc.cpp\n'
 		tmp += '#mv a.out CZ_input_zindo_mc\n\n'
 	else:
-		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm\n\n'
+		tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm -fopenmp\n\n'
 
 	tmp += 'for FILE in `find . -name "*.xyz"`\n'
 	tmp += 'do\n'
