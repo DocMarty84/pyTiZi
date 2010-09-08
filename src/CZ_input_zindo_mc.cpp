@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -32,6 +33,8 @@ bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
 
 double ***J_H, ***J_L;
+
+bool MT = 1;
 
 void Read_XYZ(string input_file, string input_folder, bool print_results){
 	string tmp;
@@ -508,6 +511,156 @@ void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_r
 	}
 }
 
+void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool print_results){
+
+	displ_vec = new int***[n_frame];
+	neighbors = new bool**[n_frame];
+	n_neighbors = new int*[n_frame];
+	
+	for(int i=0; i<n_frame; i++){
+		displ_vec[i] = new int**[n_mol];
+		neighbors[i] = new bool*[n_mol];
+		n_neighbors[i] = new int[n_mol];
+		
+		for(int ii=0; ii<n_mol; ii++){
+			displ_vec[i][ii] = new int*[n_mol];
+			neighbors[i][ii] = new bool[n_mol];
+			n_neighbors[i][ii] = 0;
+			
+			for(int jj=0; jj<n_mol; jj++){
+				displ_vec[i][ii][jj] = new int[3];
+				neighbors[i][ii][jj] = 0;
+				
+				for(int k=0; k<3; k++){
+					displ_vec[i][ii][jj][k] = 0;
+				}
+			}
+		}
+	}
+
+	double CutOff_square = pow(cutoff, 2);
+	
+	double Dist_Norm_square = 0.0;
+	double *Dist_Cart, *Dist_Frac;
+	
+	// Varibles specific for multithread
+	int th_id, n_threads, n_frame_by_th, start_frame, end_frame;
+	
+	#pragma omp parallel private(th_id, start_frame, end_frame, Dist_Norm_square, Dist_Cart, Dist_Frac) 
+	{
+		// Calculates the number of frame for each thread
+		#pragma omp master
+		{
+			n_threads = omp_get_num_threads();
+			
+			if (n_threads > n_frame){
+				n_threads = n_frame;
+			}
+			
+			n_frame_by_th = n_frame/n_threads;
+		}
+		#pragma omp barrier
+		
+		// Calculates start_frame and end_frame
+		th_id = omp_get_thread_num();
+		
+		if (th_id > n_threads - 1) {
+			start_frame = 0;
+			end_frame = 0;
+		}
+		
+		else {
+			start_frame = th_id * n_frame_by_th;
+			
+			if (th_id == n_threads - 1) {
+				end_frame = n_frame;
+			}
+			else {
+				end_frame = (th_id + 1) * n_frame_by_th;
+			}
+		}
+		
+		// Start calculation
+		Dist_Cart = new double[3];
+		Dist_Frac = new double[3];
+		
+		for (int i=start_frame; i<end_frame; i++){
+			for (int ii=0; ii<n_mol; ii++){
+				if(J[ii]){
+					for (int jj=ii+1; jj<n_mol; jj++){
+						Dist_Cart[0] = CM_x[i][jj] - CM_x[i][ii];
+						Dist_Cart[1] = CM_y[i][jj] - CM_y[i][ii];
+						Dist_Cart[2] = CM_z[i][jj] - CM_z[i][ii];
+						
+						Cartesian_To_Fractional(Dist_Cart, Dist_Frac, i);
+
+						// Periodic boundary conditions calculations
+						for (int k=0; k<3; k++){
+							if (fabs(Dist_Frac[k]) > 0.5 && pbc[k]){
+								if (Dist_Frac[k] < 0.0){
+									Dist_Frac[k] = Dist_Frac[k] + 1.0;
+									displ_vec[i][ii][jj][k] = 1;
+								}
+								else{
+									Dist_Frac[k] = Dist_Frac[k] - 1.0;
+									displ_vec[i][ii][jj][k] = -1;
+								}
+							}
+						}
+						
+						Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
+						
+						Dist_Norm_square = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
+						
+						if (Dist_Norm_square < CutOff_square && Dist_Norm_square != 0){
+							neighbors[i][ii][jj] = 1;
+							n_neighbors[i][ii] ++;
+							
+							stringstream output_filename;
+							stringstream s_frame, s_mol_n1, s_mol_n2;
+							
+							s_frame << i;
+							s_mol_n1 << mol_label[ii];
+							s_mol_n2 << mol_label[jj];
+							output_filename << output_folder.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".dist";
+							
+							ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
+							if (output){
+								output << Dist_Cart[0] << " " << Dist_Cart[1] << " " << Dist_Cart[2] <<endl;
+							}
+							else
+								cerr << "Error opening " << output_filename.str().c_str() << endl;	
+						}
+					}
+				}
+			}
+		}
+		
+		#pragma omp barrier
+	}
+	
+	int tmp;
+	if(print_results){
+		for (int i=0; i<n_frame; i++){
+			cout << "frame " << i << endl;
+			for (int ii=0; ii<n_mol; ii++){
+				tmp = 0;
+				for (int jj=0; jj<n_mol; jj++){
+					if (neighbors[i][ii][jj]){
+						tmp++;
+					}
+				}
+				cout << "Molecule " << mol_label[ii] << ": " << tmp << " Neighbors\n";
+				for (int jj=0; jj<n_mol; jj++){
+					if (neighbors[i][ii][jj]){
+						cout << "Vector " << displ_vec[i][ii][jj][0] << " " << displ_vec[i][ii][jj][1] << " " << displ_vec[i][ii][jj][2] << endl;
+					}
+				}
+			}
+		}	
+	}
+}
+
 void Write_DAT(string input_file, double **mol1, double **mol2, int frame, int mol_n1, int mol_n2){
 	
 	stringstream output_filename;
@@ -921,7 +1074,12 @@ int main(int argc, char **argv){
 	Read_ZIN(input_file, input_folder, false);
 	
 	if (zindo){
-		Find_Neighbors_Sphere(input_file, output_folder, false);
+		if (MT) {
+			Find_Neighbors_Sphere_MT(input_file, output_folder, false);
+		}
+		else {
+			Find_Neighbors_Sphere(input_file, output_folder, false);
+		}
 		Write_ZINDO_Files(input_file, output_folder, log_file, zindo_folder);
 		Write_NB(input_file, input_folder);
 	}
