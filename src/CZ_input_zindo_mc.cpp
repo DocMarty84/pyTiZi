@@ -759,16 +759,28 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "echo $nmol > nb_all.txt" << endl << endl;
 		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
 		if (sign){
-			output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_h" << endl;
-			output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_l" << endl;
+			//output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_h" << endl;
+			//output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_l" << endl;
+			output << "H_1=`sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }'`" << endl;
+			output << "L_1=`sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }'`" << endl;
+		}
+		else{
+			output << "H_1='1.0'" << endl;
+			output << "L_1='1.0'" << endl;
 		}
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
 		output << "cat nb.txt >> nb_all.txt" << endl << endl;
 		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
 		if (sign){
-			output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_h" << endl;
-			output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_l" << endl;
+			//output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_h" << endl;
+			//output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_l" << endl;
+			output << "H_2=`sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }'`" << endl;
+			output << "L_2=`sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }'`" << endl;
+		}
+		else{
+			output << "H_2='1.0'" << endl;
+			output << "L_2='1.0'" << endl;
 		}
 		output << "cat mo_moner.txt >> mo_all.txt" << endl;
 		output << "cat nat.txt >> nat_all.txt" << endl;
@@ -805,9 +817,14 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "done" << endl << endl;
 		output << "if [[ `wc -l split.out | awk '{print $1}'` -le 4 ]]; then" << endl;
 		output << "	echo 'Error with file " << output_folder << "/frame_" << frame << "/dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << "' >> " << log_file << ".log" << endl;
+		output << "	J_H='0.0'" << endl;
+		output << "	J_L='0.0'" << endl;
+		output << "else" << endl;
+		output << "	J_H=`grep ' i(1)" << setw(13) << n_electrons[mol_n1]/2 << " j(2)" << setw(13) << n_electrons[mol_n2]/2 << "' split.out | awk '{print $6}'`" << endl;
+		output << "	J_L=`grep ' i(1)" << setw(13) << (n_electrons[mol_n1]/2)+1 << " j(2)" << setw(13) << (n_electrons[mol_n2]/2)+1 << "' split.out | awk '{print $6}'`" << endl;
 		output << "fi" << endl << endl;
 		output << "mv split.out dimer_"  <<  mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
-//		output << "rm *.out" << endl;
+		output << "echo " << frame << " " << mol_label[mol_n1] << " " << mol_label[mol_n2] << " $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> frame_" << frame << ".out" << endl;
 		output.close();
 	}
 	else 
