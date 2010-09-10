@@ -531,11 +531,14 @@ if __name__ == '__main__':
 	# Script files creation
 	# =====================
 	
+	write_cluster_files.ScriptCompile(project)
 	write_cluster_files.ScriptFileCreation(project)
 	write_cluster_files.ScriptFileCreationDirect(project)
 	write_cluster_files.ScriptFileCreationPBS(project)
 	write_cluster_files.ScriptZINDOLaunch(project)
+	write_cluster_files.ScriptZINDOCollect(data, project)
 	write_cluster_files.ScriptZINDOCollectDirect(data, project)
+	write_cluster_files.ScriptZINDOCollectPBS(project)
 
 	"""
 	try:
