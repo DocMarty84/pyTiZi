@@ -19,8 +19,8 @@
 
 // To compile on lucky : 
 // g++ -Wall MC_BKL_layer.cpp /home/nmartine/lib/boost/lib/libboost_thread.so -O3 -lm -I /home/nmartine/lib/boost/include/ -Wl,-rpath,/home/nmartine/lib/boost/lib -o MC_BKL_layer
-#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
-//#include <boost/thread.hpp>
+//#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
+#include <boost/thread.hpp>
 
 // C++ libraries
 #include <iostream> //Entrées-sorties standard
