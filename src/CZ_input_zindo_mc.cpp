@@ -1189,7 +1189,7 @@ int main(int argc, char **argv){
 		
 		for(int i=0; i<n_frame; i++){
 			for(int ii=0; ii<n_mol; ii++){
-				for(int jj=0; jj<n_mol; jj++){
+				for(int jj=0; jj<n_mol-(ii+1); jj++){
 					delete [] displ_vec[i][ii][jj];
 				}
 				delete [] displ_vec[i][ii];
