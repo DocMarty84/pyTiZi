@@ -724,8 +724,8 @@ void Write_morange(string input_file, int frame){
 	ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
 	
 	if (output){
-		output << n_electrons[0]/2 - 2 << " " << n_electrons[0]/2 + 2 << endl;
-		output << n_electrons[0]/2 - 2 << " " << n_electrons[0]/2 + 2;
+		output << n_electrons[0]/2 - 1 << " " << n_electrons[0]/2 + 1 << endl;
+		output << n_electrons[0]/2 - 1 << " " << n_electrons[0]/2 + 1;
 		output.close();
 	}
 	else 
@@ -764,7 +764,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "	cat nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
 		output << "else" << endl;
-		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
+		output << zindo_folder << "	/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
 		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
 		output << "	cp nat.txt nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
 		output << "	cp nb.txt nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;		
@@ -778,7 +778,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "	cat nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;
 		output << "else" << endl;
-		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
+		output << zindo_folder << "	/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
 		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
 		output << "	cp nat.txt nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
 		output << "	cp nb.txt nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;		
