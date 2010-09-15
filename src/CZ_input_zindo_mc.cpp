@@ -747,7 +747,6 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 				mol1_cart[iii][0] = x_cart[i][ii][iii];
 				mol1_cart[iii][1] = y_cart[i][ii][iii];
 				mol1_cart[iii][2] = z_cart[i][ii][iii];
-				
 			}	
 					
 			Write_INP(input_file, mol1_cart, i, ii);
@@ -758,9 +757,17 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 			delete [] mol1_cart;
 			
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				
+				int kk;
+				for (int xx=0; xx<n_mol; xx++){
+					if (mol_label[xx] == neigh_label[i][ii][jj]){
+						kk = xx;
+					}
+				}
+				
 				mol1_cart = new double*[n_atom[ii]];
-				mol2_cart = new double*[n_atom[jj+(ii+1)]];
-				mol2_frac = new double*[n_atom[jj+(ii+1)]];
+				mol2_cart = new double*[n_atom[kk]];
+				mol2_frac = new double*[n_atom[kk]];
 				
 				for (int iii=0; iii<n_atom[ii]; iii++){	
 					mol1_cart[iii] = new double[3];
@@ -771,9 +778,9 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 				}
 				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
 					mol2_cart[jjj] = new double[3];
-					mol2_cart[jjj][0] = x_cart[i][jj+(ii+1)][jjj];
-					mol2_cart[jjj][1] = y_cart[i][jj+(ii+1)][jjj];
-					mol2_cart[jjj][2] = z_cart[i][jj+(ii+1)][jjj];
+					mol2_cart[jjj][0] = x_cart[i][kk][jjj];
+					mol2_cart[jjj][1] = y_cart[i][kk][jjj];
+					mol2_cart[jjj][2] = z_cart[i][kk][jjj];
 					
 					mol2_frac[jjj] = new double[3];
 				}
@@ -783,25 +790,25 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
 				//}
 				
-				Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[jj+(ii+1)]);
-				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){
+				Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[kk]);
+				for (int jjj=0; jjj<n_atom[kk]; jjj++){
 					mol2_frac[jjj][0] = mol2_frac[jjj][0] + neigh_jump_vec_a[i][ii][jj];
 					mol2_frac[jjj][1] = mol2_frac[jjj][1] + neigh_jump_vec_b[i][ii][jj];
 					mol2_frac[jjj][2] = mol2_frac[jjj][2] + neigh_jump_vec_c[i][ii][jj];
 				}
-				Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[jj+(ii+1)]);
+				Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[kk]);
 				
 				//if(i==0)
 				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
 				
-				Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, jj+(ii+1));
-				Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, jj+(ii+1));
+				Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, kk);
+				Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, kk);
 				
 				for (int iii=0; iii<n_atom[ii]; iii++){	
 					delete [] mol1_cart[iii];
 				}
 				
-				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
+				for (int jjj=0; jjj<n_atom[kk]; jjj++){	
 					delete [] mol2_cart[jjj];
 					delete [] mol2_frac[jjj];
 				}
