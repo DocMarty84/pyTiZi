@@ -759,7 +759,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "echo $nmol > nat_all.txt" << endl;
 		output << "echo $nmol > nb_all.txt" << endl << endl;
 		
-		output << "if [ -f molecule_" << mol_label[mol_n1] << ".out ]; then"
+		output << "if [ -f molecule_" << mol_label[mol_n1] << ".out ]; then" << endl;
 		output << "	cat mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
 		output << "	cat nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
@@ -773,7 +773,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
 		output << "fi" << endl << endl;
 
-		output << "if [ -f molecule_" << mol_label[mol_n2] << ".out ]; then"
+		output << "if [ -f molecule_" << mol_label[mol_n2] << ".out ]; then" << endl;
 		output << "	cat mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
 		output << "	cat nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;

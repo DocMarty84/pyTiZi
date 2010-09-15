@@ -889,7 +889,7 @@ def ScriptZINDOCollectPBS(project):
 	tmp += 'chmod +x 03.collect.sh\n'
 	tmp += './03.collect.sh\n'
 
-	file = 'project%s%s%s01.file_creation.pbs' % (os.sep, project.project_name, os.sep)
+	file = 'project%s%s%s03.collect.sh' % (os.sep, project.project_name, os.sep)
 	try:
 		foutput = open(file, 'w')
 	except:
