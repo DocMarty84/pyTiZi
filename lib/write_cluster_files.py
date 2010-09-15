@@ -275,8 +275,8 @@ def ScriptFileCreation(project):
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
 	
 	tmp += '		cd output\n'
-	tmp += '		tar cfz output_"$NAME"_frame_"$i"_DIST.tar.gz $NAME/frame_$i\n'
-	tmp += '		mv output_"$NAME"_frame_"$i"_DIST.tar.gz $OUTPUT_DIR\n'
+	#tmp += '		tar cfz output_"$NAME"_frame_"$i"_DIST.tar.gz $NAME/frame_$i\n'
+	#tmp += '		mv output_"$NAME"_frame_"$i"_DIST.tar.gz $OUTPUT_DIR\n'
 	tmp += '		rm -rf output/$NAME/frame_$i\n'
 	tmp += '		cd $SCRATCH_DIR\n\n'
 	
@@ -350,7 +350,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
 	
 	tmp += '		cd $OUTPUT_DIR\n'
-	tmp += '		tar cfz output_"$NAME"_frame_"$i"_DIST.tar.gz $NAME/frame_$i\n'
+	#tmp += '		tar cfz output_"$NAME"_frame_"$i"_DIST.tar.gz $NAME/frame_$i\n'
 	tmp += '		rm -rf $OUTPUT_DIR/$NAME/frame_$i\n\n'
 	
 	tmp += '		(( i = $i+1 ))\n'

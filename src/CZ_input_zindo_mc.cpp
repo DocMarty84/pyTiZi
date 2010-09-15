@@ -473,17 +473,17 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 						stringstream output_filename;
 						stringstream s_frame, s_mol_n1, s_mol_n2;
 						
-						s_frame << i;
-						s_mol_n1 << mol_label[ii];
-						s_mol_n2 << neigh_label[i][ii].back();
-						output_filename << output_folder.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".dist";
+						//s_frame << i;
+						//s_mol_n1 << mol_label[ii];
+						//s_mol_n2 << neigh_label[i][ii].back();
+						//output_filename << output_folder.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".dist";
 						
-						ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
-						if (output){
-							output << Dist_Cart[0] << " " << Dist_Cart[1] << " " << Dist_Cart[2] <<endl;
-						}
-						else
-							cerr << "Error opening " << output_filename.str().c_str() << endl;	
+						//ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
+						//if (output){
+						//	output << Dist_Cart[0] << " " << Dist_Cart[1] << " " << Dist_Cart[2] <<endl;
+						//}
+						//else
+						//	cerr << "Error opening " << output_filename.str().c_str() << endl;	
 					}
 				}
 			}
