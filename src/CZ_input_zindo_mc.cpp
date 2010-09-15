@@ -645,7 +645,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "	cat nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
 		output << "else" << endl;
-		output << zindo_folder << "	/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
+		output << "	" << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
 		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
 		output << "	cp nat.txt nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
 		output << "	cp nb.txt nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;		
@@ -659,7 +659,7 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "	cat nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
 		output << "	cat nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;
 		output << "else" << endl;
-		output << zindo_folder << "	/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
+		output << "	" << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
 		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
 		output << "	cp nat.txt nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
 		output << "	cp nb.txt nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;		
