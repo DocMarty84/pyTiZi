@@ -4,6 +4,7 @@
 //#include <limits> //Pour aller à la fin d'une ligne, par exemple
 #include <iomanip> //Manipulation des sorties, par exemple format scientifique
 #include <sstream> //Pour les conversion entre types de variables
+#include <vector>
 #include <math.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -27,14 +28,15 @@ double cutoff; // Cutoff distance
 double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg; // Cell parameters
 double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_gamma_cos, *temp_beta_term, *temp_gamma_term; // Parameters for fractional coordinates
 
-int ****displ_vec; bool ***neighbors; int **n_neighbors, ***neighbors_label;
-
 bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
 
 double ***J_H, ***J_L;
 
 bool MT = 1;
+
+vector< vector< vector<int> > > neigh_label;
+vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
 
 void Read_XYZ(string input_file, string input_folder, bool print_results){
 	string tmp;
@@ -237,30 +239,28 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 	stringstream file_nb;
 	file_nb << input_folder << "/" << input_file << ".nb";
 	
+	unsigned int tmp_n_neigh;
+	int tmp_neigh_label;
+	
 	ifstream input(file_nb.str().c_str(), ios::in);
 	if (input){
+		
+		neigh_label.clear();
 		input >> n_frame >> n_mol;
-		
-		neighbors_label = new int**[n_frame];
-		n_neighbors = new int*[n_frame];
-		
-		for(int i=0; i<n_frame; i++){
-			neighbors_label[i] = new int*[n_mol];
-			n_neighbors[i] = new int[n_mol];
-			
-			for(int ii=0; ii<n_mol; ii++){
-				n_neighbors[i][ii] = 0;
-			}
-		}
 
 		for (int i=0; i<n_frame; i++){
+			
+			neigh_label.push_back( vector< vector<int> > ());
 			input >> tmp >> tmp;
+			
 			for (int ii=0; ii<n_mol; ii++){
-				input >> tmp >> tmp >> n_neighbors[i][ii];
-				neighbors_label[i][ii] = new int[n_neighbors[i][ii]];
 				
-				for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-					input >> neighbors_label[i][ii][jj];
+				neigh_label[i].push_back( vector<int> ());
+				input >> tmp >> tmp >> tmp_n_neigh;
+				
+				for (unsigned int jj=0; jj<tmp_n_neigh; jj++){
+					input >> tmp_neigh_label;
+					neigh_label[i][ii].push_back(tmp_neigh_label);
 				}
 			}
 		}
@@ -271,9 +271,9 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 			for (int i=0; i<n_frame; i++){
 				cout << "frame " << i << endl;
 				for (int ii=0; ii<n_mol; ii++){
-					cout << "molecule " << ii << " " << n_neighbors[i][ii] << endl;
-					for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-						cout << neighbors_label[i][ii][jj] << endl;
+					cout << "molecule " << ii << " " << neigh_label[i][ii].size() << endl;
+					for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+						cout << neigh_label[i][ii][jj] << endl;
 					}
 				}
 			}
@@ -306,8 +306,8 @@ void Read_J(string input_file, string result_folder){
 			J_L[i] = new double*[n_mol];
 			
 			for (int ii=0; ii<n_mol; ii++){
-				J_H[i][ii] = new double[n_neighbors[i][ii]];
-				J_L[i][ii] = new double[n_neighbors[i][ii]];	
+				J_H[i][ii] = new double[neigh_label[i][ii].size()];
+				J_L[i][ii] = new double[neigh_label[i][ii].size()];	
 			}
 		}
 		
@@ -332,14 +332,14 @@ void Read_J(string input_file, string result_folder){
 						}
 					}
 
-					if (mol2 == neighbors_label[f][mol1_index][prev_value]){
+					if (mol2 == neigh_label[f][mol1_index][prev_value]){
 						J_H[f][mol1_index][prev_value] = h;
 						J_L[f][mol1_index][prev_value] = l;
 					}					
 					
 					else {
-						for (int jj=0; jj<n_neighbors[f][mol1_index]; jj++){
-							if (mol2 == neighbors_label[f][mol1_index][jj]){
+						for (unsigned int jj=0; jj<neigh_label[f][mol1_index].size(); jj++){
+							if (mol2 == neigh_label[f][mol1_index][jj]){
 								J_H[f][mol1_index][jj] = h;
 								J_L[f][mol1_index][jj] = l;
 								prev_value = jj;
@@ -403,138 +403,22 @@ void Mol_Cart_To_Frac(double** Coord_Cart, double** Coord_Frac, int frame, int a
 	}
 }
 
-void Find_Neighbors_Sphere(string input_file, string output_folder, bool print_results){
-
-	displ_vec = new int***[n_frame];
-	neighbors = new bool**[n_frame];
-	n_neighbors = new int*[n_frame];
-	
-	for(int i=0; i<n_frame; i++){
-		displ_vec[i] = new int**[n_mol];
-		neighbors[i] = new bool*[n_mol];
-		n_neighbors[i] = new int[n_mol];
-		
-		for(int ii=0; ii<n_mol; ii++){
-			displ_vec[i][ii] = new int*[n_mol-(ii+1)];
-			neighbors[i][ii] = new bool[n_mol-(ii+1)];
-			n_neighbors[i][ii] = 0;
-			
-			for(int jj=0; jj<n_mol-(ii+1); jj++){
-				displ_vec[i][ii][jj] = new int[3];
-				neighbors[i][ii][jj] = 0;
-				
-				for(int k=0; k<3; k++){
-					displ_vec[i][ii][jj][k] = 0;
-				}
-			}
-		}
-	}
-
-	double CutOff_square = pow(cutoff, 2);
-	
-	double Dist_Norm_square = 0.0;
-	double *Dist_Cart, *Dist_Frac;
-	Dist_Cart = new double[3];
-	Dist_Frac = new double[3];
-	
-	for (int i=0; i<n_frame; i++){
-		for (int ii=0; ii<n_mol; ii++){
-			if(J[ii]){
-				for (int jj=0; jj<n_mol-(ii+1); jj++){
-					Dist_Cart[0] = CM_x[i][jj+(ii+1)] - CM_x[i][ii];
-					Dist_Cart[1] = CM_y[i][jj+(ii+1)] - CM_y[i][ii];
-					Dist_Cart[2] = CM_z[i][jj+(ii+1)] - CM_z[i][ii];
-					
-					Cartesian_To_Fractional(Dist_Cart, Dist_Frac, i);
-
-					// Periodic boundary conditions calculations
-					for (int k=0; k<3; k++){
-						if (fabs(Dist_Frac[k]) > 0.5 && pbc[k]){
-							if (Dist_Frac[k] < 0.0){
-								Dist_Frac[k] = Dist_Frac[k] + 1.0;
-								displ_vec[i][ii][jj][k] = 1;
-							}
-							else{
-								Dist_Frac[k] = Dist_Frac[k] - 1.0;
-								displ_vec[i][ii][jj][k] = -1;
-							}
-						}
-					}
-					
-					Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
-					
-					Dist_Norm_square = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
-					
-					if (Dist_Norm_square < CutOff_square && Dist_Norm_square != 0){
-						neighbors[i][ii][jj] = 1;
-						n_neighbors[i][ii] ++;
-						
-						stringstream output_filename;
-						stringstream s_frame, s_mol_n1, s_mol_n2;
-						
-						s_frame << i;
-						s_mol_n1 << mol_label[ii];
-						s_mol_n2 << mol_label[jj+(ii+1)];
-						output_filename << output_folder.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".dist";
-						
-						ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
-						if (output){
-							output << Dist_Cart[0] << " " << Dist_Cart[1] << " " << Dist_Cart[2] <<endl;
-						}
-						else
-							cerr << "Error opening " << output_filename.str().c_str() << endl;	
-					}
-				}
-			}
-		}
-	}
-	
-	int tmp;
-	if(print_results){
-		for (int i=0; i<n_frame; i++){
-			cout << "frame " << i << endl;
-			for (int ii=0; ii<n_mol; ii++){
-				tmp = 0;
-				for (int jj=0; jj<n_mol-(ii+1); jj++){
-					if (neighbors[i][ii][jj]){
-						tmp++;
-					}
-				}
-				cout << "Molecule " << mol_label[ii] << ": " << tmp << " Neighbors\n";
-				for (int jj=0; jj<n_mol-(ii+1); jj++){
-					if (neighbors[i][ii][jj]){
-						cout << "Vector " << displ_vec[i][ii][jj][0] << " " << displ_vec[i][ii][jj][1] << " " << displ_vec[i][ii][jj][2] << endl;
-					}
-				}
-			}
-		}	
-	}
-}
-
 void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool print_results){
 
-	displ_vec = new int***[n_frame];
-	neighbors = new bool**[n_frame];
-	n_neighbors = new int*[n_frame];
+	neigh_label.clear();
+	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();
 	
 	for(int i=0; i<n_frame; i++){
-		displ_vec[i] = new int**[n_mol];
-		neighbors[i] = new bool*[n_mol];
-		n_neighbors[i] = new int[n_mol];
+		neigh_label.push_back( vector< vector<int> > ());
+		neigh_jump_vec_a.push_back( vector< vector<int> > ());
+		neigh_jump_vec_b.push_back( vector< vector<int> > ());
+		neigh_jump_vec_c.push_back( vector< vector<int> > ());
 		
 		for(int ii=0; ii<n_mol; ii++){
-			displ_vec[i][ii] = new int*[n_mol-(ii+1)];
-			neighbors[i][ii] = new bool[n_mol-(ii+1)];
-			n_neighbors[i][ii] = 0;
-			
-			for(int jj=0; jj<n_mol-(ii+1); jj++){
-				displ_vec[i][ii][jj] = new int[3];
-				neighbors[i][ii][jj] = 0;
-				
-				for(int k=0; k<3; k++){
-					displ_vec[i][ii][jj][k] = 0;
-				}
-			}
+			neigh_label[i].push_back( vector<int> ());
+			neigh_jump_vec_a[i].push_back( vector<int> ());
+			neigh_jump_vec_b[i].push_back( vector<int> ());
+			neigh_jump_vec_c[i].push_back( vector<int> ());
 		}
 	}
 
@@ -544,10 +428,13 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 	
 	// Start calculation
 	for (int i=0; i<n_frame; i++){
+		
 		double Dist_Norm_square = 0.0;
 		double *Dist_Cart, *Dist_Frac;
+		int *tmp_neigh_jump_vec;
 		Dist_Cart = new double[3];
 		Dist_Frac = new double[3];
+		tmp_neigh_jump_vec = new int[3];
 		
 		for (int ii=0; ii<n_mol; ii++){
 			if(J[ii]){
@@ -560,14 +447,15 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 
 					// Periodic boundary conditions calculations
 					for (int k=0; k<3; k++){
+						tmp_neigh_jump_vec[k] = 0;
 						if (fabs(Dist_Frac[k]) > 0.5 && pbc[k]){
 							if (Dist_Frac[k] < 0.0){
 								Dist_Frac[k] = Dist_Frac[k] + 1.0;
-								displ_vec[i][ii][jj][k] = 1;
+								tmp_neigh_jump_vec[k] = 1;
 							}
 							else{
 								Dist_Frac[k] = Dist_Frac[k] - 1.0;
-								displ_vec[i][ii][jj][k] = -1;
+								tmp_neigh_jump_vec[k] = -1;
 							}
 						}
 					}
@@ -577,15 +465,17 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 					Dist_Norm_square = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
 					
 					if (Dist_Norm_square < CutOff_square && Dist_Norm_square != 0){
-						neighbors[i][ii][jj] = 1;
-						n_neighbors[i][ii] ++;
+						neigh_label[i][ii].push_back(mol_label[jj+(ii+1)]);
+						neigh_jump_vec_a[i][ii].push_back(tmp_neigh_jump_vec[0]);
+						neigh_jump_vec_b[i][ii].push_back(tmp_neigh_jump_vec[1]);
+						neigh_jump_vec_c[i][ii].push_back(tmp_neigh_jump_vec[2]);
 						
 						stringstream output_filename;
 						stringstream s_frame, s_mol_n1, s_mol_n2;
 						
 						s_frame << i;
 						s_mol_n1 << mol_label[ii];
-						s_mol_n2 << mol_label[jj+(ii+1)];
+						s_mol_n2 << neigh_label[i][ii].back();
 						output_filename << output_folder.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".dist";
 						
 						ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
@@ -604,22 +494,13 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 	
 	#pragma omp barrier
 	
-	int tmp;
 	if(print_results){
 		for (int i=0; i<n_frame; i++){
 			cout << "frame " << i << endl;
 			for (int ii=0; ii<n_mol; ii++){
-				tmp = 0;
-				for (int jj=0; jj<n_mol-(ii+1); jj++){
-					if (neighbors[i][ii][jj]){
-						tmp++;
-					}
-				}
-				cout << "Molecule " << mol_label[ii] << ": " << tmp << " Neighbors\n";
-				for (int jj=0; jj<n_mol-(ii+1); jj++){
-					if (neighbors[i][ii][jj]){
-						cout << "Vector " << displ_vec[i][ii][jj][0] << " " << displ_vec[i][ii][jj][1] << " " << displ_vec[i][ii][jj][2] << endl;
-					}
+				cout << "Molecule " << mol_label[ii] << ": " << neigh_label[i][ii].size() << " Neighbors\n";
+				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+					cout << "Vector " << neigh_jump_vec_a[i][ii][jj] << " " << neigh_jump_vec_b[i][ii][jj] << " " << neigh_jump_vec_c[i][ii][jj] << endl;
 				}
 			}
 		}	
@@ -846,90 +727,6 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		cerr << "Error opening " << output_filename.str().c_str() << endl;	
 }
 
-void Write_ZINDO_Files(string input_file, string output_folder, string log_file, string zindo_folder){
-	double **mol1_cart, **mol2_cart;
-	double **mol2_frac;
-	
-	for (int i=0; i<n_frame; i++){
-		
-		Write_morange(input_file, i);
-		
-		for (int ii=0; ii<n_mol; ii++){
-			
-			mol1_cart = new double*[n_atom[ii]];
-			
-			for (int iii=0; iii<n_atom[ii]; iii++){	
-				mol1_cart[iii] = new double[3];
-				mol1_cart[iii][0] = x_cart[i][ii][iii];
-				mol1_cart[iii][1] = y_cart[i][ii][iii];
-				mol1_cart[iii][2] = z_cart[i][ii][iii];
-				
-			}	
-					
-			Write_INP(input_file, mol1_cart, i, ii);
-			
-			for (int iii=0; iii<n_atom[ii]; iii++){	
-				delete [] mol1_cart[iii];
-			}
-			delete [] mol1_cart;
-			
-			for (int jj=0; jj<n_mol-(ii+1); jj++){
-				if (neighbors[i][ii][jj]){
-					mol1_cart = new double*[n_atom[ii]];
-					mol2_cart = new double*[n_atom[jj+(ii+1)]];
-					mol2_frac = new double*[n_atom[jj+(ii+1)]];
-					
-					for (int iii=0; iii<n_atom[ii]; iii++){	
-						mol1_cart[iii] = new double[3];
-						mol1_cart[iii][0] = x_cart[i][ii][iii];
-						mol1_cart[iii][1] = y_cart[i][ii][iii];
-						mol1_cart[iii][2] = z_cart[i][ii][iii];
-						
-					}
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
-						mol2_cart[jjj] = new double[3];
-						mol2_cart[jjj][0] = x_cart[i][jj+(ii+1)][jjj];
-						mol2_cart[jjj][1] = y_cart[i][jj+(ii+1)][jjj];
-						mol2_cart[jjj][2] = z_cart[i][jj+(ii+1)][jjj];
-						
-						mol2_frac[jjj] = new double[3];
-					}
-					
-					//if(i==0){
-					//	cout << i << " " << ii << " " << jj << endl;
-					//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
-					//}
-					
-					Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[jj+(ii+1)]);
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){
-						for (int k=0; k<3; k++){
-							mol2_frac[jjj][k] = mol2_frac[jjj][k] + displ_vec[i][ii][jj][k];
-						}
-					}
-					Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[jj+(ii+1)]);
-					
-					//if(i==0)
-					//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
-					
-					Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, jj+(ii+1));
-					Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, jj+(ii+1));
-					
-					for (int iii=0; iii<n_atom[ii]; iii++){	
-						delete [] mol1_cart[iii];
-					}
-					
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
-						delete [] mol2_cart[jjj];
-						delete [] mol2_frac[jjj];
-					}
-					delete [] mol1_cart; delete [] mol2_cart; delete [] mol2_frac; 		
-					
-				}
-			}
-		}
-	}		
-}
-
 void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_file, string zindo_folder){
 	
 	#pragma omp parallel for
@@ -960,58 +757,55 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 			}
 			delete [] mol1_cart;
 			
-			for (int jj=0; jj<n_mol-(ii+1); jj++){
-				if (neighbors[i][ii][jj]){
-					mol1_cart = new double*[n_atom[ii]];
-					mol2_cart = new double*[n_atom[jj+(ii+1)]];
-					mol2_frac = new double*[n_atom[jj+(ii+1)]];
-					
-					for (int iii=0; iii<n_atom[ii]; iii++){	
-						mol1_cart[iii] = new double[3];
-						mol1_cart[iii][0] = x_cart[i][ii][iii];
-						mol1_cart[iii][1] = y_cart[i][ii][iii];
-						mol1_cart[iii][2] = z_cart[i][ii][iii];
-						
-					}
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
-						mol2_cart[jjj] = new double[3];
-						mol2_cart[jjj][0] = x_cart[i][jj+(ii+1)][jjj];
-						mol2_cart[jjj][1] = y_cart[i][jj+(ii+1)][jjj];
-						mol2_cart[jjj][2] = z_cart[i][jj+(ii+1)][jjj];
-						
-						mol2_frac[jjj] = new double[3];
-					}
-					
-					//if(i==0){
-					//	cout << i << " " << ii << " " << jj << endl;
-					//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
-					//}
-					
-					Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[jj+(ii+1)]);
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){
-						for (int k=0; k<3; k++){
-							mol2_frac[jjj][k] = mol2_frac[jjj][k] + displ_vec[i][ii][jj][k];
-						}
-					}
-					Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[jj+(ii+1)]);
-					
-					//if(i==0)
-					//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
-					
-					Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, jj+(ii+1));
-					Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, jj+(ii+1));
-					
-					for (int iii=0; iii<n_atom[ii]; iii++){	
-						delete [] mol1_cart[iii];
-					}
-					
-					for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
-						delete [] mol2_cart[jjj];
-						delete [] mol2_frac[jjj];
-					}
-					delete [] mol1_cart; delete [] mol2_cart; delete [] mol2_frac; 		
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				mol1_cart = new double*[n_atom[ii]];
+				mol2_cart = new double*[n_atom[jj+(ii+1)]];
+				mol2_frac = new double*[n_atom[jj+(ii+1)]];
+				
+				for (int iii=0; iii<n_atom[ii]; iii++){	
+					mol1_cart[iii] = new double[3];
+					mol1_cart[iii][0] = x_cart[i][ii][iii];
+					mol1_cart[iii][1] = y_cart[i][ii][iii];
+					mol1_cart[iii][2] = z_cart[i][ii][iii];
 					
 				}
+				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
+					mol2_cart[jjj] = new double[3];
+					mol2_cart[jjj][0] = x_cart[i][jj+(ii+1)][jjj];
+					mol2_cart[jjj][1] = y_cart[i][jj+(ii+1)][jjj];
+					mol2_cart[jjj][2] = z_cart[i][jj+(ii+1)][jjj];
+					
+					mol2_frac[jjj] = new double[3];
+				}
+				
+				//if(i==0){
+				//	cout << i << " " << ii << " " << jj << endl;
+				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
+				//}
+				
+				Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[jj+(ii+1)]);
+				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){
+					mol2_frac[jjj][0] = mol2_frac[jjj][0] + neigh_jump_vec_a[i][ii][jj];
+					mol2_frac[jjj][1] = mol2_frac[jjj][1] + neigh_jump_vec_b[i][ii][jj];
+					mol2_frac[jjj][2] = mol2_frac[jjj][2] + neigh_jump_vec_c[i][ii][jj];
+				}
+				Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[jj+(ii+1)]);
+				
+				//if(i==0)
+				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
+				
+				Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, jj+(ii+1));
+				Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, jj+(ii+1));
+				
+				for (int iii=0; iii<n_atom[ii]; iii++){	
+					delete [] mol1_cart[iii];
+				}
+				
+				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
+					delete [] mol2_cart[jjj];
+					delete [] mol2_frac[jjj];
+				}
+				delete [] mol1_cart; delete [] mol2_cart; delete [] mol2_frac;
 			}
 		}
 	}
@@ -1032,11 +826,9 @@ void Write_NB(string output_file, string input_folder){
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile, "frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "molecule %d %d\n", mol_label[ii], n_neighbors[i][ii]);
-			for (int jj=0; jj<n_mol-(ii+1); jj++){
-				if (neighbors[i][ii][jj]){
-					fprintf(pFile, "%d\n", mol_label[jj+(ii+1)]);
-				}
+			fprintf(pFile, "molecule %d %d\n", mol_label[ii], neigh_label[i][ii].size());
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				fprintf(pFile, "%d\n", neigh_label[i][ii][jj]);
 			}
 		}	
 	}
@@ -1065,9 +857,9 @@ void Write_MC_YO(string input_file, string result_folder){
 		fprintf(pFile, "N_frame=%d\n", i);
 		fprintf(pFile, "%.4f %.4f %.4f %.4f %.4f %.4f\n", a[i], b[i], c[i], alpha_deg[i], beta_deg[i], gamma_deg[i]);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "0 %d 0\n", n_neighbors[i][ii]);
-			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
+			fprintf(pFile, "0 %d 0\n", neigh_label[i][ii].size());
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				fprintf(pFile, "%d %e %e\n", neigh_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
 			fprintf(pFile, "%e %e %e 0\n", CM_x[i][ii], CM_y[i][ii], CM_z[i][ii]);
 		}	
@@ -1093,9 +885,9 @@ void Write_MC(string input_file, string result_folder){
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile, "frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "mol %d %d\n", mol_label[ii], n_neighbors[i][ii]);
-			for (int jj=0; jj<n_neighbors[i][ii]; jj++){
-				fprintf(pFile, "%d %e %e\n", neighbors_label[i][ii][jj], J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
+			fprintf(pFile, "mol %d %d\n", mol_label[ii], neigh_label[i][ii].size());
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				fprintf(pFile, "%d %e %e\n", neigh_label[i][ii][jj], J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
 		}	
 	}
@@ -1160,14 +952,8 @@ int main(int argc, char **argv){
 	Read_ZIN(input_file, input_folder, false);
 	
 	if (zindo){
-		if (MT) {
-			Find_Neighbors_Sphere_MT(input_file, output_folder, false);
-			Write_ZINDO_Files_MT(input_file, output_folder, log_file, zindo_folder);
-		}
-		else {
-			Find_Neighbors_Sphere(input_file, output_folder, false);
-			Write_ZINDO_Files(input_file, output_folder, log_file, zindo_folder);
-		}
+		Find_Neighbors_Sphere_MT(input_file, output_folder, false);
+		Write_ZINDO_Files_MT(input_file, output_folder, log_file, zindo_folder);
 		Write_NB(input_file, input_folder);
 	}
 	
@@ -1201,32 +987,6 @@ int main(int argc, char **argv){
 		}
 		delete [] x_cart; delete [] y_cart; delete [] z_cart; 
 		delete [] atomic_number; delete [] atomic_mass; delete [] atomic_valence; delete [] symbol; 
-		
-		for(int i=0; i<n_frame; i++){
-			for(int ii=0; ii<n_mol; ii++){
-				for(int jj=0; jj<n_mol-(ii+1); jj++){
-					delete [] displ_vec[i][ii][jj];
-				}
-				delete [] displ_vec[i][ii];
-				delete [] neighbors[i][ii];
-			}
-			delete [] displ_vec[i];
-			delete [] neighbors[i];
-			delete [] n_neighbors[i];
-		}
-		delete [] displ_vec; delete [] neighbors; delete [] n_neighbors;
-	}
-
-	if (mc){
-		for(int i=0; i<n_frame; i++){
-			for(int ii=0; ii<n_mol; ii++){
-				delete [] neighbors_label[i][ii];
-			}
-			delete [] neighbors_label[i];
-			delete [] n_neighbors[i];
-		}
-		delete [] neighbors_label;
-		delete [] n_neighbors;
 	}
 	
 	if (mc){
@@ -1250,6 +1010,9 @@ int main(int argc, char **argv){
 	delete [] a; delete [] b; delete [] c; delete [] alpha_deg; delete [] beta_deg; delete [] gamma_deg;
 	delete [] temp_alpha_cos; delete [] temp_beta_sin; delete [] temp_beta_cos; delete [] temp_gamma_sin;
 	delete [] temp_gamma_cos; delete [] temp_beta_term; delete [] temp_gamma_term;
+	
+	neigh_label.clear();
+	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();
 	
 	return 0;
 }
