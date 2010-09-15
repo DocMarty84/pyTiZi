@@ -752,39 +752,54 @@ void Write_CMD(string input_file, string zindo_folder, string output_folder, str
 		output << "a=1" << endl;
 		output << "b=1" << endl;
 		output << "c=1" << endl << endl;
+		
 		output << "######## calculate each molecules. need modify input file ##########" << endl << endl;
 		output << "nmol=2" << endl << endl;
 		output << "echo $nmol > mo_all.txt" << endl;
 		output << "echo $nmol > nat_all.txt" << endl;
 		output << "echo $nmol > nb_all.txt" << endl << endl;
+		
+		output << "if [ -f molecule_" << mol_label[mol_n1] << ".out ]; then"
+		output << "	cat mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
+		output << "	cat nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
+		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
+		output << "else" << endl;
 		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n1] << ".inp >molecule_" << mol_label[mol_n1] << ".out" << endl;
+		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
+		output << "	cp nat.txt nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
+		output << "	cp nb.txt nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;		
+		output << "	cat mo_moner_" << mol_label[mol_n1] << ".txt >> mo_all.txt" << endl;
+		output << "	cat nat_" << mol_label[mol_n1] << ".txt >> nat_all.txt" << endl;
+		output << "	cat nb_" << mol_label[mol_n1] << ".txt >> nb_all.txt" << endl;
+		output << "fi" << endl << endl;
+
+		output << "if [ -f molecule_" << mol_label[mol_n2] << ".out ]; then"
+		output << "	cat mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
+		output << "	cat nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
+		output << "	cat nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;
+		output << "else" << endl;
+		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
+		output << "	cp mo_moner.txt mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
+		output << "	cp nat.txt nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
+		output << "	cp nb.txt nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;		
+		output << "	cat mo_moner_" << mol_label[mol_n2] << ".txt >> mo_all.txt" << endl;
+		output << "	cat nat_" << mol_label[mol_n2] << ".txt >> nat_all.txt" << endl;
+		output << "	cat nb_" << mol_label[mol_n2] << ".txt >> nb_all.txt" << endl;
+		output << "fi" << endl << endl;
+		
 		if (sign){
-			//output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_h" << endl;
-			//output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n1] << ".coeff_l" << endl;
 			output << "H_1=`sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_H_row << " }'`" << endl;
 			output << "L_1=`sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n1] << ".out | awk '{ print $" << coeff_L_row << " }'`" << endl;
-		}
-		else{
-			output << "H_1='1.0'" << endl;
-			output << "L_1='1.0'" << endl;
-		}
-		output << "cat mo_moner.txt >> mo_all.txt" << endl;
-		output << "cat nat.txt >> nat_all.txt" << endl;
-		output << "cat nb.txt >> nb_all.txt" << endl << endl;
-		output << zindo_folder << "/molecule/zindo1 <molecule_" << mol_label[mol_n2] << ".inp >molecule_" << mol_label[mol_n2] << ".out" << endl;
-		if (sign){
-			//output << "sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_h" << endl;
-			//output << "sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }' > molecule_" << mol_label[mol_n2] << ".coeff_l" << endl;
 			output << "H_2=`sed -n " << coeff_H_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_H_row << " }'`" << endl;
 			output << "L_2=`sed -n " << coeff_L_lign << "p molecule_" << mol_label[mol_n2] << ".out | awk '{ print $" << coeff_L_row << " }'`" << endl;
 		}
 		else{
+			output << "H_1='1.0'" << endl;
+			output << "L_1='1.0'" << endl;
 			output << "H_2='1.0'" << endl;
-			output << "L_2='1.0'" << endl;
+			output << "L_2='1.0'" << endl << endl;
 		}
-		output << "cat mo_moner.txt >> mo_all.txt" << endl;
-		output << "cat nat.txt >> nat_all.txt" << endl;
-		output << "cat nb.txt >> nb_all.txt" << endl << endl;
+		
 		output << "####### finsih calculation for each molecule ###########" << endl << endl;
 		output << "count=0" << endl << endl;
 		output << "let \"mol_total=$nmol\"" << endl << endl;
