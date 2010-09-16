@@ -382,11 +382,10 @@ if __name__ == '__main__':
 	
 	try:
 		shutil.copy("src%sCZ_input_zindo_mc.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
-		shutil.copy("src%sZINDO_sign.cpp" % (os.sep), "project%s%s" % (os.sep, project.project_name))
 	except:
 		pass
 		if verb > 1:
-			print "[WARNING] Could not copy file src%create_input_zindo.cpp to %s.\n" % (os.sep, project.project_name)
+			print "[WARNING] Could not copy file src%CZ_input_zindo_mc.cpp to %s.\n" % (os.sep, project.project_name)
 	
 	# ==========================
 	#      Start working...
@@ -539,7 +538,6 @@ if __name__ == '__main__':
 	write_cluster_files.ScriptZINDOCollect(data, project)
 	write_cluster_files.ScriptZINDOCollectDirect(data, project)
 	write_cluster_files.ScriptZINDOCollectPBS(project)
-	write_cluster_files.ScriptZINDOCollectDirectNew(data, project)
 
 	"""
 	try:

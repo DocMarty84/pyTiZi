@@ -200,8 +200,7 @@ def ScriptCompile(project):
 	"""
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
-	tmp += 'g++ ZINDO_sign.cpp -o ZINDO_sign -O2 -lm\n'
-	tmp += 'g++ CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm -fopenmp\n\n'
+	tmp += 'g++ -Wall CZ_input_zindo_mc.cpp -o CZ_input_zindo_mc -O2 -lm -fopenmp\n\n'
 	
 	file = 'project%s%s%s00.compile.sh' % (os.sep, project.project_name, os.sep)
 	try:
@@ -570,9 +569,7 @@ def ScriptZINDOLaunch(project):
 def ScriptZINDOCollect(data, project):
 	""" Create the script used to collect the transfer integrals values.
 	"""
-	
-	a = data.n_electrons[0, 0]/2
-	
+
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
@@ -598,14 +595,14 @@ def ScriptZINDOCollect(data, project):
 	tmp += 'fi\n\n'
 
 	tmp += 'mkdir -p $RESULTS_DIR\n'
-	tmp += 'cp ZINDO_sign CZ_input_zindo_mc $RESULTS_DIR\n\n'
-
+	tmp += 'cp CZ_input_zindo_mc $RESULTS_DIR\n\n'
+	
 	tmp += 'mkdir -p $SCRATCH_DIR\n'
 	tmp += 'cp -r $OUTPUT_DIR $SCRATCH_DIR\n'
 	tmp += 'cp -r $RESULTS_DIR $SCRATCH_DIR\n\n'
 
 	tmp += 'cd $SCRATCH_DIR/output\n'
-	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
+	tmp += 'for x in `find . -maxdepth 1 -name "*FULL.tar.gz"`; do\n'
 	tmp += '	tar xfz $x\n'
 	tmp += 'done\n\n'
 
@@ -613,97 +610,26 @@ def ScriptZINDOCollect(data, project):
 	tmp += '	if [[ -d $SYSTEM ]]; then\n'
 	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
 	tmp += '		cd $SYSTEM\n'
-	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g | awk -F \'/\' \'{ print $2 }\'`; do\n'
-	tmp += '			if [[ -d $FRAME ]]; then\n'
-	tmp += '				echo $FRAME\n'
-	tmp += '				cd $FRAME\n'
-	tmp += '				for x in `find . -maxdepth 1 -name "*.out"`; do\n'
-	tmp += '					MOL_1=`echo $x | cut -d "_" -f2`\n'
-	tmp += '					MOL_2=`echo $x | cut -d "_" -f3 | cut -d "." -f1`\n'
-	tmp += '					J_H=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a, a)
-	tmp += '					J_L=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a+1, a+1)
-	tmp += '					N=`echo $FRAME | cut -d "_" -f2`\n\n'
-	
-	tmp += '					if [[ $J_H == \'\' ]]; then\n'
-	tmp += '						echo "Problem at frame" $N "between molecules" $MOL_1 "and" $MOL_2 .\n'
-	tmp += '						J_H="0.0"\n'
-	tmp += '						J_L="0.0"\n'
-	tmp += '					fi\n\n'
-					
-	tmp += '					if [[ -f molecule_"$MOL_1".coeff_h ]]; then\n'
-	tmp += '						H_1=`cat molecule_"$MOL_1".coeff_h`\n'
-	tmp += '					else\n'
-	tmp += '						H_1="1.0"\n'
-	tmp += '					fi\n\n'
-					
-	tmp += '					if [[ -f molecule_"$MOL_2".coeff_h ]]; then\n'
-	tmp += '						H_2=`cat molecule_"$MOL_2".coeff_h`\n'
-	tmp += '					else\n'
-	tmp += '						H_2="1.0"\n'
-	tmp += '					fi\n\n'
-
-	tmp += '					if [[ -f molecule_"$MOL_1".coeff_l ]]; then\n'
-	tmp += '						L_1=`cat molecule_"$MOL_1".coeff_l`\n'
-	tmp += '					else\n'
-	tmp += '						L_1="1.0"\n'
-	tmp += '					fi\n\n'
-
-	tmp += '					if [[ -f molecule_"$MOL_2".coeff_l ]]; then\n'
-	tmp += '						L_2=`cat molecule_"$MOL_2".coeff_l`\n'
-	tmp += '					else\n'
-	tmp += '						L_2="1.0"\n'
-	tmp += '					fi\n'
-	tmp += '					a=`echo $x | cut -d "/" -f2`\n'
-	tmp += '					echo $N $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> "$SCRATCH_DIR"/results/"$SYSTEM"_"$a"\n'
-	tmp += '				done\n'
-	tmp += '				cd ..\n'
-	tmp += '			fi\n'
+	tmp += '		echo "" > "$SCRATCH_DIR"/results/"$SYSTEM".full\n'
+	tmp += '		for x in `find . -name "frame*.out"`; do\n'
+	tmp += '			cat $x >> "$SCRATCH_DIR"/results/"$SYSTEM".full\n'
 	tmp += '		done\n'
-	tmp += '		cd ..\n'
+	tmp += '		cd $SCRATCH_DIR/output\n'
 	tmp += '	fi\n'
 	tmp += 'done\n\n'
 
-	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
-	tmp += 'cd $SCRATCH_DIR/results\n'
-	tmp += 'for x in `find . -maxdepth 1 -name "*.out"`; do\n'
-	tmp += '	mol1=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f1`\n'
-	tmp += '	mol2=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f2`\n'
-	tmp += '	n_frame=`wc -l $x | awk \'{ print $1 }\'`\n'
-	tmp += '	echo $n_frame $mol1 $mol2 > "$x".sign\n'
-	tmp += '	./ZINDO_sign -n $n_frame -f $x >> "$x".sign\n'
-	tmp += 'done\n\n'
-
 	tmp += 'echo "Creating Monte-Carlo input files..."\n'
-	tmp += 'cd $SCRATCH_DIR/results\n'
+	tmp += 'cd "$SCRATCH_DIR"/results\n'
 	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	find . -name ""$SYSTEM"_dimer_*.sign" > "$SYSTEM".list\n'
-	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r $SCRATCH_DIR/results -t mc\n'
+	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r "$SCRATCH_DIR"/results -t mc\n'
 	tmp += 'done\n\n'
 
 	tmp += 'echo "Now cleaning everything..."\n'
-	tmp += 'cd $SCRATCH_DIR/results\n'
-	tmp += 'rm ZINDO_sign CZ_input_zindo_mc\n'
-	tmp += 'rm $RESULTS_DIR/ZINDO_sign $RESULTS_DIR/CZ_input_zindo_mc\n'
-	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	rm "$SYSTEM".list\n'
-	tmp += '	mkdir -p $SYSTEM\n'
-	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.out"`; do\n'
-	tmp += '		mv $x $SYSTEM\n'
-	tmp += '	done\n'
-	tmp += '	tar cfz "$SYSTEM"_out.tar.gz $SYSTEM\n'
-	tmp += '	rm -rf $SYSTEM\n\n'
-
-	tmp += '	mkdir -p $SYSTEM\n'
-	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.sign"`; do\n'
-	tmp += '		mv $x $SYSTEM\n'
-	tmp += '	done\n'
-	tmp += '	tar cfz "$SYSTEM"_sign.tar.gz $SYSTEM\n'
-	tmp += '	rm -rf $SYSTEM\n'
-	tmp += '	mv $SCRATCH_DIR/results/* $RESULTS_DIR\n'
-	tmp += 'done\n'
+	tmp += 'mv $SCRATCH_DIR/results/* $RESULTS_DIR\n'
+	tmp += 'rm $RESULTS_DIR/CZ_input_zindo_mc\n\n'
 	
 	tmp += 'rm -rf $SCRATCH_DIR\n'
-	
+
 	file = 'project%s%s%s03.collect.sh' % (os.sep, project.project_name, os.sep)
 	try:
 		foutput = open(file, 'w')
@@ -713,149 +639,11 @@ def ScriptZINDOCollect(data, project):
 	
 	foutput.write(tmp)
 	foutput.close()
-
+	
 def ScriptZINDOCollectDirect(data, project):
 	""" Create the script used to collect the transfer integrals values.
 	"""
-	
-	a = data.n_electrons[0, 0]/2
-	
-	tmp = ''
-	tmp += '#!/bin/bash\n\n'
-	tmp += 'DIR="%s"\n' % (project.dir_cluster)
-	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
-	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
-	tmp += 'RESULTS_DIR="%s"\n\n' % (project.results_dir_cluster)
 
-	tmp += 'if [[ -d $DIR ]]; then\n'
-	tmp += '	cd $DIR\n'
-	tmp += 'else\n'
-	tmp += '	echo "The folder $DIR does not exist, but it is supposed to be the project directory. Aborting..."\n'
-	tmp += '	exit\n'
-	tmp += 'fi\n\n'
-
-	tmp += 'mkdir -p $RESULTS_DIR\n'
-	tmp += 'cp ZINDO_sign CZ_input_zindo_mc $RESULTS_DIR\n\n'
-
-	tmp += 'cd $OUTPUT_DIR\n'
-	tmp += 'for x in `find . -maxdepth 1 -name "*J.tar.gz"`; do\n'
-	tmp += '	tar xfz $x\n'
-	tmp += 'done\n\n'
-
-	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	if [[ -d $SYSTEM ]]; then\n'
-	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
-	tmp += '		cd $SYSTEM\n'
-	tmp += '		for FRAME in `find . -maxdepth 1 -name "*" | sort -t "_" -k 2 -g | awk -F \'/\' \'{ print $2 }\'`; do\n'
-	tmp += '			if [[ -d $FRAME ]]; then\n'
-	tmp += '				echo $FRAME\n'
-	tmp += '				cd $FRAME\n'
-	tmp += '				for x in `find . -maxdepth 1 -name "*.out"`; do\n'
-	tmp += '					MOL_1=`echo $x | cut -d "_" -f2`\n'
-	tmp += '					MOL_2=`echo $x | cut -d "_" -f3 | cut -d "." -f1`\n'
-	tmp += '					J_H=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a, a)
-	tmp += '					J_L=`grep " i(1)%13d j(2)%13d" $x | awk \'{print $6}\'`\n' % (a+1, a+1)
-	tmp += '					N=`echo $FRAME | cut -d "_" -f2`\n\n'
-	
-	tmp += '					if [[ $J_H == \'\' ]]; then\n'
-	tmp += '						echo "Problem at frame" $N "between molecules" $MOL_1 "and" $MOL_2 .\n'
-	tmp += '						J_H="0.0"\n'
-	tmp += '						J_L="0.0"\n'
-	tmp += '					fi\n\n'
-					
-	tmp += '					if [[ -f molecule_"$MOL_1".coeff_h ]]; then\n'
-	tmp += '						H_1=`cat molecule_"$MOL_1".coeff_h`\n'
-	tmp += '					else\n'
-	tmp += '						H_1="1.0"\n'
-	tmp += '					fi\n\n'
-					
-	tmp += '					if [[ -f molecule_"$MOL_2".coeff_h ]]; then\n'
-	tmp += '						H_2=`cat molecule_"$MOL_2".coeff_h`\n'
-	tmp += '					else\n'
-	tmp += '						H_2="1.0"\n'
-	tmp += '					fi\n\n'
-
-	tmp += '					if [[ -f molecule_"$MOL_1".coeff_l ]]; then\n'
-	tmp += '						L_1=`cat molecule_"$MOL_1".coeff_l`\n'
-	tmp += '					else\n'
-	tmp += '						L_1="1.0"\n'
-	tmp += '					fi\n\n'
-
-	tmp += '					if [[ -f molecule_"$MOL_2".coeff_l ]]; then\n'
-	tmp += '						L_2=`cat molecule_"$MOL_2".coeff_l`\n'
-	tmp += '					else\n'
-	tmp += '						L_2="1.0"\n'
-	tmp += '					fi\n'
-	tmp += '					a=`echo $x | cut -d "/" -f2`\n'
-	tmp += '					echo $N $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> "$RESULTS_DIR"/"$SYSTEM"_"$a"\n'
-	tmp += '				done\n'
-	tmp += '				cd ..\n'
-	tmp += '			fi\n'
-	tmp += '		done\n'
-	tmp += '		cd ..\n'
-	tmp += '	fi\n'
-	tmp += 'done\n\n'
-
-	tmp += 'echo "Collection of results done! Now calculating the sign (if possible)..."\n'
-	tmp += 'cd $RESULTS_DIR\n'
-	tmp += 'for x in `find . -maxdepth 1 -name "*.out"`; do\n'
-	tmp += '	mol1=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f1`\n'
-	tmp += '	mol2=`echo $x | awk -F \'_dimer_\' \'{ print $2 }\' | awk -F \'.out\' \'{ print $1 }\' | cut -d "_" -f2`\n'
-	tmp += '	n_frame=`wc -l $x | awk \'{ print $1 }\'`\n'
-	tmp += '	echo $n_frame $mol1 $mol2 > "$x".sign\n'
-	tmp += '	./ZINDO_sign -n $n_frame -f $x >> "$x".sign\n'
-	tmp += 'done\n\n'
-
-	tmp += 'echo "Creating Monte-Carlo input files..."\n'
-	tmp += 'cd $RESULTS_DIR\n'
-	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	find . -name ""$SYSTEM"_dimer_*.sign" > "$SYSTEM".list\n'
-	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r $RESULTS_DIR -t mc\n'
-	tmp += 'done\n\n'
-
-	tmp += 'echo "Now cleaning everything..."\n'
-	tmp += 'cd $OUTPUT_DIR\n'
-	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	if [[ -d $SYSTEM ]]; then\n'
-	tmp += '		rm -rf $SYSTEM\n'
-	tmp += '	fi\n'
-	tmp += 'done\n'
-	
-	tmp += 'cd $RESULTS_DIR\n'
-	tmp += 'rm ZINDO_sign CZ_input_zindo_mc\n'
-	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
-	tmp += '	rm "$SYSTEM".list\n'
-	tmp += '	mkdir -p $SYSTEM\n'
-	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.out"`; do\n'
-	tmp += '		mv $x $SYSTEM\n'
-	tmp += '	done\n'
-	tmp += '	tar cfz "$SYSTEM"_out.tar.gz $SYSTEM\n'
-	tmp += '	rm -rf $SYSTEM\n\n'
-
-	tmp += '	mkdir -p $SYSTEM\n'
-	tmp += '	for x in `find . -maxdepth 1 -name ""$SYSTEM"*.sign"`; do\n'
-	tmp += '		mv $x $SYSTEM\n'
-	tmp += '	done\n'
-	tmp += '	tar cfz "$SYSTEM"_sign.tar.gz $SYSTEM\n'
-	tmp += '	rm -rf $SYSTEM\n'
-	tmp += 'done\n'
-	
-	file = 'project%s%s%s03.collect_direct.sh' % (os.sep, project.project_name, os.sep)
-	try:
-		foutput = open(file, 'w')
-	except:
-		print "[ERROR] Could not create %s. Aborting..." % (file)
-		sys.exit(1)
-	
-	foutput.write(tmp)
-	foutput.close()
-	
-def ScriptZINDOCollectDirectNew(data, project):
-	""" Create the script used to collect the transfer integrals values.
-	"""
-	
-	a = data.n_electrons[0, 0]/2
-	
 	tmp = ''
 	tmp += '#!/bin/bash\n\n'
 	tmp += 'DIR="%s"\n' % (project.dir_cluster)
@@ -907,7 +695,7 @@ def ScriptZINDOCollectDirectNew(data, project):
 	tmp += 'cd $RESULTS_DIR\n'
 	tmp += 'rm CZ_input_zindo_mc\n'
 	
-	file = 'project%s%s%s03.collect_direct_new.sh' % (os.sep, project.project_name, os.sep)
+	file = 'project%s%s%s03.collect_direct.sh' % (os.sep, project.project_name, os.sep)
 	try:
 		foutput = open(file, 'w')
 	except:

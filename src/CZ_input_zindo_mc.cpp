@@ -247,8 +247,8 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 	stringstream file_nb;
 	file_nb << input_folder << "/" << input_file << ".nb";
 	
-	unsigned int tmp_n_neigh;
-	int tmp_neigh_label;
+	//unsigned int tmp_n_neigh;
+	//int tmp_neigh_label;
 	
 	ifstream input(file_nb.str().c_str(), ios::in);
 	if (input){
@@ -256,6 +256,7 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 		neigh_label.clear();
 		input >> n_frame >> n_mol;
 
+		/*
 		for (int i=0; i<n_frame; i++){
 			
 			neigh_label.push_back( vector< vector<int> > ());
@@ -272,6 +273,7 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 				}
 			}
 		}
+		*/
 		input.close();
 		
 		if (print_results){
@@ -305,13 +307,16 @@ void Read_FULL(string input_file, string result_folder){
 		int f, mol1, mol2, mol1_index;
 		double j_h, j_l, h_1, h_2, l_1, l_2;
 		
+		neigh_label.clear();
 		J_H.clear(); J_L.clear(); 
 		
 		for(int i=0; i<n_frame; i++){
+			neigh_label.push_back( vector< vector<int> > ());
 			J_H.push_back( vector< vector<double> > ());
 			J_L.push_back( vector< vector<double> > ());
 			
 			for(int ii=0; ii<n_mol; ii++){
+				neigh_label[i].push_back( vector<int> ());
 				J_H[i].push_back( vector<double> ());
 				J_L[i].push_back( vector<double> ());
 			}
@@ -319,7 +324,6 @@ void Read_FULL(string input_file, string result_folder){
 		
 		while (!input.eof()){
 			input >> f >> mol1 >> mol2 >> j_h >> h_1 >> h_2 >> j_l >> l_1 >> l_2;
-
 			for (int ii=0; ii<n_mol; ii++){
 				if (mol_label[ii]==mol1){
 					mol1_index = ii;
@@ -328,21 +332,38 @@ void Read_FULL(string input_file, string result_folder){
 			}
 			
 			// Fill the vector and sort it at the same time
-			bool bitedanslecul = true;
-			for (unsigned int jj=0; jj<neigh_label[f][mol1_index].size(); jj++){
-				if (mol2<J_H[f][mol1_index][jj]) {
-					neigh_label[f][mol1_index].insert(neigh_label[f][mol1_index].begin(), mol2);
-					J_H[f][mol1_index].insert(J_H[f][mol1_index].begin(), (1000*j_h*(h_1*h_2/(fabs(h_1*h_2)))));
-					J_L[f][mol1_index].insert(J_L[f][mol1_index].begin(), (1000*j_l*(l_1*l_2/(fabs(l_1*l_2)))));
-					bitedanslecul = false;
-					break;
-				}
-			}
-			
-			if (bitedanslecul) {
+			if (neigh_label[f][mol1_index].size() == 0){
 				neigh_label[f][mol1_index].push_back(mol2);
 				J_H[f][mol1_index].push_back(1000*j_h*(h_1*h_2/(fabs(h_1*h_2))));
 				J_L[f][mol1_index].push_back(1000*j_l*(l_1*l_2/(fabs(l_1*l_2))));
+			}
+
+			else if (mol2 > neigh_label[f][mol1_index].back()) {
+				neigh_label[f][mol1_index].push_back(mol2);
+				J_H[f][mol1_index].push_back(1000*j_h*(h_1*h_2/(fabs(h_1*h_2))));
+				J_L[f][mol1_index].push_back(1000*j_l*(l_1*l_2/(fabs(l_1*l_2))));
+			}
+			
+			else if (mol2 < neigh_label[f][mol1_index].front()) {
+				neigh_label[f][mol1_index].insert(neigh_label[f][mol1_index].begin(), mol2);
+				J_H[f][mol1_index].insert(J_H[f][mol1_index].begin(), 1000*j_h*(h_1*h_2/(fabs(h_1*h_2))));
+				J_L[f][mol1_index].insert(J_L[f][mol1_index].begin(), 1000*j_l*(l_1*l_2/(fabs(l_1*l_2))));
+			}
+			
+			else {
+				vector<int>::iterator it_n = neigh_label[f][mol1_index].begin();
+				vector<double>::iterator it_h = J_H[f][mol1_index].begin();
+				vector<double>::iterator it_l = J_L[f][mol1_index].begin();
+				for (it_n=neigh_label[f][mol1_index].begin(); it_n<neigh_label[f][mol1_index].end(); it_n++){
+					if (mol2<*(it_n+1) && mol2>*(it_n)) {
+						neigh_label[f][mol1_index].insert(it_n+1, mol2);
+						J_H[f][mol1_index].insert(it_h+1, (1000*j_h*(h_1*h_2/(fabs(h_1*h_2)))));
+						J_L[f][mol1_index].insert(it_l+1, (1000*j_l*(l_1*l_2/(fabs(l_1*l_2)))));
+						break;
+					}
+					it_h++;
+					it_l++;
+				}
 			}
 		}
 		input.close();
@@ -937,9 +958,9 @@ int main(int argc, char **argv){
 		Read_XYZ(input_file, input_folder, false);
 	}
 	
-	if (mc){
-		Read_NB(input_file, input_folder, false);
-	}
+	//if (mc){
+	//	Read_NB(input_file, input_folder, false);
+	//}
 	
 	Read_CELL(input_file, input_folder, false);
 	Read_CM(input_file, input_folder, false);
@@ -1006,3 +1027,4 @@ int main(int argc, char **argv){
 	
 	return 0;
 }
+
