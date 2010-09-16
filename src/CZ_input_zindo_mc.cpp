@@ -841,7 +841,7 @@ void Write_NB(string output_file, string input_folder){
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile, "frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "molecule %d %d\n", mol_label[ii], neigh_label[i][ii].size());
+			fprintf(pFile, "molecule %d %d\n", mol_label[ii], int(neigh_label[i][ii].size()));
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				fprintf(pFile, "%d\n", neigh_label[i][ii][jj]);
 			}
@@ -872,7 +872,7 @@ void Write_MC_YO(string input_file, string result_folder){
 		fprintf(pFile, "N_frame=%d\n", i);
 		fprintf(pFile, "%.4f %.4f %.4f %.4f %.4f %.4f\n", a[i], b[i], c[i], alpha_deg[i], beta_deg[i], gamma_deg[i]);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "0 %d 0\n", neigh_label[i][ii].size());
+			fprintf(pFile, "0 %d 0\n", int(neigh_label[i][ii].size()));
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				fprintf(pFile, "%d %e %e\n", neigh_label[i][ii][jj]+1, J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
@@ -900,7 +900,7 @@ void Write_MC(string input_file, string result_folder){
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile, "frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile, "mol %d %d\n", mol_label[ii], neigh_label[i][ii].size());
+			fprintf(pFile, "mol %d %d\n", mol_label[ii], int(neigh_label[i][ii].size()));
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				fprintf(pFile, "%d %e %e\n", neigh_label[i][ii][jj], J_H[i][ii][jj]/1000.0, J_L[i][ii][jj]/1000.0);
 			}
