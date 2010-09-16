@@ -36,15 +36,15 @@ double cutoff; // Cutoff distance
 double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg; // Cell parameters
 double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_gamma_cos, *temp_beta_term, *temp_gamma_term; // Parameters for fractional coordinates
 
+vector< vector< vector<int> > > neigh_label;
+vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
+
 bool sign;
 int coeff_H_lign, coeff_H_row, coeff_L_lign, coeff_L_row; 
 
-double ***J_H, ***J_L;
+vector< vector< vector<double> > > J_H, J_L;
 
 bool MT = 1;
-
-vector< vector< vector<int> > > neigh_label;
-vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
 
 void Read_XYZ(string input_file, string input_folder, bool print_results){
 	string tmp;
@@ -294,84 +294,63 @@ void Read_NB(string input_file, string input_folder, bool print_results){
 	}
 }
 
-void Read_J(string input_file, string result_folder){
+void Read_FULL(string input_file, string result_folder){
 	string tmp;
-	stringstream file_J_list;
-	stringstream file_J;
-	int f;
-	double h,l;
+	stringstream file_full;
+	file_full << result_folder << "/" << input_file << ".full";
 	
-	file_J_list << result_folder << "/" << input_file << ".list";
-	ifstream input_list(file_J_list.str().c_str(), ios::in);
+	ifstream input(file_full.str().c_str(), ios::in);
 	
-	if (input_list){
+	if (input){
+		int f, mol1, mol2, mol1_index;
+		double j_h, j_l, h_1, h_2, l_1, l_2;
 		
-		J_H = new double**[n_frame];
-		J_L = new double**[n_frame];
+		J_H.clear(); J_L.clear(); 
 		
-		for (int i=0; i<n_frame; i++){
-			J_H[i] = new double*[n_mol];
-			J_L[i] = new double*[n_mol];
+		for(int i=0; i<n_frame; i++){
+			J_H.push_back( vector< vector<double> > ());
+			J_L.push_back( vector< vector<double> > ());
 			
+			for(int ii=0; ii<n_mol; ii++){
+				J_H[i].push_back( vector<double> ());
+				J_L[i].push_back( vector<double> ());
+			}
+		}
+		
+		while (!input.eof()){
+			input >> f >> mol1 >> mol2 >> j_h >> h_1 >> h_2 >> j_l >> l_1 >> l_2;
+
 			for (int ii=0; ii<n_mol; ii++){
-				J_H[i][ii] = new double[neigh_label[i][ii].size()];
-				J_L[i][ii] = new double[neigh_label[i][ii].size()];	
-			}
-		}
-		
-		input_list >> tmp;
-		while (!input_list.eof()){
-			file_J.str("");
-			file_J << result_folder << "/" << tmp;
-			ifstream input(file_J.str().c_str(), ios::in);
-			
-			if (input){
-				int mol1, mol2, mol1_index;
-				int prev_value = 0;
-				
-				input >> tmp >> mol1 >> mol2;
-				
-				while (!input.eof()){
-					input >> f >> h >> l;
-
-					for (int ii=0; ii<n_mol; ii++){
-						if (mol_label[ii]==mol1){
-							mol1_index = ii;
-						}
-					}
-
-					if (mol2 == neigh_label[f][mol1_index][prev_value]){
-						J_H[f][mol1_index][prev_value] = h;
-						J_L[f][mol1_index][prev_value] = l;
-					}					
-					
-					else {
-						for (unsigned int jj=0; jj<neigh_label[f][mol1_index].size(); jj++){
-							if (mol2 == neigh_label[f][mol1_index][jj]){
-								J_H[f][mol1_index][jj] = h;
-								J_L[f][mol1_index][jj] = l;
-								prev_value = jj;
-								break;
-							}
-						}
-					}
+				if (mol_label[ii]==mol1){
+					mol1_index = ii;
+					break;
 				}
-				input.close();
 			}
 			
-			else{
-				cerr << "Error opening " << file_J.str().c_str() << endl;
-				exit(1);			
+			// Fill the vector and sort it at the same time
+			bool bitedanslecul = true;
+			for (unsigned int jj=0; jj<neigh_label[f][mol1_index].size(); jj++){
+				if (mol2<J_H[f][mol1_index][jj]) {
+					neigh_label[f][mol1_index].insert(neigh_label[f][mol1_index].begin(), mol2);
+					J_H[f][mol1_index].insert(J_H[f][mol1_index].begin(), (1000*j_h*(h_1*h_2/(fabs(h_1*h_2)))));
+					J_L[f][mol1_index].insert(J_L[f][mol1_index].begin(), (1000*j_l*(l_1*l_2/(fabs(l_1*l_2)))));
+					bitedanslecul = false;
+					break;
+				}
 			}
 			
-			input_list >> tmp;
+			if (bitedanslecul) {
+				neigh_label[f][mol1_index].push_back(mol2);
+				J_H[f][mol1_index].push_back(1000*j_h*(h_1*h_2/(fabs(h_1*h_2))));
+				J_L[f][mol1_index].push_back(1000*j_l*(l_1*l_2/(fabs(l_1*l_2))));
+			}
 		}
-		input_list.close();
+		input.close();
 	}
-		
+	
 	else{
-		cerr << "Error opening " << file_J_list.str().c_str() << endl;
-		exit(1);
+		cerr << "Error opening " << file_full.str().c_str() << endl;
+		exit(1);			
 	}
 }
 
@@ -973,7 +952,7 @@ int main(int argc, char **argv){
 	}
 	
 	if (mc){
-		Read_J(input_file, result_folder);
+		Read_FULL(input_file, result_folder);
 		Write_MC_YO(input_file, result_folder);
 		Write_MC(input_file, result_folder);
 	}
@@ -1005,11 +984,7 @@ int main(int argc, char **argv){
 	}
 	
 	if (mc){
-		for(int i=0; i<n_frame; i++){
-			delete [] J_H[i];
-			delete [] J_L[i];
-		}
-		delete [] J_H; delete [] J_L; 
+		J_H.clear(); J_L.clear(); 
 	}
 	
 	for(int i=0; i<n_frame; i++){

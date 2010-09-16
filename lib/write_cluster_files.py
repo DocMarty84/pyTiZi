@@ -850,6 +850,73 @@ def ScriptZINDOCollectDirect(data, project):
 	foutput.write(tmp)
 	foutput.close()
 	
+def ScriptZINDOCollectDirectNew(data, project):
+	""" Create the script used to collect the transfer integrals values.
+	"""
+	
+	a = data.n_electrons[0, 0]/2
+	
+	tmp = ''
+	tmp += '#!/bin/bash\n\n'
+	tmp += 'DIR="%s"\n' % (project.dir_cluster)
+	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
+	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
+	tmp += 'RESULTS_DIR="%s"\n\n' % (project.results_dir_cluster)
+
+	tmp += 'if [[ -d $DIR ]]; then\n'
+	tmp += '	cd $DIR\n'
+	tmp += 'else\n'
+	tmp += '	echo "The folder $DIR does not exist, but it is supposed to be the project directory. Aborting..."\n'
+	tmp += '	exit\n'
+	tmp += 'fi\n\n'
+
+	tmp += 'mkdir -p $RESULTS_DIR\n'
+	tmp += 'cp CZ_input_zindo_mc $RESULTS_DIR\n\n'
+
+	tmp += 'cd $OUTPUT_DIR\n'
+	tmp += 'for x in `find . -maxdepth 1 -name "*FULL.tar.gz"`; do\n'
+	tmp += '	tar xfz $x\n'
+	tmp += 'done\n\n'
+
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
+	tmp += '	if [[ -d $SYSTEM ]]; then\n'
+	tmp += '		echo "Collecting results for system" $SYSTEM"..."\n'
+	tmp += '		cd $SYSTEM\n'
+	tmp += '		echo "" > "$RESULTS_DIR"/"$SYSTEM".full\n'
+	tmp += '		for x in `find . -name "frame*.out"`; do\n'
+	tmp += '			cat $x >> "$RESULTS_DIR"/"$SYSTEM".full\n'
+	tmp += '		done\n'
+	tmp += '		cd $OUTPUT_DIR\n'
+	tmp += '	fi\n'
+	tmp += 'done\n\n'
+
+	tmp += 'echo "Creating Monte-Carlo input files..."\n'
+	tmp += 'cd $RESULTS_DIR\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
+	tmp += '	./CZ_input_zindo_mc -I $SYSTEM -i $INPUT_DIR/MD -r $RESULTS_DIR -t mc\n'
+	tmp += 'done\n\n'
+
+	tmp += 'echo "Now cleaning everything..."\n'
+	tmp += 'cd $OUTPUT_DIR\n'
+	tmp += "for SYSTEM in `find $INPUT_DIR/MD -maxdepth 1 -name '*.xyz' | awk -F 'input/MD/' '{print $2}' | cut -d '.' -f1`; do\n"
+	tmp += '	if [[ -d $SYSTEM ]]; then\n'
+	tmp += '		rm -rf $SYSTEM\n'
+	tmp += '	fi\n'
+	tmp += 'done\n'
+	
+	tmp += 'cd $RESULTS_DIR\n'
+	tmp += 'rm CZ_input_zindo_mc\n'
+	
+	file = 'project%s%s%s03.collect_direct_new.sh' % (os.sep, project.project_name, os.sep)
+	try:
+		foutput = open(file, 'w')
+	except:
+		print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+	
+	foutput.write(tmp)
+	foutput.close()
+	
 def ScriptZINDOCollectPBS(project):
 	""" Create the .pbs file for the neighbor calculations.
 	"""

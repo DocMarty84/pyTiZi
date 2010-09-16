@@ -539,6 +539,7 @@ if __name__ == '__main__':
 	write_cluster_files.ScriptZINDOCollect(data, project)
 	write_cluster_files.ScriptZINDOCollectDirect(data, project)
 	write_cluster_files.ScriptZINDOCollectPBS(project)
+	write_cluster_files.ScriptZINDOCollectDirectNew(data, project)
 
 	"""
 	try:
