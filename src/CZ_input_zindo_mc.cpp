@@ -958,9 +958,9 @@ int main(int argc, char **argv){
 		Read_XYZ(input_file, input_folder, false);
 	}
 	
-	//if (mc){
-	//	Read_NB(input_file, input_folder, false);
-	//}
+	if (mc){
+		Read_NB(input_file, input_folder, false);
+	}
 	
 	Read_CELL(input_file, input_folder, false);
 	Read_CM(input_file, input_folder, false);
