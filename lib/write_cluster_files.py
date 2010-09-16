@@ -395,7 +395,7 @@ def ScriptFileCreationPBS(project):
 		
 	elif project.location_cluster == "lucky" or project.location_cluster == "william":
 		tmp += '#!/bin/bash\n\n'
-		tmp += '#PBS -l nodes=1:ppn=1,walltime=999:00:00,mem=1gb\n'
+		tmp += '#PBS -l nodes=1:ppn=1,walltime=999:00:00,mem=2gb\n'
 		tmp += '#PBS -M nicolas.g.martinelli@gmail.com\n'
 		tmp += '#PBS -m ea\n\n'
 
@@ -744,7 +744,7 @@ def ScriptZINDOCollectPBS(project):
 	tmp += 'chmod +x 03.collect.sh\n'
 	tmp += './03.collect.sh\n'
 
-	file = 'project%s%s%s03.collect.sh' % (os.sep, project.project_name, os.sep)
+	file = 'project%s%s%s03.collect.pbs' % (os.sep, project.project_name, os.sep)
 	try:
 		foutput = open(file, 'w')
 	except:
