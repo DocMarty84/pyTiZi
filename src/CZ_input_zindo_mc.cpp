@@ -1,14 +1,22 @@
-#include <iostream> //Entrées-sorties standard
-#include <fstream> //Entrées-sorties sur fichiers
-#include <string> //Chaines de caracteres
-//#include <limits> //Pour aller à la fin d'une ligne, par exemple
-#include <iomanip> //Manipulation des sorties, par exemple format scientifique
-#include <sstream> //Pour les conversion entre types de variables
+// C++ libraries
+#include <iostream> 
+#include <fstream> 
+#include <string> 
+#include <limits> 
+#include <iomanip> 
+#include <sstream>
 #include <vector>
-#include <math.h>
+#include <algorithm>
+
+// C libraries
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <omp.h>
 
 using namespace std;
