@@ -517,8 +517,8 @@ def ScriptZINDOLaunch(project):
 	tmp += '	echo " " >> $DIR/zindo_$1.run\n'
 	
 	tmp += '	echo "	cd $SCRATCH_DIR" >> $DIR/zindo_$1.run\n'
-	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/dimer_*_*.out \$PROJECT/frame_\$FRAME/molecule_*.coeff_*" >> $DIR/zindo_$1.run\n'
-	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$OUTPUT_DIR" >> $DIR/zindo_$1.run\n'
+	#tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/dimer_*_*.out \$PROJECT/frame_\$FRAME/molecule_*.coeff_*" >> $DIR/zindo_$1.run\n'
+	#tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$OUTPUT_DIR" >> $DIR/zindo_$1.run\n'
 	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$PROJECT/frame_\$FRAME/frame_*.out" >> $DIR/zindo_$1.run\n'
 	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$OUTPUT_DIR" >> $DIR/zindo_$1.run\n\n'
 	tmp += '	echo " " >> $DIR/zindo_$1.run\n'
