@@ -20,7 +20,7 @@
 // To compile on lucky : 
 // g++ -Wall MC_BKL_layer.cpp /home/nmartine/lib/boost/lib/libboost_thread.so -O3 -lm -I /home/nmartine/lib/boost/include/ -Wl,-rpath,/home/nmartine/lib/boost/lib -o MC_BKL_layer
 //#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
-#include <boost/thread.hpp>
+//#include <boost/thread.hpp>
 
 // C++ libraries
 #include <iostream> //Entrées-sorties standard
@@ -1020,47 +1020,6 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 	pos[1] = box;
 }
 
-void MC_BKL_Loop_MT(int frame, unsigned int charge_0, unsigned int charge_f, vector<int> curr_mol, vector<int> curr_grid, int thr){
-	for (unsigned int charge_i=charge_0; charge_i<charge_f; charge_i++){
-		
-		int tmp_mol_index = curr_mol[charge_i];
-								
-		for (unsigned int jj=0; jj<neigh_label[frame][tmp_mol_index].size(); jj++){
-			
-			// Find index of neighbor
-			int tmp_neigh_num = jj;
-			int tmp_neigh_index = tmp_mol_index;
-			for (int ii=0; ii<n_mol; ii++){
-				if (neigh_label[frame][tmp_mol_index][jj] == mol_label[ii]){
-					tmp_neigh_index = ii;
-					break;
-				}
-			}
-			
-			double k_tmp = numeric_limits<double>::min();
-			if (tmp_neigh_index != tmp_mol_index){
-				k_tmp = Marcus_Levich_Jortner_rate_electro(frame, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[frame][tmp_mol_index][jj], d_y[frame][tmp_mol_index][jj], d_z[frame][tmp_mol_index][jj], dE[frame][tmp_mol_index][jj], J_H[frame][tmp_mol_index][jj], J_L[frame][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
-			}
-
-			if (thr==1) {
-				event_k_1.push_back(k_tmp);
-				event_charge_1.push_back(charge_i);
-				event_mol_index_1.push_back(tmp_mol_index);
-				event_neigh_num_1.push_back(jj);
-				event_neigh_index_1.push_back(tmp_neigh_index);
-			}
-			
-			else if (thr==2) {
-				event_k_2.push_back(k_tmp);
-				event_charge_2.push_back(charge_i);
-				event_mol_index_2.push_back(tmp_mol_index);
-				event_neigh_num_2.push_back(jj);
-				event_neigh_index_2.push_back(tmp_neigh_index);
-			}
-		}
-	}
-}
-
 // BKL algorithm
 void MC_BKL(string output_folder){
 	
@@ -1197,92 +1156,39 @@ void MC_BKL(string output_folder){
 			// Calculates the transfer rates
 			if (previous_jump_ok){
 				
-				if (MT){
-					event_k.clear();
-					event_charge.clear();
-					event_mol_index.clear();
-					event_neigh_num.clear(); 
-					event_neigh_index.clear();
-					
-					event_k_1.clear();
-					event_charge_1.clear();
-					event_mol_index_1.clear();
-					event_neigh_num_1.clear(); 
-					event_neigh_index_1.clear();
-					
-					event_k_2.clear();
-					event_charge_2.clear();
-					event_mol_index_2.clear();
-					event_neigh_num_2.clear(); 
-					event_neigh_index_2.clear();
-										
-					boost::thread thrd1(&MC_BKL_Loop_MT, i, 0, int(curr_mol.size()/2), curr_mol, curr_grid, 1);
-					boost::thread thrd2(&MC_BKL_Loop_MT, i, int(curr_mol.size()/2), curr_mol.size(), curr_mol, curr_grid, 2);
-					thrd1.join();
-					thrd2.join();
-					
-					
-					for (unsigned int t=0; t<event_k_1.size(); t++){
-						event_k.push_back(event_k_1[t]);
-						event_charge.push_back(event_charge_1[t]);
-						event_mol_index.push_back(event_mol_index_1[t]);
-						event_neigh_num.push_back(event_neigh_num_1[t]);
-						event_neigh_index.push_back(event_neigh_index_1[t]);
-						
-					}
-					
-					for (unsigned int t=0; t<event_k_2.size(); t++){
-						event_k.push_back(event_k_2[t]);
-						event_charge.push_back(event_charge_2[t]);
-						event_mol_index.push_back(event_mol_index_2[t]);
-						event_neigh_num.push_back(event_neigh_num_2[t]);
-						event_neigh_index.push_back(event_neigh_index_2[t]);
-						
-					}
-					
-					//merge(event_k_1.begin(), event_k_1.begin()+event_k_1.size(), event_k_2.begin(), event_k_2.begin()+event_k_2.size(), event_k.begin());
-					//merge(event_charge_1.begin(), event_charge_1.begin()+event_charge_1.size(), event_charge_2.begin(), event_charge_2.begin()+event_charge_2.size(), event_charge.begin());
-					//merge(event_mol_index_1.begin(), event_mol_index_1.begin()+event_mol_index_1.size(), event_mol_index_2.begin(), event_mol_index_2.begin()+event_mol_index_2.size(), event_mol_index.begin());
-					//merge(event_neigh_num_1.begin(), event_neigh_num_1.begin()+event_neigh_num_1.size(), event_neigh_num_2.begin(), event_neigh_num_2.begin()+event_neigh_num_2.size(), event_neigh_num.begin());
-					//merge(event_neigh_index_1.begin(), event_neigh_index_1.begin()+event_neigh_index_1.size(), event_neigh_index_2.begin(), event_neigh_index_2.begin()+event_neigh_index_2.size(), event_neigh_index.begin());
-
-				}
+				// List all the possible events
+				event_k.clear();
+				event_charge.clear();
+				event_mol_index.clear();
+				event_neigh_num.clear(); 
+				event_neigh_index.clear();
 				
-				else {
-					// List all the possible events
-					event_k.clear();
-					event_charge.clear();
-					event_mol_index.clear();
-					event_neigh_num.clear(); 
-					event_neigh_index.clear();
+				for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
 					
-					for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
+					int tmp_mol_index = curr_mol[charge_i];
+											
+					for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
 						
-						int tmp_mol_index = curr_mol[charge_i];
-												
-						for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
-							
-							// Find index of neighbor
-							int tmp_neigh_num = jj;
-							int tmp_neigh_index = tmp_mol_index;
-							for (int ii=0; ii<n_mol; ii++){
-								if (neigh_label[i][tmp_mol_index][jj] == mol_label[ii]){
-									tmp_neigh_index = ii;
-									break;
-								}
+						// Find index of neighbor
+						int tmp_neigh_num = jj;
+						int tmp_neigh_index = tmp_mol_index;
+						for (int ii=0; ii<n_mol; ii++){
+							if (neigh_label[i][tmp_mol_index][jj] == mol_label[ii]){
+								tmp_neigh_index = ii;
+								break;
 							}
-							
-							double k_tmp = numeric_limits<double>::min();
-							if (tmp_neigh_index != tmp_mol_index){
-								k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
-							}
-
-							event_k.push_back(k_tmp);
-							event_charge.push_back(charge_i);
-							event_mol_index.push_back(tmp_mol_index);
-							event_neigh_num.push_back(jj);
-							event_neigh_index.push_back(tmp_neigh_index);
 						}
+						
+						double k_tmp = numeric_limits<double>::min();
+						if (tmp_neigh_index != tmp_mol_index){
+							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+						}
+
+						event_k.push_back(k_tmp);
+						event_charge.push_back(charge_i);
+						event_mol_index.push_back(tmp_mol_index);
+						event_neigh_num.push_back(jj);
+						event_neigh_index.push_back(tmp_neigh_index);
 					}
 				}
 				
