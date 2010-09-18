@@ -25,6 +25,8 @@ if __name__ == '__main__':
 	##############################################
 	
 	verb = 4
+	
+	n_cpu = 4
 
 	if len(sys.argv) > 1:
 		tmp = sys.argv[1:]
@@ -434,9 +436,9 @@ if __name__ == '__main__':
 				print "[INFO] Parameters For Orthogonalization calculated!"
 				print "[INFO] Calculation of Center of Masses. This may take some time..."
 			try:
-				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			except:
-				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"
 			
@@ -471,9 +473,9 @@ if __name__ == '__main__':
 				print "[INFO] Parameters For Orthogonalization calculated!"
 				print "[INFO] Calculation of Center of Masses. This may take some time..."
 			try:
-				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			except:
-				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"

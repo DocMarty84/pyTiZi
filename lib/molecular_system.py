@@ -188,7 +188,7 @@ class MolecularSystem(object):
 			
 		#self.Center_of_Masses_MT_thread(mutex, mol, 0, self.n_frame, verb)
 
-	def Center_of_Masses_MT(self, molecules=[0], verb=2):
+	def Center_of_Masses_MT(self, molecules=[0], n_cpu = 2, verb=2):
 		import multiprocessing
 		
 		if molecules[0] == 0:
@@ -198,27 +198,28 @@ class MolecularSystem(object):
 		
 		mutex = multiprocessing.Lock()
 		ps = []
-		n_cpu = 4
-		len_subtable = int(len(self.n_frame)/n_cpu) + 1	
+		len_subtable = int(self.n_frame/n_cpu) + 1	
 		parents = []
 		childs = []
 		res_thr = []
 
 		for np in range(n_cpu):
 			pipe = multiprocessing.Pipe()
-			parents.append(pipe)
-			childs.append(pipe)
+			parents.append(" ")
+			childs.append(" ")
+			parents[np], childs[np] = pipe
 			
 			min = len_subtable * np
 			max = len_subtable * (np+1)
-			if max > int(len(self.n_frame)):
-				max = int(len(self.n_frame))
+			if max > self.n_frame:
+				max = self.n_frame
 
 			p = multiprocessing.Process(target = self.Center_of_Masses_MT_thread, args = (mutex, childs[np], mol, min, max, verb))
 			ps.append(p)
 			p.start()
 
-			res_thr.append(parent[np].recv())
+		for np in range(n_cpu):
+			res_thr.append(parents[np].recv())
 		
 		for x in ps:
 			p.join()
@@ -226,14 +227,13 @@ class MolecularSystem(object):
 		for np in range(n_cpu):
 			min = len_subtable * np
 			max = len_subtable * (np+1)
-			if max > int(len(self.n_frame)):
-				max = int(len(self.n_frame))
+			if max > self.n_frame:
+				max = self.n_frame
 
-			self.n_electrons[min:max] = res_thr[0][:]
-			self.CM_x[min:max] = res_thr[1][:]
-			self.CM_y[min:max] = res_thr[2][:]
-			self.CM_z[min:max] = res_thr[3][:]
-			
+			self.n_electrons[min:max] = res_thr[np][0][:]
+			self.CM_x[min:max] = res_thr[np][1][:]
+			self.CM_y[min:max] = res_thr[np][2][:]
+			self.CM_z[min:max] = res_thr[np][3][:]
 	
 	def Center_of_Masses_MT_thread(self, mutex, child, mol, frame_i, frame_f, verb):	
 		#mutex.acquire()
