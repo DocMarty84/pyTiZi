@@ -438,7 +438,7 @@ if __name__ == '__main__':
 			try:
 				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			except:
-				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"
 			
@@ -475,7 +475,7 @@ if __name__ == '__main__':
 			try:
 				qs.Center_of_Masses_MT(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
 			except:
-				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), n_cpu, verb)
+				qs.Center_of_Masses(list_manipulation.MoleculesList(project.molecules_to_analyze, qs.n_mol), verb)
 			
 			if verb > 2:	
 				print "[INFO] Centers of Masses calculated!"
