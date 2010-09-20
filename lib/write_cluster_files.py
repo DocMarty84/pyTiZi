@@ -52,7 +52,7 @@ def CreateXYZ(data, cell, project, filename_base, verb=2):
 	foutput.write(tmp)
 	foutput.close()
 	
-def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
+def CreateXYZ_MT_old(data, cell, project, filename_base, verb=2):
 	""" Create the .xyz file containing the coordinates of all the atoms
 		in the system.
 	"""
@@ -120,7 +120,67 @@ def CreateXYZ_MT(data, cell, project, filename_base, verb=2):
 	foutput.write(tmp)
 				
 	foutput.close()
+
+def CreateXYZ_MT(data, cell, project, filename_base, n_cpu=2, verb=2):
+	""" Create the .xyz file containing the coordinates of all the atoms
+		in the system.
+	"""
+	import multiprocessing
 	
+	file = '%s%s%s.xyz' % (project.input_cluster, os.sep, filename_base)
+	try:
+		foutput = open(file, 'w')
+	except:
+		if verb>0:
+			print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+		
+	tmp = '%d %d\n' % (data.n_frame, len(project.molecules_to_analyze_full))
+	for ii in project.molecules_to_analyze_full:
+		tmp += '%d ' % (data.n_atom[ii])
+	tmp += '\n'	
+	foutput.writelines(tmp)
+	tmp = ''
+	
+	mutex = multiprocessing.Lock()
+	ps = []
+	len_subtable = int(data.n_frame/n_cpu) + 1	
+	parents = []
+	childs = []
+	res_thr = []
+
+	for np in range(n_cpu):
+		pipe = multiprocessing.Pipe()
+		parents.append(" ")
+		childs.append(" ")
+		parents[np], childs[np] = pipe
+		
+		min = len_subtable * np
+		max = len_subtable * (np+1)
+		if max > data.n_frame:
+			max = data.n_frame
+
+		p = multiprocessing.Process(target = CreateXYZ_MT_thread, args = (childs[np], data, cell, project, min, max, verb))
+		ps.append(p)
+		p.start()
+
+	for np in range(n_cpu):
+		res_thr.append(parents[np].recv())
+	
+	for x in ps:
+		p.join()
+	
+	for np in range(n_cpu):
+		foutput.writelines(res_thr[np])
+		
+		max = len_subtable * (np+1)
+		if max > data.n_frame:
+			max = data.n_frame
+		if verb > 3:
+			print "[INFO] Writing frame %d in the file %s" % (max, file)
+				
+	foutput.close()
+
 def CreateXYZ_MT_thread(child, data, cell, project, frame_i, frame_f, verb=2):
 	tmp = ''	
 	for i in xrange(frame_i, frame_f, 1):

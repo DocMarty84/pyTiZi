@@ -523,7 +523,7 @@ if __name__ == '__main__':
 		write_cluster_files.CreateCM(data, project, filename_base)
 		write_cluster_files.CreateZIN(project, filename_base)
 		try:
-			write_cluster_files.CreateXYZ_MT(data, cell, project, filename_base, verb)
+			write_cluster_files.CreateXYZ_MT(data, cell, project, filename_base, n_cpu, verb)
 		except:
 			write_cluster_files.CreateXYZ(data, cell, project, filename_base, verb)
 		
