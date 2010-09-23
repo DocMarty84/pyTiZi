@@ -88,8 +88,6 @@ def Read_PDB_File_First(name, verb=2):
 		beta[i] = beta_tmp[i]
 		gamma[i] = gamma_tmp[i]
 		
-	print n_frame, n_mol, a, b, c, alpha, beta, gamma
-	
 	return n_frame, n_mol, n_atom[0], a, b, c, alpha, beta, gamma
 
 def Read_PDB_File_Second(name, mol, verb=2):
