@@ -37,7 +37,7 @@ def Read_PDB_File_First(name, verb=2):
 		elif words1[0] == "REMARK":
 			pass
 		
-		elif words1[0] == "CRYST":
+		elif words1[0] == "CRYST" or words1[0] == "CRYST1":
 			a_tmp.append(float(words1[1]))
 			b_tmp.append(float(words1[2]))
 			c_tmp.append(float(words1[3]))
@@ -46,7 +46,7 @@ def Read_PDB_File_First(name, verb=2):
 			gamma_tmp.append(float(words1[6]))
 			n_frame += 1
 		
-		elif words1[0] == "ATOM" and first_frame:
+		elif (words1[0] == "ATOM" or words1[0] == "HETATM") and first_frame:
 			tmp = 1
 			n_mol = 1
 			
@@ -54,16 +54,16 @@ def Read_PDB_File_First(name, verb=2):
 				line = finput.readline()
 				words2 = line.split()
 			
-				if words2[0] == "ATOM" and int(words1[4]) == int(words2[4]):
+				if (words2[0] == "ATOM" or words2[0] == "HETATM") and int(words1[4]) == int(words2[4]):
 					tmp += 1
 					
-				elif words2[0] == "ATOM" and int(words1[4]) != int(words2[4]):
+				elif (words2[0] == "ATOM" or words2[0] == "HETATM") and int(words1[4]) != int(words2[4]):
 					n_atom.append(tmp)
 					words1 = words2[:]
 					n_mol += 1
 					tmp = 1
 					
-				elif words2[0] == "TER":
+				elif (words2[0] == "TER" or words2[0] == "END"):
 					n_atom.append(tmp)
 					first_frame = False
 					break
@@ -87,6 +87,8 @@ def Read_PDB_File_First(name, verb=2):
 		alpha[i] = alpha_tmp[i]
 		beta[i] = beta_tmp[i]
 		gamma[i] = gamma_tmp[i]
+		
+	print n_frame, n_mol, a, b, c, alpha, beta, gamma
 	
 	return n_frame, n_mol, n_atom[0], a, b, c, alpha, beta, gamma
 
@@ -113,7 +115,7 @@ def Read_PDB_File_Second(name, mol, verb=2):
 			finput.close()
 			break
 			
-		elif words[0] == "CRYST":
+		elif words[0] == "CRYST" or words[0] == "CRYST1":
 			i += 1
 			if verb > 3 and i%10 == 0:
 				print "[INFO] Reading frame %d/%d" %(i, mol.n_frame)
@@ -121,7 +123,7 @@ def Read_PDB_File_Second(name, mol, verb=2):
 		elif words[0] == "REMARK":
 			pass
 		
-		elif words[0] == "ATOM":
+		elif words[0] == "ATOM" or words[0] == "HETATM":
 			first_atom_line = True
 			for ii in xrange(mol.n_mol):
 				for iii in xrange(mol.n_atom[ii]):
