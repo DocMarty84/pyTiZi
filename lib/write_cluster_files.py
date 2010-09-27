@@ -281,7 +281,10 @@ def ScriptFileCreation(project):
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
 	tmp += 'LOG_DIR="%s"\n' % (project.log_dir_cluster)
-	tmp += 'ZINDO_DIR="%s"\n' % (project.zindo_dir_cluster)
+	
+	if project.J_type == "zindo":
+		tmp += 'ZINDO_DIR="%s"\n' % (project.zindo_dir_cluster)
+		
 	if project.location_cluster == "joe":
 		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
 	elif project.location_cluster == "lyra" or project.location_cluster == "adam":
@@ -303,7 +306,11 @@ def ScriptFileCreation(project):
 	tmp += 'mkdir -p $SCRATCH_DIR\n'
 	tmp += 'mkdir -p $OUTPUT_DIR\n'
 	tmp += 'mkdir -p $LOG_DIR\n'
-	tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
+	
+	if project.J_type == "zindo":
+		tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
+	else if project.J_type == "adf":
+		tmp += 'mkdir -p $INPUT_DIR/ADF\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
 	tmp += 'find . -name "*" | cpio -pd $SCRATCH_DIR\n'
@@ -324,13 +331,21 @@ def ScriptFileCreation(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	if project.J_type == "zindo":
+		tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	else if project.J_type == "adf":
+		tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -t adf\n\n'
 	
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
 	tmp += '	do\n'
 	tmp += '		tar cfz "$NAME"_frame_"$i".tar.gz $NAME/frame_$i\n'
-	tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
+	
+	if project.J_type == "zindo":
+		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
+	else if project.J_type == "adf":
+		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ADF\n'
+		
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
 	
 	tmp += '		cd output\n'
@@ -366,7 +381,11 @@ def ScriptFileCreationDirect(project):
 	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
 	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
 	tmp += 'LOG_DIR="%s"\n' % (project.log_dir_cluster)
-	tmp += 'ZINDO_DIR="%s"\n\n' % (project.zindo_dir_cluster)
+	
+	if project.J_type == "zindo":
+		tmp += 'ZINDO_DIR="%s"\n\n' % (project.zindo_dir_cluster)
+	else:
+		tmp += '\n'
 
 	tmp += 'if [[ -d $DIR ]]; then\n'
 	tmp += '	cd $DIR\n'
@@ -377,7 +396,11 @@ def ScriptFileCreationDirect(project):
 
 	tmp += 'mkdir -p $OUTPUT_DIR\n'
 	tmp += 'mkdir -p $LOG_DIR\n'
-	tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
+	
+	if project.J_type == "zindo":
+		tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
+	else if project.J_type == "adf":
+		tmp += 'mkdir -p $INPUT_DIR/ADF\n\n'
 
 	tmp += 'cp CZ_input_zindo_mc $INPUT_DIR/MD\n'
 	tmp += 'cd $INPUT_DIR/MD\n\n'
@@ -398,14 +421,21 @@ def ScriptFileCreationDirect(project):
 	tmp += '		(( i = $i+1 ))\n'
 	tmp += '	done\n\n'
 
-	tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+	if project.J_type == "zindo":
+		tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
+
+	else if project.J_type == "adf":
+		tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -t adf\n\n'
 
 	tmp += '	i=0\n'
 	tmp += '	while [ $i -lt $N_FRAME ]\n'
 	tmp += '	do\n'
 	tmp += '		cd $INPUT_DIR/MD\n'
 	tmp += '		tar cfz "$NAME"_frame_"$i".tar.gz $NAME/frame_$i\n'
-	tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
+	if project.J_type == "zindo":
+		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
+	else if project.J_type == "adf":
+		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ADF\n'
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
 	
 	tmp += '		cd $OUTPUT_DIR\n'
@@ -508,7 +538,7 @@ def ScriptZINDOLaunch(project):
 		tmp += '	echo "#PBS -l nodes=1:p4:ppn=1" 		>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#PBS -A `whoami`" 			>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#PBS -M `whoami`@averell.umh.ac.be" 		>> $DIR/zindo_$1.pbs\n'
-		tmp += '	echo "#PBS -m bae" 				>> $DIR/zindo_$1.pbs\n'
+		tmp += '	echo "#PBS -m ae" 				>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo "#PBS -V" 					>> $DIR/zindo_$1.pbs\n'
 		tmp += '	echo " "					>> $DIR/zindo_$1.pbs\n'
 

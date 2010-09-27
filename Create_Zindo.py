@@ -91,6 +91,10 @@ if __name__ == '__main__':
 				project.file_type = string.lower(words[1])
 				project.file_type_ok = True
 			
+			elif first_word=="J_TYPE":
+				project.J_type = string.lower(words[1])
+				project.J_type_ok = True
+			
 			elif first_word=="MOLECULES_TO_ANALYZE":
 	#			cut = re.compile('[;, ]')
 	#			molecules_to_analyze = [ cut.split(x) for x in words[1:] ]
@@ -184,6 +188,15 @@ if __name__ == '__main__':
 			
 		project.file_type = string.lower(a)
 		project.file_type_ok = True
+	
+	while not project.J_type_ok:
+		print "Variable J_TYPE not specified!"
+		a = raw_input("J_TYPE = ")
+		while len(a) == 0:
+			a = raw_input("J_TYPE = ")
+			
+		project.J_type = string.lower(a)
+		project.J_type_ok = True
 	
 	while not project.molecules_to_analyze_ok:
 		print "Variable MOLECULES_TO_ANALYZE not specified!"
@@ -388,6 +401,11 @@ if __name__ == '__main__':
 		pass
 		if verb > 1:
 			print "[WARNING] Could not copy file src%CZ_input_zindo_mc.cpp to %s.\n" % (os.sep, project.project_name)
+			
+	if project.J_type != "zindo" and project.J_type != "adf":
+		if verb > 0:
+			print "[ERROR] J type %s not recognized! Current J type recognized are zindo and adf. Exiting..." % (project.J_type)
+			sys.exit(1)
 	
 	# ==========================
 	#      Start working...
@@ -446,7 +464,7 @@ if __name__ == '__main__':
 			data = qs
 			cell = box
 			
-		if project.file_type == "pdb":
+		else if project.file_type == "pdb":
 			file_pdb = "%s%s%s.pdb" % (project.input_dir, os.sep, filename_base)
 			
 			# Getting informations about the size of the system and cell parameters
@@ -483,6 +501,11 @@ if __name__ == '__main__':
 			# Making a link between qs and data
 			data = qs
 			cell = box
+			
+		else:
+			if verb > 0:
+				print "[ERROR] File type %s not recognized! Current file type recognized are tinker and pdb. Exiting..." % (project.file_type)
+				sys.exit(1)
 		
 		# =============================
 		# Include here other file types

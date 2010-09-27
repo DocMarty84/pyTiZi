@@ -8,6 +8,7 @@ class InstructionsData(object):
 		self.project_name = ''
 		self.input_dir = ''
 		self.file_type = ''
+		self.J_type = ''
 		self.input_dir_local = ''
 		self.molecules_to_analyze = ''
 		self.pbc = ''
@@ -31,6 +32,7 @@ class InstructionsData(object):
 		self.project_name_ok = False
 		self.input_dir_ok = False
 		self.file_type_ok = False
+		self.J_type_ok = False
 		self.input_dir_local_ok = False
 		self.molecules_to_analyze_ok = False
 		self.pbc_ok = False
@@ -58,7 +60,8 @@ class InstructionsData(object):
 		summary += '===============================\n\n'
 		summary += 'PROJECT_NAME = %s\n' % (self.project_name)
 		summary += 'INPUT_DIR = %s\n' % (self.input_dir)
-		summary += 'FILE_TYPE = %s\n\n' % (self.file_type)
+		summary += 'FILE_TYPE = %s\n' % (self.file_type)
+		summary += 'J_TYPE = %s\n\n' % (self.J_type)
 		summary += 'Neighbors parameters:\n'
 		summary += '=====================\n'
 		
