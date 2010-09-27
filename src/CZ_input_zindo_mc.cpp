@@ -46,6 +46,12 @@ vector< vector< vector<double> > > J_H, J_L;
 
 bool MT = 1;
 
+// =============================================================================
+// =============================================================================
+// --------------------------------- Read Part ---------------------------------
+// =============================================================================
+// =============================================================================
+
 void Read_XYZ(string input_file, string input_folder, bool print_results){
 	string tmp;
 	stringstream file_xyz;
@@ -375,6 +381,12 @@ void Read_FULL(string input_file, string result_folder){
 	}
 }
 
+// =============================================================================
+// =============================================================================
+// --------------------------- Coordinate Conversion ---------------------------
+// =============================================================================
+// =============================================================================
+
 void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i){
 	double x = Dist_Cart[0];
 	double y = Dist_Cart[1];
@@ -410,6 +422,12 @@ void Mol_Cart_To_Frac(double** Coord_Cart, double** Coord_Frac, int frame, int a
 		Cartesian_To_Fractional(Coord_Cart[i], Coord_Frac[i], frame);
 	}
 }
+
+// =============================================================================
+// =============================================================================
+// ------------------------------ Find neighbors -------------------------------
+// =============================================================================
+// =============================================================================
 
 void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool print_results){
 
@@ -515,7 +533,13 @@ void Find_Neighbors_Sphere_MT(string input_file, string output_folder, bool prin
 	}
 }
 
-void Write_DAT(string input_file, double **mol1, double **mol2, int frame, int mol_n1, int mol_n2){
+// =============================================================================
+// =============================================================================
+// ----------------------------- Write ZINDO Files -----------------------------
+// =============================================================================
+// =============================================================================
+
+void Write_ZINDO_DAT(string input_file, double **mol1, double **mol2, int frame, int mol_n1, int mol_n2){
 	
 	stringstream output_filename;
 	stringstream s_frame, s_mol_n1, s_mol_n2;
@@ -541,7 +565,7 @@ void Write_DAT(string input_file, double **mol1, double **mol2, int frame, int m
 	
 }
 
-void Write_INP(string input_file, double **mol, int frame, int mol_n){
+void Write_ZINDO_INP(string input_file, double **mol, int frame, int mol_n){
 	
 	int n_s=0, n_p=0, n_d=0;
 	int n_exc=50;
@@ -603,7 +627,7 @@ void Write_INP(string input_file, double **mol, int frame, int mol_n){
 	fclose (pFile);
 }
 
-void Write_morange(string input_file, int frame){
+void Write_ZINDO_morange(string input_file, int frame){
 	
 	stringstream output_filename;
 	stringstream s_frame;
@@ -621,7 +645,7 @@ void Write_morange(string input_file, int frame){
 		cerr << "Error opening " << output_filename.str().c_str() << endl;
 }
 
-void Write_CMD(string input_file, string zindo_folder, string output_folder, string log_file, int frame, int mol_n1, int mol_n2){
+void Write_ZINDO_CMD(string input_file, string zindo_folder, string output_folder, string log_file, int frame, int mol_n1, int mol_n2){
 
 	stringstream output_filename;
 	stringstream s_frame, s_mol_n1, s_mol_n2;
@@ -744,7 +768,7 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 		double **mol1_cart, **mol2_cart;
 		double **mol2_frac;
 		
-		Write_morange(input_file, i);
+		Write_ZINDO_morange(input_file, i);
 		
 		for (int ii=0; ii<n_mol; ii++){
 			
@@ -757,7 +781,7 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 				mol1_cart[iii][2] = z_cart[i][ii][iii];
 			}	
 					
-			Write_INP(input_file, mol1_cart, i, ii);
+			Write_ZINDO_INP(input_file, mol1_cart, i, ii);
 			
 			for (int iii=0; iii<n_atom[ii]; iii++){	
 				delete [] mol1_cart[iii];
@@ -809,8 +833,8 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 				//if(i==0)
 				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
 				
-				Write_DAT(input_file, mol1_cart, mol2_cart, i, ii, kk);
-				Write_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, kk);
+				Write_ZINDO_DAT(input_file, mol1_cart, mol2_cart, i, ii, kk);
+				Write_ZINDO_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, kk);
 				
 				for (int iii=0; iii<n_atom[ii]; iii++){	
 					delete [] mol1_cart[iii];
@@ -827,6 +851,280 @@ void Write_ZINDO_Files_MT(string input_file, string output_folder, string log_fi
 	
 	#pragma omp barrier
 }
+
+// =============================================================================
+// =============================================================================
+// ------------------------------ Write ADF Files ------------------------------
+// =============================================================================
+// =============================================================================
+
+void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, int mol_n1, int mol_n2){
+	
+	stringstream output_filename;
+	stringstream s_frame, s_mol_n1, s_mol_n2;
+	
+	s_frame << frame;
+	s_mol_n1 << mol_label[mol_n1];
+	s_mol_n2 << mol_label[mol_n2];
+	output_filename << input_file.c_str() << "/frame_" << s_frame.str().c_str() << "/dimer_" << s_mol_n1.str().c_str() << "_" << s_mol_n2.str().c_str() << ".cmd";
+	ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
+	
+	if (output){
+		output << "#!/bin/bash" << endl << endl;
+		
+		output << "if [ ! -f molecule_" << mol_label[mol_n1] << ".t21 ]; then" << endl;
+		output << "	chmod +x molecule_" << mol_label[mol_n1] << ".inp" << endl;
+		output << "	./molecule_" << mol_label[mol_n1] << ".inp" << endl;
+		output << "fi" << endl << endl;
+		output << "if [ ! -f molecule_" << mol_label[mol_n2] << ".t21 ]; then" << endl;
+		output << "	chmod +x molecule_" << mol_label[mol_n2] << ".inp" << endl;
+		output << "	./molecule_" << mol_label[mol_n2] << ".inp" << endl;
+		output << "fi" << endl << endl;
+		
+		output << "JOBNAME=dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
+		output << "export JOBNAME" << endl << endl;
+		
+		output << "\"$ADFBIN/adf\" << eor" << endl;
+		output << "TITLE dimer " << mol_label[mol_n1] << "_" << mol_label[mol_n2] << endl << endl;
+
+		output << "UNITS" << endl;
+		output << "    length Angstrom" << endl;
+		output << "    angle Degree" << endl;
+		output << "END" << endl << endl;
+		
+		output << "ATOMS" << endl;
+		for (int iii=0; iii<n_atom[mol_n1]; iii++){
+			output << iii+1 << " " << symbol[frame][mol_n1][iii] << " " << mol1[iii][0] << " " << mol1[iii][1] << " " << mol1[iii][2] << "f=frag1" << endl;
+		}
+		for (int iii=0; iii<n_atom[mol_n2]; iii++){
+			output << iii+n_atom[mol_n1]+1 << " " << symbol[frame][mol_n2][iii] << " " << mol2[iii][0] << " " << mol2[iii][1] << " " << mol2[iii][2] << "f=frag2" << endl;
+		}
+		output << "END" << endl << endl;
+
+		output << "CHARGE 0.0" << endl;
+		output << "SYMMETRY NOSYM tol=0.001" << endl << endl;
+
+		output << "EPRINT" << endl;
+		output << "FRAG SFO EIG" << endl;
+		output << "SFO EIG OVL" << endl;
+		output << "EIGVAL 9999 9999" << endl;
+		output << "END" << endl << endl;
+
+		output << "BASIS" << endl;
+		output << "TYPE TZP" << endl;
+		output << "CORE None" << endl;
+		output << "END" << endl << endl;
+
+		output << "XC" << endl;
+		output << "Hybrid B3LYP" << endl;
+		output << "END" << endl << endl;
+
+		output << "SAVE TAPE21 TAPE13" << endl << endl;
+
+		output << "SCF" << endl;
+		output << "ITERATIONS 99" << endl;
+		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
+		output << "MIXING 0.2" << endl;
+		output << "LSHIFT 0.0" << endl;
+		output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
+		output << "END" << endl << endl;
+
+		output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
+
+		output << "FULLFOCK" << endl;
+		output << "A1FIT 10.0" << endl << endl;
+
+		output << "DEPENDENCY bas=4e-3" << endl << endl;
+		
+		output << "FRAGMENTS" << endl;
+		output << "    frag1 molecule_" << mol_label[mol_n1] << ".t21" << endl;
+		output << "    frag2 molecule_" << mol_label[mol_n2] << ".t21" << endl;
+		output << "END" << endl;
+		
+		output << "eor" << endl << endl;
+
+		output << "mv TAPE21 dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".t21" << endl << endl;
+
+		output.close();
+	}
+		
+	else 
+		cerr << "Error opening " << output_filename.str().c_str() << endl;	
+
+}
+
+void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
+
+	stringstream output_filename;
+	stringstream s_frame, s_mol_n;
+	
+	s_frame << frame;
+	s_mol_n << mol_label[mol_n];
+	output_filename << input_file.c_str() << "/frame_" << s_frame.str().c_str() << "/molecule_" << s_mol_n.str().c_str() << ".inp";
+	ofstream output(output_filename.str().c_str(), ios::out | ios::trunc);  //déclaration du flux et ouverture du fichier
+	
+	if (output){
+		output << "#!/bin/bash" << endl << endl;
+
+		output << "JOBNAME=molecule_" << mol_label[mol_n] << ".out" << endl;
+		output << "export JOBNAME" << endl << endl;
+
+		output << "\"$ADFBIN/adf\" << eor" << endl;
+		output << "TITLE molecule " << mol_label[mol_n] << endl << endl;
+
+		output << "UNITS" << endl;
+		output << "    length Angstrom" << endl;
+		output << "    angle Degree" << endl;
+		output << "END" << endl << endl;
+		
+		output << "ATOMS" << endl;
+		for (int iii=0; iii<n_atom[mol_n]; iii++){
+			output << iii+1 << " " << symbol[frame][mol_n][iii] << " " << mol[iii][0] << " " << mol[iii][1] << " " << mol[iii][2] << endl;
+		}
+		output << "END" << endl << endl;
+
+		output << "CHARGE 0.0" << endl;
+		output << "SYMMETRY NOSYM tol=0.001" << endl << endl;
+
+		output << "EPRINT" << endl;
+		output << "FRAG SFO EIG" << endl;
+		output << "SFO EIG OVL" << endl;
+		output << "EIGVAL 9999 9999" << endl;
+		output << "END" << endl << endl;
+
+		output << "BASIS" << endl;
+		output << "TYPE TZP" << endl;
+		output << "CORE None" << endl;
+		output << "END" << endl << endl;
+
+		output << "XC" << endl;
+		output << "Hybrid B3LYP" << endl;
+		output << "END" << endl << endl;
+
+		output << "SAVE TAPE21 TAPE13" << endl << endl;
+
+		output << "SCF" << endl;
+		output << "ITERATIONS 99" << endl;
+		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
+		output << "MIXING 0.2" << endl;
+		output << "LSHIFT 0.0" << endl;
+		output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
+		output << "END" << endl << endl;
+
+		output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
+
+		output << "FULLFOCK" << endl;
+		output << "A1FIT 10.0" << endl << endl;
+
+		output << "DEPENDENCY bas=4e-3" << endl;
+		output << "eor" << endl << endl;
+		
+		output << "mv TAPE21 molecule_" << mol_label[mol_n] << ".t21" << endl << endl;
+		
+		output.close();
+	}
+	
+	else 
+		cerr << "Error opening " << output_filename.str().c_str() << endl;	
+
+}
+
+void Write_ADF_Files_MT(string input_file, string output_folder, string log_file, string zindo_folder){
+	
+	#pragma omp parallel for
+	
+	// Start calculation
+	for (int i=0; i<n_frame; i++){
+		double **mol1_cart, **mol2_cart;
+		double **mol2_frac;
+		
+		for (int ii=0; ii<n_mol; ii++){
+			
+			mol1_cart = new double*[n_atom[ii]];
+			
+			for (int iii=0; iii<n_atom[ii]; iii++){	
+				mol1_cart[iii] = new double[3];
+				mol1_cart[iii][0] = x_cart[i][ii][iii];
+				mol1_cart[iii][1] = y_cart[i][ii][iii];
+				mol1_cart[iii][2] = z_cart[i][ii][iii];
+			}	
+					
+			Write_ADF_INP(input_file, mol1_cart, i, ii);
+			
+			for (int iii=0; iii<n_atom[ii]; iii++){	
+				delete [] mol1_cart[iii];
+			}
+			delete [] mol1_cart;
+			
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				
+				int kk;
+				for (int xx=0; xx<n_mol; xx++){
+					if (mol_label[xx] == neigh_label[i][ii][jj]){
+						kk = xx;
+					}
+				}
+				
+				mol1_cart = new double*[n_atom[ii]];
+				mol2_cart = new double*[n_atom[kk]];
+				mol2_frac = new double*[n_atom[kk]];
+				
+				for (int iii=0; iii<n_atom[ii]; iii++){	
+					mol1_cart[iii] = new double[3];
+					mol1_cart[iii][0] = x_cart[i][ii][iii];
+					mol1_cart[iii][1] = y_cart[i][ii][iii];
+					mol1_cart[iii][2] = z_cart[i][ii][iii];
+					
+				}
+				for (int jjj=0; jjj<n_atom[jj+(ii+1)]; jjj++){	
+					mol2_cart[jjj] = new double[3];
+					mol2_cart[jjj][0] = x_cart[i][kk][jjj];
+					mol2_cart[jjj][1] = y_cart[i][kk][jjj];
+					mol2_cart[jjj][2] = z_cart[i][kk][jjj];
+					
+					mol2_frac[jjj] = new double[3];
+				}
+				
+				//if(i==0){
+				//	cout << i << " " << ii << " " << jj << endl;
+				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
+				//}
+				
+				Mol_Cart_To_Frac(mol2_cart, mol2_frac, i, n_atom[kk]);
+				for (int jjj=0; jjj<n_atom[kk]; jjj++){
+					mol2_frac[jjj][0] = mol2_frac[jjj][0] + neigh_jump_vec_a[i][ii][jj];
+					mol2_frac[jjj][1] = mol2_frac[jjj][1] + neigh_jump_vec_b[i][ii][jj];
+					mol2_frac[jjj][2] = mol2_frac[jjj][2] + neigh_jump_vec_c[i][ii][jj];
+				}
+				Mol_Frac_To_Cart(mol2_frac, mol2_cart, i, n_atom[kk]);
+				
+				//if(i==0)
+				//	cout << mol2_cart[0][0] << " " << mol2_cart[0][1] << " " << mol2_cart[0][2] << endl;
+				
+				Write_ADF_CMD(input_file, mol1_cart, mol2_cart, i, ii, kk);
+				//Write_ZINDO_CMD(input_file, zindo_folder, output_folder, log_file, i, ii, kk);
+				
+				for (int iii=0; iii<n_atom[ii]; iii++){	
+					delete [] mol1_cart[iii];
+				}
+				
+				for (int jjj=0; jjj<n_atom[kk]; jjj++){	
+					delete [] mol2_cart[jjj];
+					delete [] mol2_frac[jjj];
+				}
+				delete [] mol1_cart; delete [] mol2_cart; delete [] mol2_frac;
+			}
+		}
+	}
+	
+	#pragma omp barrier
+}
+
+// =============================================================================
+// =============================================================================
+// ------------------------------- Write MC Files ------------------------------
+// =============================================================================
+// =============================================================================
 
 void Write_NB(string output_file, string input_folder){
 	string tmp;
@@ -922,6 +1220,7 @@ int main(int argc, char **argv){
 	string result_folder;
 	
 	bool zindo = false;
+	bool adf = false;
 	bool mc = false;
 	
   	while ((s = getopt_long (argc, argv, "I:i:o:L:z:r:t:", NULL, NULL)) != -1){
@@ -949,16 +1248,18 @@ int main(int argc, char **argv){
 	  			a = optarg;
 	  			if (a.compare("zindo") == 0)
 	  				zindo = true;
+	  			else if (a.compare("adf") == 0)
+	  				adf = true;
 	  			else if (a.compare("mc") == 0)
 	  				mc = true;
 		}
 	}
 	
-	if (zindo){
+	if (zindo || adf){
 		Read_XYZ(input_file, input_folder, false);
 	}
 	
-	if (mc){
+	else if (mc){
 		Read_NB(input_file, input_folder, false);
 	}
 	
@@ -972,7 +1273,13 @@ int main(int argc, char **argv){
 		Write_NB(input_file, input_folder);
 	}
 	
-	if (mc){
+	else if (adf){
+		Find_Neighbors_Sphere_MT(input_file, output_folder, false);
+		Write_ADF_Files_MT(input_file, output_folder, log_file, zindo_folder);
+		Write_NB(input_file, input_folder);
+	}
+	
+	else if (mc){
 		Read_FULL(input_file, result_folder);
 		Write_MC_YO(input_file, result_folder);
 		Write_MC(input_file, result_folder);
@@ -980,7 +1287,7 @@ int main(int argc, char **argv){
 
 //==============================================================================
 
-	if (zindo){
+	if (zindo || adf){
 		for(int i=0; i<n_frame; i++){
 			for(int ii=0; ii<n_mol; ii++){
 				delete [] x_cart[i][ii];
@@ -1004,7 +1311,7 @@ int main(int argc, char **argv){
 		delete [] atomic_number; delete [] atomic_mass; delete [] atomic_valence; delete [] symbol; 
 	}
 	
-	if (mc){
+	else if (mc){
 		J_H.clear(); J_L.clear(); 
 	}
 	

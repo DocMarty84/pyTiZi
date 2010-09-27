@@ -309,7 +309,7 @@ def ScriptFileCreation(project):
 	
 	if project.J_type == "zindo":
 		tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += 'mkdir -p $INPUT_DIR/ADF\n\n'
 
 	tmp += 'cd $INPUT_DIR/MD\n'
@@ -333,7 +333,7 @@ def ScriptFileCreation(project):
 
 	if project.J_type == "zindo":
 		tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += '	./CZ_input_zindo_mc -I $NAME -i . -o output/$NAME -L $LOG_DIR/$NAME -t adf\n\n'
 	
 	tmp += '	i=0\n'
@@ -343,7 +343,7 @@ def ScriptFileCreation(project):
 	
 	if project.J_type == "zindo":
 		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ADF\n'
 		
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
@@ -399,7 +399,7 @@ def ScriptFileCreationDirect(project):
 	
 	if project.J_type == "zindo":
 		tmp += 'mkdir -p $INPUT_DIR/ZINDO\n\n'
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += 'mkdir -p $INPUT_DIR/ADF\n\n'
 
 	tmp += 'cp CZ_input_zindo_mc $INPUT_DIR/MD\n'
@@ -424,7 +424,7 @@ def ScriptFileCreationDirect(project):
 	if project.J_type == "zindo":
 		tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -z $ZINDO_DIR -t zindo\n\n'
 
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += '	./CZ_input_zindo_mc -I $NAME -i $INPUT_DIR/MD -o $OUTPUT_DIR/$NAME -L $LOG_DIR/$NAME -t adf\n\n'
 
 	tmp += '	i=0\n'
@@ -434,7 +434,7 @@ def ScriptFileCreationDirect(project):
 	tmp += '		tar cfz "$NAME"_frame_"$i".tar.gz $NAME/frame_$i\n'
 	if project.J_type == "zindo":
 		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ZINDO\n'
-	else if project.J_type == "adf":
+	elif project.J_type == "adf":
 		tmp += '		mv "$NAME"_frame_"$i".tar.gz $INPUT_DIR/ADF\n'
 	tmp += '		rm -rf $NAME/frame_$i\n\n'
 	

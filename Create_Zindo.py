@@ -464,7 +464,7 @@ if __name__ == '__main__':
 			data = qs
 			cell = box
 			
-		else if project.file_type == "pdb":
+		elif project.file_type == "pdb":
 			file_pdb = "%s%s%s.pdb" % (project.input_dir, os.sep, filename_base)
 			
 			# Getting informations about the size of the system and cell parameters
