@@ -559,7 +559,10 @@ if __name__ == '__main__':
 	write_cluster_files.ScriptFileCreation(project)
 	write_cluster_files.ScriptFileCreationDirect(project)
 	write_cluster_files.ScriptFileCreationPBS(project)
-	write_cluster_files.ScriptZINDOLaunch(project)
+	if (project.J_type == "zindo"):
+		write_cluster_files.ScriptZINDOLaunch(project)
+	elif (project.J_type == "adf"):
+		write_cluster_files.ScriptADFLaunch(project)
 	write_cluster_files.ScriptZINDOCollect(data, project)
 	write_cluster_files.ScriptZINDOCollectDirect(data, project)
 	write_cluster_files.ScriptZINDOCollectPBS(project)

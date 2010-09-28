@@ -614,7 +614,8 @@ def ScriptZINDOLaunch(project):
 	tmp += '	echo " " >> $DIR/zindo_$1.run\n'
 	
 	tmp += '	echo "	rm -rf \$PROJECT/frame_\$FRAME" >> $DIR/zindo_$1.run\n'
-	tmp += '	echo "done" >> $DIR/zindo_$1.run\n'
+	tmp += '	echo "done" >> $DIR/zindo_$1.run\n\n'
+	tmp += '	echo "rm -rf $SCRATCH_DIR" >> $DIR/zindo_$1.run\n'
 	tmp += '}\n\n'
 	
 	tmp += 'i=1\n'
@@ -647,6 +648,144 @@ def ScriptZINDOLaunch(project):
 	tmp += 'done\n'
 
 	file = 'project%s%s%s02.launch_zindo.sh' % (os.sep, project.project_name, os.sep)
+	try:
+		foutput = open(file, 'w')
+	except:
+		print "[ERROR] Could not create %s. Aborting..." % (file)
+		sys.exit(1)
+	
+	foutput.write(tmp)
+	foutput.close()
+	
+def ScriptADFLaunch(project):
+	""" Create a bash script which will create the scripts (.pbs and .run files) needed 
+		to run all the ZIND0 calculations.
+	"""
+	tmp = ''
+	tmp += '#!/bin/bash\n\n'
+	tmp += 'DIR="%s"\n' % (project.dir_cluster)
+	tmp += 'INPUT_DIR="%s"\n' % (project.input_dir_cluster)
+	tmp += 'OUTPUT_DIR="%s"\n' % (project.output_dir_cluster)
+	tmp += 'LOG_DIR="%s/logs"\n' % (project.dir_cluster)
+	if project.location_cluster == "joe":
+		tmp += 'SCRATCH_DIR="%s"\n\n' % (project.scratch_dir_cluster)
+	elif project.location_cluster == "lyra" or project.location_cluster == "adam":
+		tmp += 'SCRATCH_DIR="\\$TMPDIR"\n\n' % (project.scratch_dir_cluster)
+		#tmp += 'SCRATCH_DIR="\\%s"\n\n' % (project.scratch_dir_cluster)
+	elif project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += 'SCRATCH_DIR="/scratch/"\\$PBS_JOBID""\n\n'
+	else:
+		print '[ERROR] Bad cluster location. Aborting...'
+		sys.exit(1)
+		
+	tmp += 'N_PBS=2\n'
+	tmp += 'N_CPU=6\n\n'
+
+	tmp += 'MakePBS(){\n'
+
+	if project.location_cluster == "lucky" or project.location_cluster == "william":
+		tmp += '	echo "#!/bin/bash"			> $DIR/adf_$1.pbs\n'
+		tmp += '	echo "#PBS -l nodes=1:ppn=$N_CPU,walltime=999:00:00,mem=4gb\"			>> $DIR/adf_$1.pbs\n'
+		tmp += '	echo "#PBS -M nicolas.g.martinelli@gmail.com"			>> $DIR/adf_$1.pbs\n'
+		tmp += '	echo "#PBS -m ea"			>> $DIR/adf_$1.pbs\n'
+	
+	else:
+		print '[ERROR] Bad cluster location. Aborting...'
+		sys.exit(1)
+		
+	tmp += '	echo "cd $DIR"					>> $DIR/adf_$1.pbs\n'
+	tmp += '	echo "chmod +x adf_$1.run"			>> $DIR/adf_$1.pbs\n'
+	tmp += '	echo "./adf_$1.run"				>> $DIR/adf_$1.pbs\n'
+	tmp += '}\n\n'
+
+	tmp += 'MakeRUN(){\n'
+	tmp += '	echo "#!/bin/bash" > $DIR/adf_$1.run\n\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n'
+	
+	tmp += '	echo "source /cluster/profiles/adfrc.sh" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "source /cluster/profiles/intelmpi.sh" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "export NSCM=$N_CPU" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "export SCM_TMPDIR=$SCRATCH_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n\n'
+	
+	tmp += '	echo "OUTPUT_DIR="%s"" >> $DIR/adf_$1.run\n' % (project.output_dir_cluster)
+	tmp += '	echo "LOG_DIR="%s/logs"" >> $DIR/adf_$1.run\n' % (project.dir_cluster)
+	tmp += '	echo " " >> $DIR/adf_$1.run\n\n'
+	
+	tmp += '	echo "mkdir -p $SCRATCH_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n\n'
+	
+	tmp += '	echo "for TAR in \`cat $DIR/adf_$1.dir\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "do" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	cd $INPUT_DIR/ADF" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	cp \$TAR $SCRATCH_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	cd $SCRATCH_DIR" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n'
+	
+	tmp += '	echo "	PROJECT=\`echo \$TAR | awk -F \'/\' \'{print \$2}\' | awk -F \'_frame_\' \'{print \$1}\'\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	FRAME=\`echo \$TAR | awk -F \'_frame_\' \'{print \$2}\' | cut -d \'.\' -f1\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	mkdir -p \$PROJECT/frame_\$FRAME" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	mv \$TAR \$PROJECT/frame_\$FRAME" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	cd \$PROJECT/frame_\$FRAME" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	tar xfz \$TAR" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n'
+	
+	tmp += '	echo "	for FILE in \`find . -name \'*.*\'\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	do" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "		mv \$FILE ." >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	done" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	for CMD in \`find . -name \'*.cmd\'\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	do" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "		chmod +x \$CMD" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "		OUT=\`echo \$CMD | sed \'s/\.cmd/\.out/g\'\`" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "		./\$CMD >& \$OUT" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	done" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n'
+	
+	tmp += '	echo "	cd $SCRATCH_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/dimer_*_*.out" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$OUTPUT_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	tar cfz logs_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/*.log" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	mv logs_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$LOG_DIR" >> $DIR/adf_$1.run\n'
+	#tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$PROJECT/frame_\$FRAME/frame_*.out" >> $DIR/adf_$1.run\n'
+	#tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$OUTPUT_DIR" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo " " >> $DIR/adf_$1.run\n'
+	
+	tmp += '	echo "	rm -rf \$PROJECT/frame_\$FRAME" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "done" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo "rm -rf $SCRATCH_DIR" >> $DIR/adf_$1.run\n'
+	tmp += '}\n\n'
+	
+	tmp += 'i=1\n'
+	tmp += 'j=1\n'
+	tmp += 'k=0\n\n'
+
+	tmp += 'cd $INPUT_DIR/ADF\n\n'
+
+	tmp += 'find . -name "*frame*" > directories.tmp\n'
+	tmp += 'N_DIR=`wc -l directories.tmp | awk \'{print $1}\'`\n'
+	tmp += 'N_STEP=$(($N_DIR/$N_PBS + 1))\n'
+
+	tmp += 'while [ $i -le $N_PBS ]\n'
+	tmp += 'do\n\n'
+
+	tmp += '	k=$(($j+$N_STEP))\n'
+	tmp += '	MakePBS $i\n'
+	tmp += '	MakeRUN $i\n'
+	tmp += '	sed -n "$j","$k"p directories.tmp > $DIR/adf_$i.dir\n\n'
+
+	tmp += '	j=$(($k+1))\n'
+	tmp += '	i=$(($i+1))\n\n'
+
+	tmp += 'done\n\n'
+	
+	tmp += 'cd $DIR\n'
+	tmp += 'for PBS in `ls adf_*.pbs`\n'
+	tmp += 'do\n'
+	tmp += '	qsub $PBS\n'
+	tmp += 'done\n'
+
+	file = 'project%s%s%s02.launch_adf.sh' % (os.sep, project.project_name, os.sep)
 	try:
 		foutput = open(file, 'w')
 	except:

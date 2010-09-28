@@ -874,16 +874,13 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		
 		output << "if [ ! -f molecule_" << mol_label[mol_n1] << ".t21 ]; then" << endl;
 		output << "	chmod +x molecule_" << mol_label[mol_n1] << ".inp" << endl;
-		output << "	./molecule_" << mol_label[mol_n1] << ".inp" << endl;
+		output << "	./molecule_" << mol_label[mol_n1] << ".inp >& molecule_" << mol_label[mol_n1] << ".out" << endl;
 		output << "fi" << endl << endl;
 		output << "if [ ! -f molecule_" << mol_label[mol_n2] << ".t21 ]; then" << endl;
 		output << "	chmod +x molecule_" << mol_label[mol_n2] << ".inp" << endl;
-		output << "	./molecule_" << mol_label[mol_n2] << ".inp" << endl;
+		output << "	./molecule_" << mol_label[mol_n2] << ".inp >& molecule_" << mol_label[mol_n2] << ".out" << endl;
 		output << "fi" << endl << endl;
-		
-		output << "JOBNAME=dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out" << endl;
-		output << "export JOBNAME" << endl << endl;
-		
+
 		output << "\"$ADFBIN/adf\" << eor" << endl;
 		output << "TITLE dimer " << mol_label[mol_n1] << "_" << mol_label[mol_n2] << endl << endl;
 
@@ -943,7 +940,9 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		
 		output << "eor" << endl << endl;
 
-		output << "mv TAPE21 dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".t21" << endl << endl;
+		output << "mv TAPE21 dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".t21" << endl;
+		output << "mv logfile dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".log" << endl;
+		output << "rm -rf TAPE* kid*" << endl << endl;
 
 		output.close();
 	}
@@ -965,9 +964,6 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 	
 	if (output){
 		output << "#!/bin/bash" << endl << endl;
-
-		output << "JOBNAME=molecule_" << mol_label[mol_n] << ".out" << endl;
-		output << "export JOBNAME" << endl << endl;
 
 		output << "\"$ADFBIN/adf\" << eor" << endl;
 		output << "TITLE molecule " << mol_label[mol_n] << endl << endl;
@@ -1019,7 +1015,9 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 		output << "DEPENDENCY bas=4e-3" << endl;
 		output << "eor" << endl << endl;
 		
-		output << "mv TAPE21 molecule_" << mol_label[mol_n] << ".t21" << endl << endl;
+		output << "mv TAPE21 molecule_" << mol_label[mol_n] << ".t21" << endl;
+		output << "mv logfile molecule_" << mol_label[mol_n] << ".log" << endl;
+		output << "rm -rf TAPE* kid*" << endl << endl;
 		
 		output.close();
 	}
