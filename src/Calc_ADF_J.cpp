@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -480,6 +481,68 @@ void Read_DIMER(string input_file, bool print_result){
 					//E.push_back(E_au);
 				}
 			}
+			
+			// Check if there are more than 2 MO for HOMO and LUMO of the dimer
+			else if (str.find("List of all MOs, ordered by energy, with the most significant SFO gross populations") != string::npos) {
+
+				do {
+					getline(input, str);
+				} 
+				while (str.find("-------------------------------------------------------------------------------------") == string::npos);
+				
+				getline(input, str);
+				
+				int count_prec = 0, count_curr = 0;
+				bool out_of_here = false;
+				size_t length;
+				
+				do {
+					getline(input, str);
+					
+					char buffer[4];
+					length = str.copy(buffer, 4, 14);
+					buffer[length] = '\0';
+					
+					if (strcmp(buffer,"2.00") == 0) {
+						count_prec = count_curr;
+						count_curr = 1;
+					}
+					
+					else if (strcmp(buffer,"    ") == 0) {
+						count_curr++;
+					}
+					
+					else if (strcmp(buffer,"0.00") == 0) {
+						count_prec = count_curr;
+						count_curr = 1;
+						
+						if (count_prec > 2) {
+							cout << "[WARNING] The HOMO of the dimer is composed of more than 2 MO! J_homo will be shitty!" << endl;
+						}
+						
+						getline(input, str);
+						length = str.copy(buffer, 4, 14);
+						buffer[length] = '\0';
+						if (strcmp(buffer,"    ") == 0) {
+							count_curr++;
+						}
+						
+						getline(input, str);
+						length = str.copy(buffer, 4, 14);
+						buffer[length] = '\0';
+						if (strcmp(buffer,"    ") == 0) {
+							cout << "[WARNING] The LUMO of the dimer is composed of more than 2 MO! J_lumo will be shitty!" << endl;
+						}
+						
+						out_of_here = true;
+					}				
+					
+				} 
+				while (out_of_here == false);
+
+			    
+			}
+			
 		}
 		
 		input.close();
