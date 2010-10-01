@@ -891,10 +891,10 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		
 		output << "ATOMS" << endl;
 		for (int iii=0; iii<n_atom[mol_n1]; iii++){
-			output << iii+1 << " " << symbol[frame][mol_n1][iii] << " " << mol1[iii][0] << " " << mol1[iii][1] << " " << mol1[iii][2] << "f=frag1" << endl;
+			output << iii+1 << " " << symbol[frame][mol_n1][iii] << " " << mol1[iii][0] << " " << mol1[iii][1] << " " << mol1[iii][2] << " f=frag1" << endl;
 		}
 		for (int iii=0; iii<n_atom[mol_n2]; iii++){
-			output << iii+n_atom[mol_n1]+1 << " " << symbol[frame][mol_n2][iii] << " " << mol2[iii][0] << " " << mol2[iii][1] << " " << mol2[iii][2] << "f=frag2" << endl;
+			output << iii+n_atom[mol_n1]+1 << " " << symbol[frame][mol_n2][iii] << " " << mol2[iii][0] << " " << mol2[iii][1] << " " << mol2[iii][2] << " f=frag2" << endl;
 		}
 		output << "END" << endl << endl;
 
@@ -939,10 +939,13 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "END" << endl;
 		
 		output << "eor" << endl << endl;
-
+		
 		output << "mv TAPE21 dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".t21" << endl;
 		output << "mv logfile dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".log" << endl;
 		output << "rm -rf TAPE* kid*" << endl << endl;
+		
+		output << "sync; sync" << endl;
+		output << "Calc_ADF_J -I dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out -f " << frame << " -a " << mol_label[mol_n1] << " -b " << mol_label[mol_n2] << " >> frame_" << frame << ".out" << endl << endl;
 
 		output.close();
 	}

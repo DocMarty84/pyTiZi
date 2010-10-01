@@ -747,8 +747,8 @@ def ScriptADFLaunch(project):
 	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$OUTPUT_DIR" >> $DIR/adf_$1.run\n'
 	tmp += '	echo "	tar cfz logs_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$PROJECT/frame_\$FRAME/*.log" >> $DIR/adf_$1.run\n'
 	tmp += '	echo "	mv logs_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_J.tar.gz \$LOG_DIR" >> $DIR/adf_$1.run\n'
-	#tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$PROJECT/frame_\$FRAME/frame_*.out" >> $DIR/adf_$1.run\n'
-	#tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$OUTPUT_DIR" >> $DIR/adf_$1.run\n\n'
+	tmp += '	echo "	tar cfz output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$PROJECT/frame_\$FRAME/frame_*.out" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "	mv output_\\"\$PROJECT\\"_frame_\\"\$FRAME\\"_FULL.tar.gz \$OUTPUT_DIR" >> $DIR/adf_$1.run\n\n'
 	tmp += '	echo " " >> $DIR/adf_$1.run\n'
 	
 	tmp += '	echo "	rm -rf \$PROJECT/frame_\$FRAME" >> $DIR/adf_$1.run\n'
