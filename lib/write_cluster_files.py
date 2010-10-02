@@ -688,6 +688,7 @@ def ScriptADFLaunch(project):
 		tmp += '	echo "#PBS -l nodes=1:ppn=$N_CPU,walltime=999:00:00,mem=4gb\"			>> $DIR/adf_$1.pbs\n'
 		tmp += '	echo "#PBS -M nicolas.g.martinelli@gmail.com"			>> $DIR/adf_$1.pbs\n'
 		tmp += '	echo "#PBS -m ea"			>> $DIR/adf_$1.pbs\n'
+		tmp += '	echo "#PBS -q adf"			>> $DIR/adf_$1.pbs\n\n'
 	
 	else:
 		print '[ERROR] Bad cluster location. Aborting...'
