@@ -702,7 +702,7 @@ def ScriptADFLaunch(project):
 	tmp += '	echo "#!/bin/bash" > $DIR/adf_$1.run\n\n'
 	tmp += '	echo " " >> $DIR/adf_$1.run\n'
 	
-	tmp += '	echo "source /cluster/profiles/adfrc.sh" >> $DIR/adf_$1.run\n'
+	tmp += '	echo "source /cluster/profiles/adf2010.01.sh" >> $DIR/adf_$1.run\n'
 	tmp += '	echo "source /cluster/profiles/intelmpi.sh" >> $DIR/adf_$1.run\n'
 	tmp += '	echo "export NSCM=$N_CPU" >> $DIR/adf_$1.run\n'
 	tmp += '	echo "export SCM_TMPDIR=$SCRATCH_DIR" >> $DIR/adf_$1.run\n'
