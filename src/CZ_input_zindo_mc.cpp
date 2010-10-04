@@ -903,7 +903,8 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 
 		output << "EPRINT" << endl;
 		output << "FRAG SFO EIG" << endl;
-		output << "SFO EIG OVL" << endl;
+		//output << "SFO EIG OVL" << endl;
+		output << "SFO EIG" << endl;
 		output << "EIGVAL 9999 9999" << endl;
 		output << "END" << endl << endl;
 
@@ -923,15 +924,15 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
 		output << "MIXING 0.2" << endl;
 		output << "LSHIFT 0.0" << endl;
-		output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
+		//output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
 		output << "END" << endl << endl;
 
-		output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
+		//output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
 
-		output << "FULLFOCK" << endl;
-		output << "A1FIT 10.0" << endl << endl;
+		//output << "FULLFOCK" << endl;
+		//output << "A1FIT 10.0" << endl << endl;
 
-		output << "DEPENDENCY bas=4e-3" << endl << endl;
+		//output << "DEPENDENCY bas=4e-3" << endl << endl;
 		
 		output << "FRAGMENTS" << endl;
 		output << "    frag1 molecule_" << mol_label[mol_n1] << ".t21" << endl;
@@ -997,7 +998,8 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 
 		output << "EPRINT" << endl;
 		output << "FRAG SFO EIG" << endl;
-		output << "SFO EIG OVL" << endl;
+		//output << "SFO EIG OVL" << endl;
+		output << "SFO EIG" << endl;
 		output << "EIGVAL 9999 9999" << endl;
 		output << "END" << endl << endl;
 
@@ -1017,15 +1019,15 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
 		output << "MIXING 0.2" << endl;
 		output << "LSHIFT 0.0" << endl;
-		output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
+		//output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
 		output << "END" << endl << endl;
 
-		output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
+		//output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
 
-		output << "FULLFOCK" << endl;
-		output << "A1FIT 10.0" << endl << endl;
+		//output << "FULLFOCK" << endl;
+		//output << "A1FIT 10.0" << endl << endl;
 
-		output << "DEPENDENCY bas=4e-3" << endl;
+		//output << "DEPENDENCY bas=4e-3" << endl;
 		output << "eor" << endl << endl;
 		
 		output << "mv TAPE21 molecule_" << mol_label[mol_n] << ".t21" << endl;
