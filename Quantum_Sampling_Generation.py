@@ -29,7 +29,7 @@ if __name__ == '__main__':
 	"""
 	t1 = time.clock()
 	
-	filename_base = "DT-TTF"
+	filename_base = "pentacene_min"
 	file_vec = "%s.vec" % (filename_base)
 	file_xyz = "%s.xyz" % (filename_base)
 	file_add = "%s.add" % (filename_base)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 		
 	for mode in xrange(0, qs_eigen.n_modes, 1):
 #		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
-		if qs_eigen.freq[mode] > 0.0:
+		if qs_eigen.freq[mode] > 1.0:
 #	for mode in xrange(12, 13, 1):
 			# ===============================
 			# Calculation of the reduced mass
@@ -136,19 +136,22 @@ if __name__ == '__main__':
 				# Create Tinker file for visualization of the mode
 				if d == d_max:
 					p = True
-				tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+#				tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
 				
 				# Create Normal Modes files like Sigi
 #				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 				
 				# Create VBHF input files
-				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+#				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
 
 				# Create ME input files
 #				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)
 
+				# Create VBHF input files
+				write_cluster_files.CreateYoInput(X, qs_coord, box, mode, d)
+
 	# Create a script which will create all the needed pbs
-	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_Tinker")
+	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_PTC_C")
 	
 	# Copy the collection script	
 	try:

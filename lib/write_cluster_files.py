@@ -1163,19 +1163,25 @@ def CreateYoInput(X, mol, box, mode, d):
 	"""
 	print "Calculating normal mode %d" %(mode+1)
 
-	k = 1
+	tmp_ref = ''
+	j_ref = 0
+	k_ref = 1
+	for i in xrange(mol.n_atom[0]):
+		Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j_ref, 0], X[j_ref+1, 0], X[j_ref+2, 0], box)
+		Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+		tmp_ref += "%4s %12f %12f %12f\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+		#tmp_ref += "%5d %4s %12f %12f %12f 0\n" % (k_ref, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+		j_ref += 3
+		k_ref += 1
+
 	for a in [0, -1, 1]:
 		for b in [0, -1, 1]:
-			for c in [0, -1, 1]:
+			for c in [0, 1]:
 				tmp = '%d\n\n' % (mol.n_atom[0] + mol.n_atom[1])
-				j = 0
-				for i in xrange(mol.n_atom[0]):
-					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
-					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-					tmp += "%4s %12f %12f %12f\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					j += 3
-					k += 1
+				tmp += tmp_ref
+				j = j_ref
+				k = k_ref
+
 				for i in xrange(mol.n_atom[1]):
 					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
 					Frac_Coord[0] += a
@@ -1199,42 +1205,39 @@ def CreateYoInput(X, mol, box, mode, d):
 				foutput.write(tmp)		
 				foutput.close() 
 
-	k = 1
 	for a in [0, -1, 1]:
 		for b in [0, -1, 1]:
-			for c in [0, -1, 1]:
-				tmp = '%d\n\n' % (mol.n_atom[0] + mol.n_atom[0])
-				j = 0
-				for i in xrange(mol.n_atom[0]):
-					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
-					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-					tmp += "%4s %12f %12f %12f\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					j += 3
-					k += 1
-				j = 0
-				for i in xrange(mol.n_atom[0]):
-					Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
-					Frac_Coord[0] += a
-					Frac_Coord[1] += b
-					Frac_Coord[2] += c
-					Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
-					tmp += "%4s %12f %12f %12f\n" % (mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
-					j += 3
-					k += 1
-
-				try:
-					dir_dimer="YO/0_%d_%d_%d" % (a, b, c)
-					os.makedirs(dir_dimer)
-				except:
+			for c in [0, 1]:
+				if (a==0 and b==0 and c==0):
 					pass
+				else:
+					tmp = '%d\n\n' % (mol.n_atom[0] + mol.n_atom[0])
+					tmp += tmp_ref
+					j = 0
+					k = k_ref
+					
+					for i in xrange(mol.n_atom[0]):
+						Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+						Frac_Coord[0] += a
+						Frac_Coord[1] += b
+						Frac_Coord[2] += c
+						Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+						tmp += "%4s %12f %12f %12f\n" % (mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+						j += 3
+						k += 1
 
-				name = "%s/J_%d_%.12f.xyz" % (dir_dimer, mode+1, d)
-				foutput = open(name, 'w')
+					try:
+						dir_dimer="YO/0_%d_%d_%d" % (a, b, c)
+						os.makedirs(dir_dimer)
+					except:
+						pass
 
-				foutput.write(tmp)		
-				foutput.close() 
+					name = "%s/J_%d_%.12f.xyz" % (dir_dimer, mode+1, d)
+					foutput = open(name, 'w')
+
+					foutput.write(tmp)		
+					foutput.close() 
 
 			
 def CreateMEInput(X, mol, box, mode, d):
