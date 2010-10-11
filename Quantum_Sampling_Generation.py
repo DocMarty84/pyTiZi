@@ -29,7 +29,7 @@ if __name__ == '__main__':
 	"""
 	t1 = time.clock()
 	
-	filename_base = "pentacene_min"
+	filename_base = "TES_Pn_min"
 	file_vec = "%s.vec" % (filename_base)
 	file_xyz = "%s.xyz" % (filename_base)
 	file_add = "%s.add" % (filename_base)
@@ -133,25 +133,43 @@ if __name__ == '__main__':
 				X_T = X_T + T[mode,:]
 				X = X_T.getT()
 				
+				# Set atom ranges for PTC derivatives
+				if filename_base == "TES_Pn_min":
+					at_to_mov_1 = 0
+					at_ref_1 = 19 
+					at_to_mov_2 = 41 
+					at_ref_2 = 60
+					
+				elif filename_base == "TIPS_min":
+					at_to_mov_1 = 0
+					at_ref_1 = 19 
+					at_to_mov_2 = 50 
+					at_ref_2 = 69
+					
+				
 				# Create Tinker file for visualization of the mode
 				if d == d_max:
 					p = True
-#				tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+				#tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+				tmp = write_cluster_files.CreateTINKERVisualization_PTCDeriv(X, qs_coord, mode, tmp, filename_base, p, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 				
 				# Create Normal Modes files like Sigi
 #				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 				
 				# Create VBHF input files
 #				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+				write_cluster_files.CreateVBHFInput_PTCDeriv(X, qs_coord, box, mode, d)
 
 				# Create ME input files
 #				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)
 
-				# Create VBHF input files
-				write_cluster_files.CreateYoInput(X, qs_coord, box, mode, d)
+				# Create YO input files
+#				write_cluster_files.CreateYoInput(X, qs_coord, box, mode, d)
+#				write_cluster_files.CreateYoInput_PTCDeriv(X, qs_coord, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 
 	# Create a script which will create all the needed pbs
-	write_cluster_files.ScriptVBHFLaunch("/home/nmartine/VBHF/QS_PTC_C")
+	string = "/home/nmartine/VBHF/%s" % (filename_base)
+	write_cluster_files.ScriptVBHFLaunch(string)
 	
 	# Copy the collection script	
 	try:
