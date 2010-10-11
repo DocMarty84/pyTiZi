@@ -1752,7 +1752,7 @@ void MC_BKL_MT(string output_folder){
 			while (wait<10 && pFile==NULL){
 				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
 				usleep(10*(wait+1)*(wait+1));
-				pFile=fopen(OUT_SIMU.str().c_str(), "w");
+				pFile=fopen(OUT_SIMU.str().c_str(), "a");
 				wait++;
 			}
 			if (wait==10 && pFile==NULL){
@@ -2721,7 +2721,7 @@ void MC_FRM_MT(string output_folder){
 			while (wait<10 && pFile==NULL){
 				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
 				usleep(10*(wait+1)*(wait+1));
-				pFile=fopen(OUT_SIMU.str().c_str(), "w");
+				pFile=fopen(OUT_SIMU.str().c_str(), "a");
 				wait++;
 			}
 			if (wait==10 && pFile==NULL){
