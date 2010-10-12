@@ -900,13 +900,18 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 
 		output << "CHARGE 0.0" << endl;
 		output << "SYMMETRY NOSYM tol=0.001" << endl << endl;
+		
+		output << "FULLFOCK" << endl;
+		output << "ALLPOINTS" << endl << endl;
 
 		output << "EPRINT" << endl;
 		output << "FRAG SFO EIG" << endl;
-		//output << "SFO EIG OVL" << endl;
-		output << "SFO EIG" << endl;
+		output << "SFO EIG OVL" << endl;
+		//output << "SFO EIG" << endl;
 		output << "EIGVAL 9999 9999" << endl;
 		output << "END" << endl << endl;
+		
+		output << "PRINT FmatSFO" << endl << endl;
 
 		output << "BASIS" << endl;
 		output << "TYPE TZP" << endl;

@@ -39,22 +39,25 @@
 #include <sys/stat.h>
 
 #include <omp.h>
-#include "/home/nicolas/Downloads/alglib_cpp/out/matinv.h"
+#include "/home/nicolas/cpp_3/src/linalg.h"
 
 using namespace std;
+using namespace alglib;
 
-int n_mo;
+int n_sfo;
 int homo_1=0, homo_2=0, lumo_1=0, lumo_2=0;
 vector<double> E;
 vector< vector<double> > H_KS, S, C, C_inv, I;
+
+bool H_KS_in_output = false, S_in_output = false;
 
 void Print_Coeff(vector< vector<double> > Coeff, string title){
 
 	cout << title << endl << endl;
 
-	int n_mo_rounded = (n_mo - (n_mo % 10))/10;
+	int n_sfo_rounded = (n_sfo - (n_sfo % 10))/10;
 	
-	for (int count_mo=0; count_mo<n_mo_rounded; count_mo++) {
+	for (int count_mo=0; count_mo<n_sfo_rounded; count_mo++) {
 		
 		for(int j=0; j<11; j++) {
 
@@ -66,7 +69,7 @@ void Print_Coeff(vector< vector<double> > Coeff, string title){
 		}
 		printf("\n");
 		
-		for(int i=0; i<n_mo; i++) {
+		for(int i=0; i<n_sfo; i++) {
 			for(int j=0; j<11; j++) {
 
 				if(j==1)
@@ -80,26 +83,26 @@ void Print_Coeff(vector< vector<double> > Coeff, string title){
 		printf("\n");
 	}
 	
-	if (n_mo % 10 != 0) {
+	if (n_sfo % 10 != 0) {
 		
-		for(int j=0; j<(n_mo % 10)+1; j++) {
+		for(int j=0; j<(n_sfo % 10)+1; j++) {
 
 			if(j==1)
-				printf(" MOs :%7d", j+(n_mo_rounded*10));
+				printf(" MOs :%7d", j+(n_sfo_rounded*10));
 			
 			else if(j>1)
-				printf("%9d", j+(n_mo_rounded*10));
+				printf("%9d", j+(n_sfo_rounded*10));
 		}
 		printf("\n");
 		
-		for(int i=0; i<n_mo; i++) {
-			for(int j=0; j<(n_mo % 10)+1; j++) {
+		for(int i=0; i<n_sfo; i++) {
+			for(int j=0; j<(n_sfo % 10)+1; j++) {
 				
 				if(j==1)
-					printf("%6d%9.4lf", i+1, Coeff[i][(j-1)+(n_mo_rounded*10)]);
+					printf("%6d%9.4lf", i+1, Coeff[i][(j-1)+(n_sfo_rounded*10)]);
 				
 				else if(j>1)
-					printf("%9.4f", Coeff[i][(j-1)+(n_mo_rounded*10)]);
+					printf("%9.4f", Coeff[i][(j-1)+(n_sfo_rounded*10)]);
 			}
 			printf("\n");
 		}
@@ -113,9 +116,9 @@ void Print_Triangular(vector< vector<double> > Triang, string title){
 
 	cout << title << endl << endl;
 
-	int n_mo_rounded = (n_mo - (n_mo % 4))/4;
+	int n_sfo_rounded = (n_sfo - (n_sfo % 4))/4;
 	
-	for (int count_mo=0; count_mo<n_mo_rounded; count_mo++) {
+	for (int count_mo=0; count_mo<n_sfo_rounded; count_mo++) {
 
 		int k = 1;
 		
@@ -134,7 +137,7 @@ void Print_Triangular(vector< vector<double> > Triang, string title){
 		//printf("\n row\n");
 		cout << endl << " row" << endl;
 		
-		for(int i=count_mo*4; i<n_mo; i++) {
+		for(int i=count_mo*4; i<n_sfo; i++) {
 			
 			if (k<5) {
 			  k++;
@@ -159,26 +162,26 @@ void Print_Triangular(vector< vector<double> > Triang, string title){
 		cout << endl;
 	}
 	
-	if (n_mo % 4 != 0) {
+	if (n_sfo % 4 != 0) {
 
 		int k = 1;
 		
 		for(int j=0; j<5; j++) {
 
 			if(j==1){
-				//printf(" column%12d", j+(n_mo_rounded*4));
-				cout << " column" << setw(12) <<  j+(n_mo_rounded*4);
+				//printf(" column%12d", j+(n_sfo_rounded*4));
+				cout << " column" << setw(12) <<  j+(n_sfo_rounded*4);
 			}
 			
 			else if(j>1){
-				//printf("%22d", j+(n_mo_rounded*4));
-				cout << setw(22) << j+(n_mo_rounded*4);
+				//printf("%22d", j+(n_sfo_rounded*4));
+				cout << setw(22) << j+(n_sfo_rounded*4);
 			}
 		}
 		//printf("\n row\n");
 		cout << endl << " row" << endl;
 		
-		for(int i=n_mo-(n_mo%4); i<n_mo; i++) {
+		for(int i=n_sfo-(n_sfo%4); i<n_sfo; i++) {
 			
 			if (k<5) {
 			  k++;
@@ -187,13 +190,13 @@ void Print_Triangular(vector< vector<double> > Triang, string title){
 			for (int j=0; j<k; j++) {
 
 				if(j==1){
-					//printf("%5d%24.14g", i+1, S[i][(j-1)+(n_mo_rounded*4)]);
-					cout << setw(5) << i+1 << setprecision(14) << setw(24) << scientific << Triang[i][(j-1)+(n_mo_rounded*4)];
+					//printf("%5d%24.14g", i+1, S[i][(j-1)+(n_sfo_rounded*4)]);
+					cout << setw(5) << i+1 << setprecision(14) << setw(24) << scientific << Triang[i][(j-1)+(n_sfo_rounded*4)];
 				}
 				
 				else if(j>1){
-					//printf("%22.14g", S[i][(j-1)+(n_mo_rounded*4)]);
-					cout << setprecision(14) << setw(22) << scientific << Triang[i][(j-1)+(n_mo_rounded*4)];
+					//printf("%22.14g", S[i][(j-1)+(n_sfo_rounded*4)]);
+					cout << setprecision(14) << setw(22) << scientific << Triang[i][(j-1)+(n_sfo_rounded*4)];
 				}
 			}
 			cout << endl;
@@ -208,7 +211,7 @@ void Print_Table(vector<double> Tab, string title){
 	
 	cout << title << endl << endl;
 	
-	for (int i=0; i<n_mo; i++){
+	for (int i=0; i<n_sfo; i++){
 		cout << setw(5) << i+1 << setprecision(14) << setw(30) << scientific << Tab[i] << endl;
 	}
 	
@@ -221,10 +224,10 @@ vector< vector<double> > Matrix_Product (vector< vector<double> > M1, vector< ve
 
 	vector< vector<double> > M_res;
 	
-	for(int i=0; i<n_mo; i++) {
+	for(int i=0; i<n_sfo; i++) {
 		M_res.push_back( vector<double> ());
 		
-		for(int j=0; j<n_mo; j++){
+		for(int j=0; j<n_sfo; j++){
 			M_res[i].push_back(0.0);
 		}
 	}
@@ -268,10 +271,10 @@ void Read_DIMER(string input_file, bool print_result){
 				char buffer[10];
 				length = str.copy(buffer, 9, 51);
 				buffer[length] = '\0';
-				n_mo = atoi(buffer);
+				n_sfo = atoi(buffer);
 				
-				if (n_mo%2 != 0){
-					cerr << "[ERROR] Number of SFO odd (" << n_mo << ")! Unable to calculate J. Exiting..." << endl;
+				if (n_sfo%2 != 0){
+					cerr << "[ERROR] Number of SFO odd (" << n_sfo << ")! Unable to calculate J. Exiting..." << endl;
 					S.clear(); C.clear(); C_inv.clear(); I.clear(); E.clear();
 					exit(1); 
 				}
@@ -312,30 +315,30 @@ void Read_DIMER(string input_file, bool print_result){
 			// Read C matrix
 			else if (str.find("MOs expanded in CFs+SFOs") != string::npos) {
 				
-				for(int i=0; i<n_mo; i++) {
+				for(int i=0; i<n_sfo; i++) {
 					C.push_back( vector<double> ());
 					C_inv.push_back( vector<double> ());
 					
-					for(int j=0; j<n_mo; j++){
+					for(int j=0; j<n_sfo; j++){
 						C[i].push_back(0.0);
 						C_inv[i].push_back(0.0);
 					}
 				}
 				
 				// Specific variables for inversion library
-				ap::real_2d_array a;
-				a.setlength(n_mo, n_mo);
+				real_2d_array a;
+				a.setlength(n_sfo, n_sfo);
 				
-				int n_mo_rounded = (n_mo - (n_mo % 10))/10;
+				int n_sfo_rounded = (n_sfo - (n_sfo % 10))/10;
 				double Z;
 				
-				for (int count_mo=0; count_mo<n_mo_rounded; count_mo++) {
+				for (int count_mo=0; count_mo<n_sfo_rounded; count_mo++) {
 					do {
 						getline(input, str);
 					} 
 					while (str.find("CF+SFO") == string::npos);
 					
-					for(int i=0; i<n_mo; i++) {
+					for(int i=0; i<n_sfo; i++) {
 						for(int j=0; j<11; j++) {
 							//input >> str;
 							input >> Z;
@@ -350,22 +353,22 @@ void Read_DIMER(string input_file, bool print_result){
 					}
 				}
 				
-				if (n_mo % 10 != 0) {
+				if (n_sfo % 10 != 0) {
 					do {
 						getline(input, str);
 					} 
 					while (str.find("CF+SFO") == string::npos);
 					
-					for(int i=0; i<n_mo; i++) {
-						for(int j=0; j<(n_mo % 10)+1; j++) {
+					for(int i=0; i<n_sfo; i++) {
+						for(int j=0; j<(n_sfo % 10)+1; j++) {
 							//input >> str;
 							input >> Z;
 	
 							if(j>0){
-								//C[i][(j-1)+(n_mo_rounded*10)] = atof(str.c_str());
-								//a(i,(j-1)+(n_mo_rounded*10)) = atof(str.c_str());
-								C[i][(j-1)+(n_mo_rounded*10)] = Z;
-								a(i,(j-1)+(n_mo_rounded*10)) = Z;
+								//C[i][(j-1)+(n_sfo_rounded*10)] = atof(str.c_str());
+								//a(i,(j-1)+(n_sfo_rounded*10)) = atof(str.c_str());
+								C[i][(j-1)+(n_sfo_rounded*10)] = Z;
+								a(i,(j-1)+(n_sfo_rounded*10)) = Z;
 							}		
 						}
 					}
@@ -374,32 +377,34 @@ void Read_DIMER(string input_file, bool print_result){
 
 				// Calculates inverse matrix
 				
-				int info;
 				matinvreport rep;
-				rmatrixinverse(a, n_mo, info, rep);
+				ae_int_t info;
+				ae_int_t n_sfo_alglib = n_sfo;
+				rmatrixinverse(a, n_sfo_alglib, info, rep);
+
 				
-				for(int i=0; i<n_mo; i++) {
-					for(int j=0; j<n_mo; j++) {
+				for(int i=0; i<n_sfo; i++) {
+					for(int j=0; j<n_sfo; j++) {
 						C_inv[i][j] = a(i,j);
 					}
 				}
 			}
+			
+			// Read H_KS matrix
+			else if (str.find("======  Fock matrix in SFO representation, symmetry =") != string::npos) {
 
-			// Read S matrix
-			else if (str.find("SFO Overlap Matrix (valence part only)") != string::npos) {
-
-				for(int i=0; i<n_mo; i++) {
-					S.push_back( vector<double> ());
+				for(int i=0; i<n_sfo; i++) {
+					H_KS.push_back( vector<double> ());
 					
-					for(int j=0; j<n_mo; j++){
-						S[i].push_back(0.0);
+					for(int j=0; j<n_sfo; j++){
+						H_KS[i].push_back(0.0);
 					}
 				}
 				
-				int n_mo_rounded = (n_mo - (n_mo % 4))/4;
+				int n_sfo_rounded = (n_sfo - (n_sfo % 4))/4;
 				double Z;
 				
-				for (int count_mo=0; count_mo<n_mo_rounded; count_mo++) {
+				for (int count_mo=0; count_mo<n_sfo_rounded; count_mo++) {
 					do {
 						getline(input, str);
 					} 
@@ -407,7 +412,80 @@ void Read_DIMER(string input_file, bool print_result){
 					
 					int k = 1;
 					
-					for(int i=count_mo*4; i<n_mo; i++) {
+					for(int i=count_mo*4; i<n_sfo; i++) {
+						
+						if (k<5) {
+						  k++;
+						}
+
+						for (int j=0; j<k; j++) {
+							//input >> str;
+							input >> Z;
+							
+							if(j>0){
+								//S[i][(j-1)+(count_mo*4)] = atof(str.c_str());
+								//S[(j-1)+(count_mo*4)][i] = atof(str.c_str());
+								H_KS[i][(j-1)+(count_mo*4)] = Z*27.211383;
+								H_KS[(j-1)+(count_mo*4)][i] = Z*27.211383;
+							}	
+						}
+					}
+				}
+				
+				if (n_sfo % 4 != 0) {
+					do {
+						getline(input, str);
+					} 
+					while (str.find("row") == string::npos);
+					
+					int k = 1;
+					
+					for(int i=n_sfo-(n_sfo%4); i<n_sfo; i++) {
+						
+						if (k<5) {
+						  k++;
+						}
+
+						for (int j=0; j<k; j++) {
+							//input >> str;
+							input >> Z;
+							
+							if(j>0){
+								//S[i][(j-1)+(n_sfo_rounded*4)] = atof(str.c_str());
+								//S[(j-1)+(n_sfo_rounded*4)][i] = atof(str.c_str());
+								H_KS[i][(j-1)+(n_sfo_rounded*4)] = Z*27.211383;
+								H_KS[(j-1)+(n_sfo_rounded*4)][i] = Z*27.211383;
+							}	
+						}
+					}
+				}
+				
+				H_KS_in_output = true;
+			}
+
+			// Read S matrix
+			else if (str.find("SFO Overlap Matrix (valence part only)") != string::npos) {
+
+				for(int i=0; i<n_sfo; i++) {
+					S.push_back( vector<double> ());
+					
+					for(int j=0; j<n_sfo; j++){
+						S[i].push_back(0.0);
+					}
+				}
+				
+				int n_sfo_rounded = (n_sfo - (n_sfo % 4))/4;
+				double Z;
+				
+				for (int count_mo=0; count_mo<n_sfo_rounded; count_mo++) {
+					do {
+						getline(input, str);
+					} 
+					while (str.find("row") == string::npos);
+					
+					int k = 1;
+					
+					for(int i=count_mo*4; i<n_sfo; i++) {
 						
 						if (k<5) {
 						  k++;
@@ -427,7 +505,7 @@ void Read_DIMER(string input_file, bool print_result){
 					}
 				}
 				
-				if (n_mo % 4 != 0) {
+				if (n_sfo % 4 != 0) {
 					do {
 						getline(input, str);
 					} 
@@ -435,7 +513,7 @@ void Read_DIMER(string input_file, bool print_result){
 					
 					int k = 1;
 					
-					for(int i=n_mo-(n_mo%4); i<n_mo; i++) {
+					for(int i=n_sfo-(n_sfo%4); i<n_sfo; i++) {
 						
 						if (k<5) {
 						  k++;
@@ -446,14 +524,16 @@ void Read_DIMER(string input_file, bool print_result){
 							input >> Z;
 							
 							if(j>0){
-								//S[i][(j-1)+(n_mo_rounded*4)] = atof(str.c_str());
-								//S[(j-1)+(n_mo_rounded*4)][i] = atof(str.c_str());
-								S[i][(j-1)+(n_mo_rounded*4)] = Z;
-								S[(j-1)+(n_mo_rounded*4)][i] = Z;
+								//S[i][(j-1)+(n_sfo_rounded*4)] = atof(str.c_str());
+								//S[(j-1)+(n_sfo_rounded*4)][i] = atof(str.c_str());
+								S[i][(j-1)+(n_sfo_rounded*4)] = Z;
+								S[(j-1)+(n_sfo_rounded*4)][i] = Z;
 							}	
 						}
 					}
 				}
+				
+				S_in_output = true;
 			}
 			
 			// Read Energies
@@ -468,7 +548,7 @@ void Read_DIMER(string input_file, bool print_result){
 				float occ;
 				double E_au;
 				
-				for(int i=0; i<n_mo; i++) {
+				for(int i=0; i<n_sfo; i++) {
 					input >> mo >> occ;
 					
 					if(occ == 2.0)
@@ -556,7 +636,7 @@ void Read_DIMER(string input_file, bool print_result){
 	
 	if (print_result) {
 		
-		cout << "N_SFO = " << n_mo << endl;
+		cout << "N_SFO = " << n_sfo << endl;
 		cout << "HOMO frag1 = " << homo_1+1 << endl;
 		cout << "LUMO frag1 = " << lumo_1+1 << endl;
 		cout << "HOMO frag2 = " << homo_2+1 << endl;
@@ -585,8 +665,8 @@ void Calculate_HKS () {
 	tmp = Matrix_Product(S,C);
 	
 	#pragma omp parallel for
-	for (int i=0; i<n_mo; i++) {
-		for (int j=0; j<n_mo; j++) {
+	for (int i=0; i<n_sfo; i++) {
+		for (int j=0; j<n_sfo; j++) {
 			tmp[i][j]=tmp[i][j]*E[j];
 		}
 	}
@@ -676,7 +756,15 @@ int main(int argc, char **argv) {
 	}
 
 	Read_DIMER(input_filename, false);
-	Calculate_HKS();
+	if (S_in_output == false) {
+		cerr << "[ERROR] Overlap matrix not found in the output file! Please include the keyword 'OVL' in the EPRINT section of the input file.\nExiting..." << endl;
+		exit(1);
+	}
+	
+	if (H_KS_in_output == false) {
+		cout << "[WARNING] Fock matrix not found in the output file! Please include the keywords 'FULLFOCK', 'ALLPOINTS' and 'PRINT FmatSFO' in the input file.\nI'm calculating the Fock matrix myself, man!" << endl;
+		Calculate_HKS();
+	}
 	
 	double J_H, J_L;
 	J_H = Calculate_Transfer_Matrix(homo_1, homo_2);
