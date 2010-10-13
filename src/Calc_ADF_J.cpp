@@ -39,13 +39,13 @@
 #include <sys/stat.h>
 
 #include <omp.h>
-#include "/home/nicolas/cpp_3/src/linalg.h"
+#include "/home/nmartine/lib/alglib_3.0.0/out/linalg.h"
 
 using namespace std;
 using namespace alglib;
 
 int n_sfo;
-int homo_1=0, homo_2=0, lumo_1=0, lumo_2=0;
+int homo_1=0, homo_2=0, lumo_1=0, lumo_2=0, homo=0, lumo=0;
 vector<double> E;
 vector< vector<double> > H_KS, S, C, C_inv, I;
 
@@ -220,22 +220,28 @@ void Print_Table(vector<double> Tab, string title){
 	cout << "=====================================" << endl << endl;
 }
 
-vector< vector<double> > Matrix_Product (vector< vector<double> > M1, vector< vector<double> > M2) {
+vector< vector<double> > Matrix_Product (vector< vector<double> > M1, vector< vector<double> > M2, unsigned int n_line_M1, unsigned int n_line_M2) {
+
+	if (M1[0].size() != n_line_M2) {
+		cerr << "[ERROR] Could not multiply matrix!\nExiting..." << endl;
+		S.clear(); C.clear(); C_inv.clear(); I.clear(); E.clear(); H_KS.clear();
+		exit(1);
+	}
 
 	vector< vector<double> > M_res;
 	
-	for(int i=0; i<n_sfo; i++) {
+	for(unsigned int i=0; i<n_line_M1; i++) {
 		M_res.push_back( vector<double> ());
 		
-		for(int j=0; j<n_sfo; j++){
+		for(unsigned int j=0; j<M2[0].size(); j++){
 			M_res[i].push_back(0.0);
 		}
 	}
 
 	#pragma omp parallel for
-	for (unsigned int i=0; i<M1[0].size(); i++) {
+	for (unsigned int i=0; i<n_line_M1; i++) {
 		double sum = 0.0;
-		for (unsigned int j=0; j<M1[0].size(); j++) {
+		for (unsigned int j=0; j<M2[0].size(); j++) {
 			sum = 0.0;
 			for (unsigned int k=0; k<M1[0].size(); k++) {
 				sum += M1[i][k] * M2[k][j];
@@ -279,6 +285,25 @@ void Read_DIMER(string input_file, bool print_result){
 					exit(1); 
 				}
 			}
+			
+			// Read HOMO and LUMO number
+			else if (str.find(" HOMO :") != string::npos) {
+				size_t length;
+				char buffer[10];
+				length = str.copy(buffer, 9, 8);
+				buffer[length] = '\0';
+				homo = atoi(buffer);
+				homo = homo - 1;
+				
+				getline(input, str);
+				length = str.copy(buffer, 9, 8);
+				buffer[length] = '\0';
+				lumo = atoi(buffer);
+				lumo = lumo - 1;
+				
+				//cout << homo << " " << lumo << endl;
+			}
+			
 			
 			// Read HOMO and LUMO numbers
 			else if (str.find("SFO  (index         Fragment          Generating    Expansion in Fragment Orbitals") != string::npos) {
@@ -419,12 +444,9 @@ void Read_DIMER(string input_file, bool print_result){
 						}
 
 						for (int j=0; j<k; j++) {
-							//input >> str;
 							input >> Z;
 							
 							if(j>0){
-								//S[i][(j-1)+(count_mo*4)] = atof(str.c_str());
-								//S[(j-1)+(count_mo*4)][i] = atof(str.c_str());
 								H_KS[i][(j-1)+(count_mo*4)] = Z*27.211383;
 								H_KS[(j-1)+(count_mo*4)][i] = Z*27.211383;
 							}	
@@ -447,12 +469,9 @@ void Read_DIMER(string input_file, bool print_result){
 						}
 
 						for (int j=0; j<k; j++) {
-							//input >> str;
 							input >> Z;
 							
 							if(j>0){
-								//S[i][(j-1)+(n_sfo_rounded*4)] = atof(str.c_str());
-								//S[(j-1)+(n_sfo_rounded*4)][i] = atof(str.c_str());
 								H_KS[i][(j-1)+(n_sfo_rounded*4)] = Z*27.211383;
 								H_KS[(j-1)+(n_sfo_rounded*4)][i] = Z*27.211383;
 							}	
@@ -492,12 +511,9 @@ void Read_DIMER(string input_file, bool print_result){
 						}
 
 						for (int j=0; j<k; j++) {
-							//input >> str;
 							input >> Z;
 							
 							if(j>0){
-								//S[i][(j-1)+(count_mo*4)] = atof(str.c_str());
-								//S[(j-1)+(count_mo*4)][i] = atof(str.c_str());
 								S[i][(j-1)+(count_mo*4)] = Z;
 								S[(j-1)+(count_mo*4)][i] = Z;
 							}	
@@ -520,12 +536,9 @@ void Read_DIMER(string input_file, bool print_result){
 						}
 
 						for (int j=0; j<k; j++) {
-							//input >> str;
 							input >> Z;
 							
 							if(j>0){
-								//S[i][(j-1)+(n_sfo_rounded*4)] = atof(str.c_str());
-								//S[(j-1)+(n_sfo_rounded*4)][i] = atof(str.c_str());
 								S[i][(j-1)+(n_sfo_rounded*4)] = Z;
 								S[(j-1)+(n_sfo_rounded*4)][i] = Z;
 							}	
@@ -597,7 +610,7 @@ void Read_DIMER(string input_file, bool print_result){
 						count_curr = 1;
 						
 						if (count_prec > 2) {
-							cout << "[WARNING] The HOMO of the dimer is composed of more than 2 MO! J_homo will be shitty!" << endl;
+							cout << "[WARNING] The HOMO of the dimer is composed of more than 2 MOs! J_homo will be shitty!" << endl;
 						}
 						
 						getline(input, str);
@@ -611,7 +624,7 @@ void Read_DIMER(string input_file, bool print_result){
 						length = str.copy(buffer, 4, 14);
 						buffer[length] = '\0';
 						if (strcmp(buffer,"    ") == 0) {
-							cout << "[WARNING] The LUMO of the dimer is composed of more than 2 MO! J_lumo will be shitty!" << endl;
+							cout << "[WARNING] The LUMO of the dimer is composed of more than 2 MOs! J_lumo will be shitty!" << endl;
 						}
 						
 						out_of_here = true;
@@ -645,7 +658,7 @@ void Read_DIMER(string input_file, bool print_result){
 		cout << "=====================================" << endl << endl;
 	
 		// Check if C*C_inv gives identity
-		I = Matrix_Product(C, C_inv);
+		I = Matrix_Product(C, C_inv, n_sfo, n_sfo);
 		
 		Print_Coeff(C, "C matrix");
 		Print_Coeff(C_inv, "C_inv matrix");
@@ -662,7 +675,7 @@ void Calculate_HKS () {
 
 	vector< vector<double> > tmp;
 
-	tmp = Matrix_Product(S,C);
+	tmp = Matrix_Product(S, C, n_sfo, n_sfo);
 	
 	#pragma omp parallel for
 	for (int i=0; i<n_sfo; i++) {
@@ -672,7 +685,7 @@ void Calculate_HKS () {
 	}
 	#pragma omp barrier
 	
-	H_KS = Matrix_Product(tmp,C_inv);
+	H_KS = Matrix_Product(tmp, C_inv, n_sfo, n_sfo);
 
 }
 
@@ -683,16 +696,16 @@ double Calculate_Transfer_Matrix (int mo_1, int mo_2) {
 	//Sites Energies Calculations
 
 	//E1
-	trans_mat_tmp[0][0]= H_KS[mo_1][mo_1];
+	trans_mat_tmp[0][0] = H_KS[mo_1][mo_1];
 
 	//E2
-	trans_mat_tmp[1][1]= H_KS[mo_2][mo_2];
+	trans_mat_tmp[1][1] = H_KS[mo_2][mo_2];
 
 	//Transfer Integrals
 
 	//J12
-	trans_mat_tmp[0][1]= H_KS[mo_1][mo_2];
-	trans_mat_tmp[1][0]= H_KS[mo_2][mo_1];
+	trans_mat_tmp[0][1] = H_KS[mo_1][mo_2];
+	trans_mat_tmp[1][0] = H_KS[mo_2][mo_1];
 
 	//S12
 	S12= S[mo_1][mo_2];
@@ -704,10 +717,10 @@ double Calculate_Transfer_Matrix (int mo_1, int mo_2) {
  
 	//Effective parameters
 
-	trans_mat[0][0]=(0.5 * (1.0/(1-S12*S12)) ) * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1] - 2 * trans_mat_tmp[0][1] *S12 + (trans_mat_tmp[0][0] - trans_mat_tmp[1][1]) * sqrt (1 - S12*S12) );
-	trans_mat[1][1]=(0.5 * (1.0/(1-S12*S12)) ) * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1] - 2 * trans_mat_tmp[0][1] *S12 - (trans_mat_tmp[0][0] - trans_mat_tmp[1][1]) * sqrt (1 - S12*S12) );
-	trans_mat[0][1]=(1.0/(1-S12*S12)) * (trans_mat_tmp[0][1] - 0.5 * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1]) * S12);
-	trans_mat[1][0]=(1.0/(1-S12*S12)) * (trans_mat_tmp[1][0] - 0.5 * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1]) * S12);
+	trans_mat[0][0] = (0.5 * (1.0/(1-S12*S12)) ) * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1] - 2 * trans_mat_tmp[0][1] *S12 + (trans_mat_tmp[0][0] - trans_mat_tmp[1][1]) * sqrt (1 - S12*S12) );
+	trans_mat[1][1] = (0.5 * (1.0/(1-S12*S12)) ) * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1] - 2 * trans_mat_tmp[0][1] *S12 - (trans_mat_tmp[0][0] - trans_mat_tmp[1][1]) * sqrt (1 - S12*S12) );
+	trans_mat[0][1] = (1.0/(1-S12*S12)) * (trans_mat_tmp[0][1] - 0.5 * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1]) * S12);
+	trans_mat[1][0] = (1.0/(1-S12*S12)) * (trans_mat_tmp[1][0] - 0.5 * (trans_mat_tmp[0][0] + trans_mat_tmp[1][1]) * S12);
 
 	//printf("\nTransfer Matrix after othonormalization\n");
 	//printf("%10.4lf   %10.4lf\n",trans_mat[0][0],trans_mat[0][1]);
@@ -758,6 +771,7 @@ int main(int argc, char **argv) {
 	Read_DIMER(input_filename, false);
 	if (S_in_output == false) {
 		cerr << "[ERROR] Overlap matrix not found in the output file! Please include the keyword 'OVL' in the EPRINT section of the input file.\nExiting..." << endl;
+		S.clear(); C.clear(); C_inv.clear(); I.clear(); E.clear(); H_KS.clear();
 		exit(1);
 	}
 	
@@ -767,16 +781,17 @@ int main(int argc, char **argv) {
 	}
 	
 	double J_H, J_L;
+		
 	J_H = Calculate_Transfer_Matrix(homo_1, homo_2);
 	J_L = Calculate_Transfer_Matrix(lumo_1, lumo_2);
-	
+
 	if (pytizi)
 		cout << f << " " << mol1 << " " << mol2 << " " << scientific << setprecision(14) << J_H << " 1.0 1.0 " << J_L << " 1.0 1.0 " << endl;
 		
 	else
 		cout << input_filename << " " << scientific << setprecision(14) << J_H << " " << J_L << endl;
 	
-	S.clear(); C.clear(); C_inv.clear(); I.clear(); E.clear();
+	S.clear(); C.clear(); C_inv.clear(); I.clear(); E.clear(); H_KS.clear();
 	
 	//--------------------------------------------------
 
@@ -791,5 +806,3 @@ int main(int argc, char **argv) {
 	return(0);
 
 }
-
-
