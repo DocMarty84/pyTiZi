@@ -1229,7 +1229,7 @@ def CreateVBHFInput(X, mol, box, mode, d):
 			foutput.write(tmp)		
 			foutput.close()
 			
-def CreateVBHFInput_PTCDeriv(X, mol, box, mode, d):
+def CreateVBHFInput_PTCDeriv_with_subst(X, mol, box, mode, d):
 	""" Creation of the VBHF input files
 	"""
 	for charge in [-1, 0, 1]:
@@ -1310,6 +1310,199 @@ def CreateVBHFInput_PTCDeriv(X, mol, box, mode, d):
 			foutput.write(tmp)		
 			foutput.close()
 
+def CreateVBHFInput_PTCDeriv(X, mol, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2):
+	""" Creation of the VBHF input files
+	"""
+	for charge in [-1, 0, 1]:
+		try:
+			dir_all="VBHF/all_%d" % (charge)
+			os.makedirs(dir_all)
+		except:
+			pass
+		try:
+			dir_mono="VBHF/mono_%d" % (charge)
+			os.makedirs(dir_mono)
+		except:
+			pass
+					
+		print "Calculating normal mode %d of charge %d" %(mode+1, charge)
+			
+		# All cluster
+		name = "%s/result_%d_%.12f_.dat" % (dir_all, mode+1, d)
+			
+		foutput = open(name, 'w')
+		
+		if foutput:
+			tmp = ''
+			tmp = "AM1 1SCF VBHF\n\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n" 
+
+			for a in [0, -2, -1, 1, 2]:
+				for b in [0, -1, 1]:
+					for c in [0, 1, -1]:
+						j = 0
+						k = 1
+						for i in xrange(mol.n_atom[0]):
+							if j == at_to_mov_1*3:
+								x_ref = X[at_ref_1*3, 0]
+								y_ref = X[(at_ref_1*3)+1, 0]
+								z_ref = X[(at_ref_1*3)+2, 0]
+								x_mov = X[j, 0]
+								y_mov = X[j+1, 0]
+								z_mov = X[j+2, 0]
+								dist = numpy.sqrt((x_ref-x_mov)*(x_ref-x_mov)+(y_ref-y_mov)*(y_ref-y_mov)+(z_ref-z_mov)*(z_ref-z_mov))
+							
+								symb = "H"
+								x = x_ref + (((x_mov-x_ref)/dist)*1.09)
+								y = y_ref + (((y_mov-y_ref)/dist)*1.09)
+								z = z_ref + (((z_mov-z_ref)/dist)*1.09)
+								
+								Frac_Coord = coord_conversion.Cartesian_To_Fractional(x, y, z, box)
+								Frac_Coord[0] += a
+								Frac_Coord[1] += b
+								Frac_Coord[2] += c
+								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (symb, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								j += 3
+								k += 1
+								
+							elif j == at_to_mov_2*3:
+								x_ref = X[at_ref_2*3, 0]
+								y_ref = X[(at_ref_2*3)+1, 0]
+								z_ref = X[(at_ref_2*3)+2, 0]
+								x_mov = X[j, 0]
+								y_mov = X[j+1, 0]
+								z_mov = X[j+2, 0]
+								dist = numpy.sqrt((x_ref-x_mov)*(x_ref-x_mov)+(y_ref-y_mov)*(y_ref-y_mov)+(z_ref-z_mov)*(z_ref-z_mov))
+							
+								symb = "H"
+								x = x_ref + (((x_mov-x_ref)/dist)*1.09)
+								y = y_ref + (((y_mov-y_ref)/dist)*1.09)
+								z = z_ref + (((z_mov-z_ref)/dist)*1.09)
+								
+								Frac_Coord = coord_conversion.Cartesian_To_Fractional(x, y, z, box)
+								Frac_Coord[0] += a
+								Frac_Coord[1] += b
+								Frac_Coord[2] += c
+								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (symb, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								j += 3
+								k += 1
+							
+							elif j > at_to_mov_1*3 and j <= (3*at_ref_1) + 1:
+								Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+								Frac_Coord[0] += a
+								Frac_Coord[1] += b
+								Frac_Coord[2] += c
+								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								j += 3
+								k += 1
+								
+							elif j > at_to_mov_2*3 and j <= (3*at_ref_2) + 1:
+								Frac_Coord = coord_conversion.Cartesian_To_Fractional(X[j, 0], X[j+1, 0], X[j+2, 0], box)
+								Frac_Coord[0] += a
+								Frac_Coord[1] += b
+								Frac_Coord[2] += c
+								Cart_Coord = coord_conversion.Fractional_To_Cartesian(Frac_Coord[0], Frac_Coord[1], Frac_Coord[2], box)
+								tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+								j += 3
+								k += 1
+								
+							else:
+								j += 3
+		
+			tmp += "$$VBHF\n"
+			tmp += "%d %d AM1 OMF-OPT\n" % (40, charge)
+			for x in xrange(14):
+				tmp += "%d 0 AM1 OMF-OPT\n"	 % 40
+
+			foutput.write(tmp)		
+			foutput.close() 
+
+
+		# Molecule alone
+		name = "%s/result_%d_%.12f_.dat" % (dir_mono, mode+1, d)
+			
+		foutput = open(name, 'w')
+		
+		if foutput:
+			tmp = ''
+			tmp = "AM1 1SCF VBHF\n\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+			tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
+
+			j = 0
+			for i in xrange(mol.n_atom[0]):
+				if j == at_to_mov_1*3:
+					x_ref = X[at_ref_1*3, 0]
+					y_ref = X[(at_ref_1*3)+1, 0]
+					z_ref = X[(at_ref_1*3)+2, 0]
+					x_mov = X[j, 0]
+					y_mov = X[j+1, 0]
+					z_mov = X[j+2, 0]
+					dist = numpy.sqrt((x_ref-x_mov)*(x_ref-x_mov)+(y_ref-y_mov)*(y_ref-y_mov)+(z_ref-z_mov)*(z_ref-z_mov))
+				
+					symb = "H"
+					x = x_ref + (((x_mov-x_ref)/dist)*1.09)
+					y = y_ref + (((y_mov-y_ref)/dist)*1.09)
+					z = z_ref + (((z_mov-z_ref)/dist)*1.09)
+					
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (symb, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+					
+				elif j == at_to_mov_2*3:
+					x_ref = X[at_ref_2*3, 0]
+					y_ref = X[(at_ref_2*3)+1, 0]
+					z_ref = X[(at_ref_2*3)+2, 0]
+					x_mov = X[j, 0]
+					y_mov = X[j+1, 0]
+					z_mov = X[j+2, 0]
+					dist = numpy.sqrt((x_ref-x_mov)*(x_ref-x_mov)+(y_ref-y_mov)*(y_ref-y_mov)+(z_ref-z_mov)*(z_ref-z_mov))
+				
+					symb = "H"
+					x = x_ref + (((x_mov-x_ref)/dist)*1.09)
+					y = y_ref + (((y_mov-y_ref)/dist)*1.09)
+					z = z_ref + (((z_mov-z_ref)/dist)*1.09)
+					
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (symb, Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+				
+				elif j > at_to_mov_1*3 and j <= (3*at_ref_1) + 1:
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+					
+				elif j > at_to_mov_2*3 and j <= (3*at_ref_2) + 1:
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					#tmp += "%5d %4s %12f %12f %12f 0\n" % (k, mol.symbol[0][1][i], Cart_Coord[0], Cart_Coord[1], Cart_Coord[2])
+					j += 3
+					k += 1
+					
+				else:
+					j += 3
+			
+			tmp += "$$VBHF\n"
+			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	
+
+			foutput.write(tmp)		
+			foutput.close()
 			
 def CreateYoInput(X, mol, box, mode, d):
 	""" Creation of the VBHF input files

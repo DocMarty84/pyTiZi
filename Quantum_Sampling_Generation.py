@@ -77,10 +77,10 @@ if __name__ == '__main__':
 	X_ref = copy.copy(qs_eigen.cart_coord_matrix)
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
-	for mode in xrange(0, qs_eigen.n_modes, 1):
+#	for mode in xrange(0, qs_eigen.n_modes, 1):
 #		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
-		if qs_eigen.freq[mode] > 1.0:
-#	for mode in xrange(12, 13, 1):
+#		if qs_eigen.freq[mode] > 1.0:
+	for mode in xrange(3, 4, 1):
 			# ===============================
 			# Calculation of the reduced mass
 			# ===============================
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 				
 				# Create VBHF input files
 #				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
-				write_cluster_files.CreateVBHFInput_PTCDeriv(X, qs_coord, box, mode, d)
+				write_cluster_files.CreateVBHFInput_PTCDeriv(X, qs_coord, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 
 				# Create ME input files
 #				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)
