@@ -907,7 +907,6 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "EPRINT" << endl;
 		output << "FRAG SFO EIG" << endl;
 		output << "SFO EIG OVL" << endl;
-		//output << "SFO EIG" << endl;
 		output << "EIGVAL 9999 9999" << endl;
 		output << "END" << endl << endl;
 		
@@ -932,11 +931,8 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		//output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
 		output << "END" << endl << endl;
 
-		//output << "INTEGRATION 4.0 4.0 4.0" << endl << endl;
-
-		//output << "FULLFOCK" << endl;
-		//output << "A1FIT 10.0" << endl << endl;
-
+		//output << "INTEGRATION 4.0 4.0 4.0" << endl;
+		//output << "A1FIT 10.0" << endl;
 		//output << "DEPENDENCY bas=4e-3" << endl << endl;
 		
 		output << "FRAGMENTS" << endl;
@@ -953,15 +949,14 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "rm -rf TAPE* kid*" << endl << endl;
 		
 		output << "sync; sync" << endl;
-		//output << "Calc_ADF_J -I dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out -f " << frame << " -a " << mol_label[mol_n1] << " -b " << mol_label[mol_n2] << " >> frame_" << frame << ".out" << endl << endl;
-		output << "H_1='1.0'" << endl;
-		output << "L_1='1.0'" << endl;
-		output << "H_2='1.0'" << endl;
-		output << "L_2='1.0'" << endl << endl;
-		output << "J_H=`grep 'transfer integral (hole)' dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out | cut -d ':' -f2 | awk '{print $1}'`" << endl;
-		output << "J_L=`grep 'transfer integral (electron)' dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out | cut -d ':' -f2 | awk '{print $1}'`" << endl;
-
-		output << "echo " << frame << " " << mol_label[mol_n1] << " " << mol_label[mol_n2] << " $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> frame_" << frame << ".out" << endl;
+		output << "Calc_ADF_J -I dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out -f " << frame << " -a " << mol_label[mol_n1] << " -b " << mol_label[mol_n2] << " >> frame_" << frame << ".out" << endl << endl;
+		//output << "H_1='1.0'" << endl;
+		//output << "L_1='1.0'" << endl;
+		//output << "H_2='1.0'" << endl;
+		//output << "L_2='1.0'" << endl << endl;
+		//output << "J_H=`grep 'transfer integral (hole)' dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out | cut -d ':' -f2 | awk '{print $1}'`" << endl;
+		//output << "J_L=`grep 'transfer integral (electron)' dimer_" << mol_label[mol_n1] << "_" << mol_label[mol_n2] << ".out | cut -d ':' -f2 | awk '{print $1}'`" << endl;
+		//output << "echo " << frame << " " << mol_label[mol_n1] << " " << mol_label[mol_n2] << " $J_H $H_1 $H_2 $J_L $L_1 $L_2 >> frame_" << frame << ".out" << endl;
 
 		output.close();
 	}

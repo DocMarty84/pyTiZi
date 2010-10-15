@@ -575,6 +575,7 @@ void Read_DIMER(string input_file, bool print_result){
 				}
 			}
 			
+			/*
 			// Check if there are more than 2 MO for HOMO and LUMO of the dimer
 			else if (str.find("List of all MOs, ordered by energy, with the most significant SFO gross populations") != string::npos) {
 
@@ -632,9 +633,8 @@ void Read_DIMER(string input_file, bool print_result){
 					
 				} 
 				while (out_of_here == false);
-
-			    
 			}
+			*/
 			
 		}
 		
@@ -744,7 +744,7 @@ int main(int argc, char **argv) {
 	
 	string input_filename;
 	int f, mol1, mol2;
-	bool pytizi=false;
+	bool pytizi = false;
 
 	int s;
 	while ((s = getopt_long (argc, argv, "I:f:a:b:", NULL, NULL)) != -1){
@@ -775,7 +775,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	if (H_KS_in_output == false) {
+	if (H_KS_in_output == false && pytizi == false) {
 		cout << "[WARNING] Fock matrix not found in the output file! Please include the keywords 'FULLFOCK', 'ALLPOINTS' and 'PRINT FmatSFO' in the input file.\nI'm calculating the Fock matrix myself, man!" << endl;
 		Calculate_HKS();
 	}
