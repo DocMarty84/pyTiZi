@@ -1195,7 +1195,7 @@ def CreateVBHFInput(X, mol, box, mode, d):
 					j += 3
 					k += 1
 		
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)
 			for x in xrange(24):
 				tmp += "%d 0 AM1 OMF-OPT\n"	 % mol.n_atom[0]	
@@ -1223,7 +1223,7 @@ def CreateVBHFInput(X, mol, box, mode, d):
 				tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], X[j, 0], X[j+1, 0], X[j+2, 0])
 				j += 3
 			
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	
 
 			foutput.write(tmp)		
@@ -1276,7 +1276,7 @@ def CreateVBHFInput_PTCDeriv_with_subst(X, mol, box, mode, d):
 							j += 3
 							k += 1
 		
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)
 			for x in xrange(24):
 				tmp += "%d 0 AM1 OMF-OPT\n"	 % mol.n_atom[0]	
@@ -1304,7 +1304,7 @@ def CreateVBHFInput_PTCDeriv_with_subst(X, mol, box, mode, d):
 				tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][0][i], X[j, 0], X[j+1, 0], X[j+2, 0])
 				j += 3
 			
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	
 
 			foutput.write(tmp)		
@@ -1420,7 +1420,7 @@ def CreateVBHFInput_PTCDeriv(X, mol, box, mode, d, at_to_mov_1, at_ref_1, at_to_
 							else:
 								j += 3
 		
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (40, charge)
 			for x in xrange(14):
 				tmp += "%d 0 AM1 OMF-OPT\n"	 % 40
@@ -1498,7 +1498,7 @@ def CreateVBHFInput_PTCDeriv(X, mol, box, mode, d, at_to_mov_1, at_ref_1, at_to_
 				else:
 					j += 3
 			
-			tmp += "$$VBHF NITERMAX=5000 ENERDIFFITER DAMPING=0.2\n"
+			tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
 			tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[0], charge)	
 
 			foutput.write(tmp)		
