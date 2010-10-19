@@ -924,9 +924,10 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "SAVE TAPE21 TAPE13" << endl << endl;
 
 		output << "SCF" << endl;
-		output << "ITERATIONS 99" << endl;
-		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
-		output << "MIXING 0.2" << endl;
+		//output << "ITERATIONS 99" << endl;
+		output << "ITERATIONS 0" << endl;
+		//output << "CONVERGE 1.0e-6 1.0e-3" << endl;
+		//output << "MIXING 0.2" << endl;
 		output << "LSHIFT 0.0" << endl;
 		//output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
 		output << "END" << endl << endl;
@@ -1016,8 +1017,8 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 
 		output << "SCF" << endl;
 		output << "ITERATIONS 99" << endl;
-		output << "CONVERGE 1.0e-6 1.0e-3" << endl;
-		output << "MIXING 0.2" << endl;
+		//output << "CONVERGE 1.0e-6 1.0e-3" << endl;
+		//output << "MIXING 0.2" << endl;
 		output << "LSHIFT 0.0" << endl;
 		//output << "diis n=10 ok=0.5 cyc=5 cx=5.0 cxx=10.0" << endl;
 		output << "END" << endl << endl;
