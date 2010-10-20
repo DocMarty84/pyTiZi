@@ -913,7 +913,7 @@ void Write_ADF_CMD(string input_file, double **mol1, double **mol2, int frame, i
 		output << "PRINT FmatSFO" << endl << endl;
 
 		output << "BASIS" << endl;
-		output << "TYPE TZP" << endl;
+		output << "TYPE DZ" << endl;
 		output << "CORE None" << endl;
 		output << "END" << endl << endl;
 
@@ -1005,7 +1005,7 @@ void Write_ADF_INP(string input_file, double **mol, int frame, int mol_n){
 		output << "END" << endl << endl;
 
 		output << "BASIS" << endl;
-		output << "TYPE TZP" << endl;
+		output << "TYPE DZ" << endl;
 		output << "CORE None" << endl;
 		output << "END" << endl << endl;
 
