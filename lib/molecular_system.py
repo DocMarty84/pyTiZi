@@ -28,14 +28,16 @@ class SimulationBox(object):
 			self.alpha_rad[i] = math.radians(self.alpha_deg[i])
 			self.beta_rad[i] = math.radians(self.beta_deg[i])
 			self.gamma_rad[i] = math.radians(self.gamma_deg[i])
+			
+		self.vol_box = np.zeros((n_frame), float)
 		
-		self.temp_alpha_cos=np.zeros((n_frame), float)
-		self.temp_beta_sin=np.zeros((n_frame), float)
-		self.temp_beta_cos=np.zeros((n_frame), float)
-		self.temp_gamma_sin=np.zeros((n_frame), float)
-		self.temp_gamma_cos=np.zeros((n_frame), float)
-		self.temp_beta_term=np.zeros((n_frame), float)
-		self.temp_gamma_term=np.zeros((n_frame), float)
+		self.temp_alpha_cos = np.zeros((n_frame), float)
+		self.temp_beta_sin = np.zeros((n_frame), float)
+		self.temp_beta_cos = np.zeros((n_frame), float)
+		self.temp_gamma_sin = np.zeros((n_frame), float)
+		self.temp_gamma_cos = np.zeros((n_frame), float)
+		self.temp_beta_term = np.zeros((n_frame), float)
+		self.temp_gamma_term = np.zeros((n_frame), float)
 
 	def __str__(self):
 		tmp = ''
@@ -61,6 +63,8 @@ class SimulationBox(object):
 				self.temp_gamma_cos[i] = 0.0
 				self.temp_beta_term[i] = 0.0
 				self.temp_gamma_term[i] = 1.0
+				
+				self.vol_box[i] = self.a[i] * self.b[i] * self.c[i]
 
 			elif self.alpha_deg[i]==90.0 and self.gamma_deg[i]==90.0:
 				self.temp_alpha_cos[i] = 0.0
@@ -70,6 +74,8 @@ class SimulationBox(object):
 				self.temp_gamma_cos[i] = 0.0
 				self.temp_beta_term[i] = 0.0
 				self.temp_gamma_term[i] = copy.copy(self.temp_beta_sin[i])
+				
+				self.vol_box[i] = self.temp_beta_sin[i] * self.a[i] * self.b[i] * self.c[i]
 
 			else:
 				self.temp_alpha_cos[i] = math.cos(self.alpha_rad[i])
@@ -79,6 +85,8 @@ class SimulationBox(object):
 				self.temp_gamma_cos[i] = math.cos(self.gamma_rad[i])
 				self.temp_beta_term[i] = (self.temp_alpha_cos[i]-self.temp_beta_cos[i]*self.temp_gamma_cos[i])/self.temp_gamma_sin[i]
 				self.temp_gamma_term[i] = math.sqrt(1.0-math.pow(self.temp_beta_cos[i],2)-math.pow(self.temp_beta_term[i],2))
+				
+				self.vol_box[i] = (self.temp_gamma_sin[i] * self.temp_gamma_term[i]) * self.a[i] * self.b[i] * self.c[i]
 			
 #		print self.temp_alpha_cos, self.temp_beta_sin, self.temp_beta_cos, self.temp_gamma_sin, self.temp_gamma_cos
 #		print self.temp_beta_term, self.temp_gamma_term
