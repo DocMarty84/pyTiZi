@@ -1229,7 +1229,7 @@ void MC_BKL(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -1616,7 +1616,7 @@ void MC_BKL_MT(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2046,7 +2046,7 @@ void MC_FRM(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2528,7 +2528,7 @@ void MC_FRM_MT(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
