@@ -66,7 +66,7 @@ string charge;
 
 // Variables for the unit cell parameters
 bool pbc[3]; // Periodic boundary conditions
-vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg; // Cell parameters
+vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg, vol_box; // Cell parameters
 vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, temp_gamma_cos, temp_beta_term, temp_gamma_term; // Parameters for fractional coordinates
 
 // Variables for each molecule
@@ -246,7 +246,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 
 // Read .cell file
 void Read_CELL(string input_file, string input_folder, bool print_results){
-	double a_tmp, b_tmp, c_tmp, alpha_deg_tmp, beta_deg_tmp, gamma_deg_tmp;
+	double a_tmp, b_tmp, c_tmp, alpha_deg_tmp, beta_deg_tmp, gamma_deg_tmp, vol_box_tmp;
 	double temp_alpha_cos_tmp, temp_beta_sin_tmp, temp_beta_cos_tmp, temp_gamma_sin_tmp, temp_gamma_cos_tmp, temp_beta_term_tmp, temp_gamma_term_tmp;
 
 	string tmp;
@@ -260,7 +260,7 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 		input >> tmp >> tmp;
 		for(int i=0; i<n_frame; i++){
 			input >> tmp >> tmp;
-			input >> a_tmp >> b_tmp >> c_tmp >> alpha_deg_tmp >> beta_deg_tmp >> gamma_deg_tmp;
+			input >> a_tmp >> b_tmp >> c_tmp >> alpha_deg_tmp >> beta_deg_tmp >> gamma_deg_tmp >> vol_box_tmp;
 			input >> temp_alpha_cos_tmp >> temp_beta_sin_tmp >> temp_beta_cos_tmp >> temp_gamma_sin_tmp >> temp_gamma_cos_tmp >> temp_beta_term_tmp >> temp_gamma_term_tmp;
 			
 			a.push_back(a_tmp); 
@@ -269,6 +269,7 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 			alpha_deg.push_back(alpha_deg_tmp); 
 			beta_deg.push_back(beta_deg_tmp); 
 			gamma_deg.push_back(gamma_deg_tmp);
+			vol_box.push_back(vol_box_tmp);
 
 			temp_alpha_cos.push_back(temp_alpha_cos_tmp);
 			temp_beta_sin.push_back(temp_beta_sin_tmp);
@@ -1098,6 +1099,7 @@ void MC_BKL(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -1476,6 +1478,7 @@ void MC_BKL_MT(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -1897,6 +1900,7 @@ void MC_FRM(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2369,6 +2373,7 @@ void MC_FRM_MT(string output_folder){
 		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2790,6 +2795,35 @@ void MC_FRM_MT(string output_folder){
 	
 }
 
+// =============================================================================
+// --------------------------------- Clear part --------------------------------
+// =============================================================================
+
+void Clear_All(){
+	a.clear(); b.clear(); c.clear(); alpha_deg.clear(); beta_deg.clear(); gamma_deg.clear(); vol_box.clear(); 
+	temp_alpha_cos.clear(); temp_beta_sin.clear(); temp_beta_cos.clear(); temp_gamma_sin.clear(); temp_gamma_cos.clear(); temp_beta_term.clear(); temp_gamma_term.clear(); 
+
+	mol_label.clear();
+	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
+	E_0.clear(); E_1.clear();
+
+	box_a.clear(); box_b.clear(); box_c.clear(); 
+	grid_occ.clear();
+	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear(); box_neigh_label.clear(); 
+
+	neigh_label.clear();
+	d_x.clear(); d_y.clear(); d_z.clear();
+	dE.clear();
+	J_H.clear(); J_L.clear();
+	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear(); 
+	k.clear(); k_inv.clear();
+
+	MLJ_CST3.clear();
+
+	event_k_1.clear(); event_k_2.clear(); 
+	event_charge_1.clear(); event_mol_index_1.clear(); event_neigh_num_1.clear(); event_neigh_index_1.clear(); event_charge_2.clear(); event_mol_index_2.clear(); event_neigh_num_2.clear(), event_neigh_index_2.clear();
+}
+
 int main(int argc, char **argv){
 	
 	cout << "\n===============================================================================" << endl;
@@ -3017,6 +3051,8 @@ int main(int argc, char **argv){
 //		}
 //	}
 
+	Clear_All();
+		
 	// Get stop time
 	t_stop = time(NULL);
 	timeinfo_stop = asctime(localtime(&t_stop));

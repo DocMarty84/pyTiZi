@@ -33,7 +33,7 @@ bool *J; // Calculate neighbors of this variable?
 
 bool pbc[3]; // Periodic boundary conditions
 double cutoff; // Cutoff distance
-double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg; // Cell parameters
+double *a, *b, *c, *alpha_deg, *beta_deg, *gamma_deg, *vol_box; // Cell parameters
 double *temp_alpha_cos, *temp_beta_sin, *temp_beta_cos, *temp_gamma_sin, *temp_gamma_cos, *temp_beta_term, *temp_gamma_term; // Parameters for fractional coordinates
 
 vector< vector< vector<int> > > neigh_label;
@@ -143,6 +143,7 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 		alpha_deg = new double[n_frame];
 		beta_deg = new double[n_frame];
 		gamma_deg = new double[n_frame];
+		vol_box = new double[n_frame];
 		
 		temp_alpha_cos = new double[n_frame]; 
 		temp_beta_sin = new double[n_frame];
@@ -156,7 +157,7 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 		input >> tmp >> cutoff;
 		for(int i=0; i<n_frame; i++){
 			input >> tmp >> tmp;
-			input >> a[i] >> b[i] >> c[i] >> alpha_deg[i] >> beta_deg[i] >> gamma_deg[i];
+			input >> a[i] >> b[i] >> c[i] >> alpha_deg[i] >> beta_deg[i] >> gamma_deg[i] >> vol_box[i];
 			input >> temp_alpha_cos[i] >> temp_beta_sin[i] >> temp_beta_cos[i] >> temp_gamma_sin[i] >> temp_gamma_cos[i] >> temp_beta_term[i] >> temp_gamma_term[i];
 		}
 		
@@ -1342,6 +1343,7 @@ int main(int argc, char **argv){
 	delete [] a; delete [] b; delete [] c; delete [] alpha_deg; delete [] beta_deg; delete [] gamma_deg;
 	delete [] temp_alpha_cos; delete [] temp_beta_sin; delete [] temp_beta_cos; delete [] temp_gamma_sin;
 	delete [] temp_gamma_cos; delete [] temp_beta_term; delete [] temp_gamma_term;
+	delete [] vol_box;
 	
 	neigh_label.clear();
 	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();

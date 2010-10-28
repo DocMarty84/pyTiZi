@@ -202,7 +202,7 @@ def CreateCELL(data, cell, project, filename_base):
 	tmp += 'cutoff %f\n' % (project.cutoff)
 	for i in xrange(data.n_frame):
 		tmp += 'frame %d\n' % (i)
-		tmp += '%f %f %f %f %f %f\n' % (cell.a[i], cell.b[i], cell.c[i], cell.alpha_deg[i], cell.beta_deg[i], cell.gamma_deg[i])
+		tmp += '%f %f %f %f %f %f %f\n' % (cell.a[i], cell.b[i], cell.c[i], cell.alpha_deg[i], cell.beta_deg[i], cell.gamma_deg[i], cell.vol_box[i])
 		tmp += '%.15f %.15f %.15f %.15f %.15f %.15f %.15f\n' % (cell.temp_alpha_cos[i], cell.temp_beta_sin[i], cell.temp_beta_cos[i], cell.temp_gamma_sin[i], cell.temp_gamma_cos[i], cell.temp_beta_term[i], cell.temp_gamma_term[i])
 
 	file = '%s%s%s.cell' % (project.input_cluster, os.sep, filename_base)
