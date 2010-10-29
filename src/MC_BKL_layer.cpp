@@ -88,8 +88,9 @@ vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_v
 vector< vector< vector<double> > > k, k_inv;
 
 // Variables for the electric field direction
-double theta_deg, phi_deg, theta_rad, phi_rad;
-double F_x, F_y, F_z;
+//double theta_deg, phi_deg, theta_rad, phi_rad;
+vector<double>  F_x_list, F_y_list, F_z_list, F_angle_list;
+double F_x, F_y, F_z, F_angle;
 
 // Constants for the MLJ theory
 double S, MLJ_CST1, MLJ_CST2; 
@@ -107,6 +108,38 @@ vector<double> min_layer (n_layer, 0.0);
 vector<double> max_layer (n_layer, 0.0);
 vector< vector< vector<int> > > mol_layer;
 vector< vector<int> > list_layer;
+
+// =============================================================================
+// --------------------------------- Clear part --------------------------------
+// =============================================================================
+
+void Clear_All(){
+	a.clear(); b.clear(); c.clear(); alpha_deg.clear(); beta_deg.clear(); gamma_deg.clear(); vol_box.clear(); 
+	temp_alpha_cos.clear(); temp_beta_sin.clear(); temp_beta_cos.clear(); temp_gamma_sin.clear(); temp_gamma_cos.clear(); temp_beta_term.clear(); temp_gamma_term.clear(); 
+
+	mol_label.clear();
+	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
+	E_0.clear(); E_1.clear();
+
+	box_a.clear(); box_b.clear(); box_c.clear(); 
+	grid_occ.clear();
+	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear(); box_neigh_label.clear(); 
+
+	neigh_label.clear();
+	d_x.clear(); d_y.clear(); d_z.clear();
+	dE.clear();
+	J_H.clear(); J_L.clear();
+	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear(); 
+	k.clear(); k_inv.clear();
+
+	F_x_list.clear(); F_y_list.clear(); F_z_list.clear();
+	F_angle_list.clear();
+
+	MLJ_CST3.clear();
+
+	event_k_1.clear(); event_k_2.clear(); 
+	event_charge_1.clear(); event_mol_index_1.clear(); event_neigh_num_1.clear(); event_neigh_index_1.clear(); event_charge_2.clear(); event_mol_index_2.clear(); event_neigh_num_2.clear(), event_neigh_index_2.clear();
+}
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -164,6 +197,43 @@ double Facto(int n) {
 	}
 }
 
+// Product of two matrix
+vector< vector<double> > Matrix_Product (vector< vector<double> > M1, vector< vector<double> > M2, unsigned int n_line_M1, unsigned int n_line_M2) {
+
+	if (M1[0].size() != n_line_M2) {
+		cerr << "[ERROR] Could not multiply matrix!\nExiting..." << endl;
+		Clear_All();
+		exit(1);
+	}
+
+	vector< vector<double> > M_res;
+	
+	for(unsigned int i=0; i<n_line_M1; i++) {
+		M_res.push_back( vector<double> ());
+		
+		for(unsigned int j=0; j<M2[0].size(); j++){
+			M_res[i].push_back(0.0);
+		}
+	}
+
+	for (unsigned int i=0; i<n_line_M1; i++) {
+		double sum = 0.0;
+		for (unsigned int j=0; j<M2[0].size(); j++) {
+			sum = 0.0;
+			for (unsigned int k=0; k<M1[0].size(); k++) {
+				sum += M1[i][k] * M2[k][j];
+			}
+			//if (sum < 1e-13) {
+			//	sum = 0.0;
+			//}
+			M_res[i][j] = sum;
+		}
+	}
+	
+	return(M_res);
+
+}
+
 // =============================================================================
 // --------------------------------- Read part ---------------------------------
 // =============================================================================
@@ -180,6 +250,19 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 	
 	ifstream input(file_mc.str().c_str(), ios::in);
 	if (input){
+		
+		/* 
+		 * ===============================================
+		 * Physical units:
+		 * ---------------
+		 * 
+		 * snap_delay: seconds
+		 * LAMBDA_I_H, LAMBDA_I_E, LAMBDA_S, H_OMEGA: eV
+		 * T: Kelvin
+		 * dist_tot: centimeter
+		 * F_norm: V/cm
+		 * ===============================================
+		 */
 		
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
@@ -247,6 +330,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 	}
 	else{
 		cerr << "Error opening " << file_mc.str().c_str() << endl;
+		Clear_All();
 		exit(1);
 	}
 }
@@ -303,6 +387,7 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 	}
 	else{
 		cerr << "Error opening " << file_cell.str().c_str() << endl;
+		Clear_All();
 		exit(1);
 	}
 }
@@ -351,6 +436,7 @@ void Read_CM(string input_file, string input_folder, bool print_results){
 	}
 	else{
 		cerr << "Error opening " << file_cm.str().c_str() << endl;
+		Clear_All();
 		exit(1);
 	}
 }
@@ -404,6 +490,236 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 // =============================================================================
 // ------------------- Physical parameters between neighbors -------------------
 // =============================================================================
+
+vector< vector<double> > Calcul_Rot_Matrix (double angle_deg, vector<double> rot_axis, vector<double> origin) {
+	
+	vector< vector<double> > Rot_Matrix (4, vector<double> (4, 0.0));
+	
+	double u, v, w, u2, v2, w2, L, L2;
+	double i,j,k;
+	double angle_rad;
+	
+	u = rot_axis[0];
+	v = rot_axis[1];
+	w = rot_axis[2];
+	u2 = u*u;
+	v2 = v*v;
+	w2 = w*w;
+	L2 = u2 + v2 + w2;
+	L = sqrt(L2);
+	
+	i = origin[0];
+	j = origin[1];
+	k = origin[2];
+	
+	angle_rad = (PI/180.0) * angle_deg;
+	
+	Rot_Matrix[0][0] = (u2 + (v2 + w2) * cos(angle_rad))/L2;
+	Rot_Matrix[0][1] = (u * v * (1.0 - cos(angle_rad)) - w * L * sin(angle_rad))/L2;
+	Rot_Matrix[0][2] = (u * w * (1.0 - cos(angle_rad)) + v * L * sin(angle_rad))/L2;
+	Rot_Matrix[0][3] = (i*(v2 + w2) - u*(j*v + k*w) + (u*(j*v + k*w) - i*(v2+w2)) * cos(angle_rad) + (j*w - k*v) * L * sin(angle_rad))/L2;
+	Rot_Matrix[1][0] = (u * v * (1.0 - cos(angle_rad)) + w * L * sin(angle_rad))/L2;
+	Rot_Matrix[1][1] = (v2 + (u2 + w2) * cos(angle_rad))/L2;
+	Rot_Matrix[1][2] = (v * w * (1.0 - cos(angle_rad)) - u * L * sin(angle_rad))/L2;
+	Rot_Matrix[1][3] = (j*(u2 + w2) - v*(i*u + k*w) + (v*(i*u + k*w) - j*(u2+w2)) * cos(angle_rad) + (k*u - i*w) * L * sin(angle_rad))/L2;
+	Rot_Matrix[2][0] = (u * w * (1.0 - cos(angle_rad)) - v * L * sin(angle_rad))/L2;
+	Rot_Matrix[2][1] = (v * w * (1.0 - cos(angle_rad)) + u * L * sin(angle_rad))/L2;
+	Rot_Matrix[2][2] = (w2 + (u2 + v2) * cos(angle_rad))/L2;
+	Rot_Matrix[2][3] = (k*(u2 + v2) - w*(i*u + j*v) + (w*(i*u + j*v) - k*(u2+v2)) * cos(angle_rad) + (i*v - j*u) * L * sin(angle_rad))/L2;
+	Rot_Matrix[3][0] = 0.0;
+	Rot_Matrix[3][1] = 0.0;
+	Rot_Matrix[3][2] = 0.0;
+	Rot_Matrix[3][3] = 1.0;
+	
+	return Rot_Matrix ;
+	
+}
+
+// Calculates the electric field unit vector
+void Calcul_F_vector(bool print_results) {
+	
+	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0) {
+		double *F_tmp_frac, *F_tmp_cart;
+		F_tmp_frac = new double[3];
+		F_tmp_cart = new double[3];
+
+		if (F_dir.compare("a") == 0) {
+			if (charge.compare("e") == 0) {
+				F_tmp_frac[0] = 1.0;
+			}
+			else {
+				F_tmp_frac[0] = -1.0;
+			}
+			F_tmp_frac[1] = 0.0;
+			F_tmp_frac[2] = 0.0;
+		}
+			
+		else if (F_dir.compare("b") == 0) {
+			F_tmp_frac[0] = 0.0;
+			if (charge.compare("e") == 0) {
+				F_tmp_frac[1] = 1.0;
+			}
+			else {
+				F_tmp_frac[1] = -1.0;
+			}
+			F_tmp_frac[2] = 0.0;
+		}
+			
+		else if (F_dir.compare("c") == 0) {
+			F_tmp_frac[0] = 0.0;
+			F_tmp_frac[1] = 0.0;
+			if (charge.compare("e") == 0) {
+				F_tmp_frac[2] = 1.0;
+			}
+			else {
+				F_tmp_frac[2] = -1.0;
+			}
+		}
+					
+		Fractional_To_Cartesian(F_tmp_frac, F_tmp_cart, 0);
+		
+		double F_norm_tmp = sqrt(pow(F_tmp_cart[0],2) + pow(F_tmp_cart[1],2) + pow(F_tmp_cart[2],2));
+		F_x_list.push_back(F_tmp_cart[0]/F_norm_tmp);
+		F_y_list.push_back(F_tmp_cart[1]/F_norm_tmp);
+		F_z_list.push_back(F_tmp_cart[2]/F_norm_tmp);
+		F_angle_list.push_back(0.0);
+		
+		delete [] F_tmp_frac; delete [] F_tmp_cart;
+		
+	}
+	
+	else {
+		double *v1, *v2, *v3, *v_tmp_frac, *v_tmp_cart;
+		v1 = new double[3];
+		v2 = new double[3];
+		v3 = new double[3];
+		v_tmp_frac = new double[3];
+		v_tmp_cart = new double[3];
+		
+		vector< vector<double> > Rot_Matrix (4, vector<double> (4, 0.0));
+		vector< vector<double> > F_0_tmp_cart (4, vector<double> (1, 0.0));
+		vector< vector<double> > F_tmp_cart (4, vector<double> (1, 0.0));
+		
+		if (F_dir.compare("ab") == 0) {
+			
+			// Get two axis parallel to a and b
+			v_tmp_frac[0] = 1.0;
+			v_tmp_frac[1] = 0.0;
+			v_tmp_frac[2] = 0.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v1[0] = v_tmp_cart[0];
+			v1[1] = v_tmp_cart[1];
+			v1[2] = v_tmp_cart[2];
+			
+			v_tmp_frac[0] = 0.0;
+			v_tmp_frac[1] = 1.0;
+			v_tmp_frac[2] = 0.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v2[0] = v_tmp_cart[0];
+			v2[1] = v_tmp_cart[1];
+			v2[2] = v_tmp_cart[2];
+			
+			// Get the third axis perpendicular to the ab plane
+			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);	
+		}
+		
+		else if (F_dir.compare("ac") == 0) {
+			
+			// Get two axis parallel to a and c
+			v_tmp_frac[0] = 1.0;
+			v_tmp_frac[1] = 0.0;
+			v_tmp_frac[2] = 0.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v1[0] = v_tmp_cart[0];
+			v1[1] = v_tmp_cart[1];
+			v1[2] = v_tmp_cart[2];
+			
+			v_tmp_frac[0] = 0.0;
+			v_tmp_frac[1] = 0.0;
+			v_tmp_frac[2] = 1.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v2[0] = v_tmp_cart[0];
+			v2[1] = v_tmp_cart[1];
+			v2[2] = v_tmp_cart[2];
+			
+			// Get the third axis perpendicular to the ac plane
+			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);	
+		}
+
+		else if (F_dir.compare("bc") == 0) {
+			
+			// Get two axis parallel to b and c
+			v_tmp_frac[0] = 0.0;
+			v_tmp_frac[1] = 1.0;
+			v_tmp_frac[2] = 0.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v1[0] = v_tmp_cart[0];
+			v1[1] = v_tmp_cart[1];
+			v1[2] = v_tmp_cart[2];
+			
+			v_tmp_frac[0] = 0.0;
+			v_tmp_frac[1] = 0.0;
+			v_tmp_frac[2] = 1.0;
+			Fractional_To_Cartesian(v_tmp_frac, v_tmp_cart, 0);
+			v2[0] = v_tmp_cart[0];
+			v2[1] = v_tmp_cart[1];
+			v2[2] = v_tmp_cart[2];
+			
+			// Get the third axis perpendicular to the bc plane
+			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);
+		}
+		
+		for (int angle=0; angle<360; angle = angle + 15) {
+			// Get the rotation matrix
+			double theta_deg = angle;
+			vector<double> origin (3, 0.0);
+			vector<double> rot_axis (3, 0.0);
+			rot_axis[0] = v3[0];
+			rot_axis[1] = v3[1];
+			rot_axis[2] = v3[2];
+			Rot_Matrix = Calcul_Rot_Matrix(theta_deg, rot_axis, origin);
+			
+			// Get the rotated electric field axis
+			F_0_tmp_cart[0][0] = v1[0];
+			F_0_tmp_cart[0][1] = v1[1];
+			F_0_tmp_cart[0][2] = v1[2];
+			F_0_tmp_cart[0][3] = 1.0;
+			F_tmp_cart = Matrix_Product(Rot_Matrix, F_0_tmp_cart, 4, 4);
+			double F_norm_tmp = sqrt(pow(F_0_tmp_cart[0][0],2) + pow(F_0_tmp_cart[0][1],2) + pow(F_0_tmp_cart[0][2],2));
+			
+			F_angle_list.push_back(theta_deg);
+			F_x_list.push_back(F_tmp_cart[0][0]/F_norm_tmp);
+			F_y_list.push_back(F_tmp_cart[0][1]/F_norm_tmp);
+			F_z_list.push_back(F_tmp_cart[0][2]/F_norm_tmp);
+		}	
+		
+		delete [] v1; delete [] v2; delete [] v3;
+		delete [] v_tmp_frac; delete [] v_tmp_cart;
+	}
+	
+	for (unsigned int m=0; m<F_angle_list.size(); m++){
+		if (fabs(F_x_list[m]) < 1E-10) F_x = 0.0;
+		if (fabs(F_y_list[m]) < 1E-10) F_y = 0.0;
+		if (fabs(F_z_list[m]) < 1E-10) F_z = 0.0;
+		
+		F_x_list[m] = F_x_list[m] * F_norm; 
+		F_y_list[m] = F_y_list[m] * F_norm; 
+		F_z_list[m] = F_z_list[m] * F_norm;
+	}
+	
+	if (print_results) {
+		for (unsigned int m=0; m<F_angle_list.size(); m++){
+			cout << F_dir << " plane: angle = " << F_angle_list[m] << " | F_x = " << F_x_list[m] << " | F_y = " << F_y_list[m] << " | F_z = " << F_z_list[m] << endl;
+		}
+	}
+	
+}
 
 // Calculates distance between molecules
 void Calcul_Dist(bool print_results){
@@ -1226,10 +1542,6 @@ void MC_BKL(string output_folder){
 			}
 		}
 		fprintf(pFile,"===============================================================================\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -1442,7 +1754,7 @@ void MC_BKL(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
+						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
 							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -1452,8 +1764,10 @@ void MC_BKL(string output_folder){
 							int *pos;
 							pos = new int[2];
 							
-							//Dispatch_Mol_begin(i, grid_occ, pos);
-							Dispatch_Mol_begin_layer(i, grid_occ, pos);
+							if (F_dir.compare("a") == 0  || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
+								Dispatch_Mol_begin_layer(i, grid_occ, pos);
+							else 
+								Dispatch_Mol_RND_layer(i, grid_occ, pos);
 							
 							curr_grid[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
@@ -1477,6 +1791,11 @@ void MC_BKL(string output_folder){
 										exit (1);
 									}
 								}
+								fprintf(pFile,"Frame = %d\n", i);
+								fprintf(pFile,"Electric_Field_Angle = %d\n", int(F_angle));
+								fprintf(pFile,"Electric_Field_Unit_Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+								fprintf(pFile,"Number_of_Charges = %d\n", n_charges);
+								fprintf(pFile,"Density_of_Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 								fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
 								fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
 								fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
@@ -1523,7 +1842,12 @@ void MC_BKL(string output_folder){
 			}
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
+		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Number of tries = %d\n", n_try);
+		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
 		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
 		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame.back());
@@ -1553,8 +1877,13 @@ void MC_BKL(string output_folder){
 			exit (1);
 		}
 	}
-	fprintf(pFile,"\n==================\n==================\n");
-	fprintf(pFile,"mu_av = %lf\n", mu_moy);
+	fprintf(pFile,"-------------------------------------------------\n");
+	fprintf(pFile,"Number of tries = %d\n", n_try);
+	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number of Charges = %d\n", n_charges);
+	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
+	fprintf(pFile,"Mobility = %lf\n", mu_moy);
 	fclose(pFile);
 	
 }
@@ -1567,7 +1896,12 @@ void MC_BKL_MT(string output_folder){
 	// Average mobility for each frame
 	vector<double> mu_frame (n_frame, 0.0);
 	
-	#pragma omp parallel for private(grid_occ)	
+	double uF_x, uF_y, uF_z;
+	uF_x = F_x/F_norm;
+	uF_y = F_y/F_norm;
+	uF_z = F_z/F_norm;
+	
+	#pragma omp parallel for private(grid_occ) if (n_frame >= int(omp_get_max_threads))
 	
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
@@ -1582,11 +1916,6 @@ void MC_BKL_MT(string output_folder){
 		
 		// Total time and distance
 		double total_time_try, total_dist_try;
-
-		double uF_x, uF_y, uF_z;
-		uF_x = F_x/F_norm;
-		uF_y = F_y/F_norm;
-		uF_z = F_z/F_norm;
 		
 		// ---------------------------------------------------------------------
 		
@@ -1613,10 +1942,6 @@ void MC_BKL_MT(string output_folder){
 			}
 		}
 		fprintf(pFile,"===============================================================================\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -1829,7 +2154,7 @@ void MC_BKL_MT(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
+						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
 							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -1839,8 +2164,10 @@ void MC_BKL_MT(string output_folder){
 							int *pos;
 							pos = new int[2];
 							
-							//Dispatch_Mol_begin(i, grid_occ, pos);
-							Dispatch_Mol_begin_layer(i, grid_occ, pos);
+							if (F_dir.compare("a") == 0  || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
+								Dispatch_Mol_begin_layer(i, grid_occ, pos);
+							else 
+								Dispatch_Mol_RND_layer(i, grid_occ, pos);
 							
 							curr_grid[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
@@ -1864,6 +2191,11 @@ void MC_BKL_MT(string output_folder){
 										exit (1);
 									}
 								}
+								fprintf(pFile,"Frame = %d\n", i);
+								fprintf(pFile,"Electric_Field_Angle = %d\n", int(F_angle));
+								fprintf(pFile,"Electric_Field_Unit_Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+								fprintf(pFile,"Number_of_Charges = %d\n", n_charges);
+								fprintf(pFile,"Density_of_Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 								fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
 								fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
 								fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
@@ -1910,7 +2242,12 @@ void MC_BKL_MT(string output_folder){
 			}
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
+		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Number of tries = %d\n", n_try);
+		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
 		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
 		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame[i]);
@@ -1964,7 +2301,13 @@ void MC_BKL_MT(string output_folder){
 			exit (1);
 		}
 	}
-	fprintf(pFile,"mu_av = %lf\n", mu_moy);
+	fprintf(pFile,"-------------------------------------------------\n");
+	fprintf(pFile,"Number of tries = %d\n", n_try);
+	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number of Charges = %d\n", n_charges);
+	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
+	fprintf(pFile,"Mobility = %lf\n", mu_moy);
 	fclose(pFile);
 	
 }
@@ -2043,10 +2386,6 @@ void MC_FRM(string output_folder){
 			}
 		}
 		fprintf(pFile,"===============================================================================\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2339,7 +2678,7 @@ void MC_FRM(string output_folder){
 				curr_mol[event_charge[event]] = tmp_curr_mol;
 				
 				// Check if the charge reached the end of the grid
-				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
+				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
 					
 					// The charge is removed
 					// curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -2349,8 +2688,10 @@ void MC_FRM(string output_folder){
 					int *pos;
 					pos = new int[2];
 					
-					//Dispatch_Mol_begin(i, grid_occ, pos);
-					Dispatch_Mol_begin_layer(i, grid_occ, pos);
+					if (F_dir.compare("a") == 0  || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
+						Dispatch_Mol_begin_layer(i, grid_occ, pos);
+					else 
+						Dispatch_Mol_RND_layer(i, grid_occ, pos);
 					
 					curr_grid[event_charge[event]] = pos[1];
 					curr_mol[event_charge[event]] = pos[0];
@@ -2374,6 +2715,11 @@ void MC_FRM(string output_folder){
 								exit (1);
 							}
 						}
+						fprintf(pFile,"Frame = %d\n", i);
+						fprintf(pFile,"Electric_Field_Angle = %d\n", int(F_angle));
+						fprintf(pFile,"Electric_Field_Unit_Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+						fprintf(pFile,"Number_of_Charges = %d\n", n_charges);
+						fprintf(pFile,"Density_of_Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 						fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
 						fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
 						fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
@@ -2419,7 +2765,12 @@ void MC_FRM(string output_folder){
 			}
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
+		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Number of tries = %d\n", n_try);
+		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
 		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
 		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame.back());
@@ -2465,8 +2816,13 @@ void MC_FRM(string output_folder){
 			exit (1);
 		}
 	}
-	fprintf(pFile,"\n==================\n==================\n");
-	fprintf(pFile,"mu_av = %lf\n", mu_moy);
+	fprintf(pFile,"-------------------------------------------------\n");
+	fprintf(pFile,"Number of tries = %d\n", n_try);
+	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number of Charges = %d\n", n_charges);
+	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
+	fprintf(pFile,"Mobility = %lf\n", mu_moy);
 	fclose(pFile);
 	
 }
@@ -2479,7 +2835,12 @@ void MC_FRM_MT(string output_folder){
 	// Average mobility for each frame
 	vector<double> mu_frame (n_frame, 0.0);
 	
-	#pragma omp parallel for private(grid_occ)
+	double uF_x, uF_y, uF_z;
+	uF_x = F_x/F_norm;
+	uF_y = F_y/F_norm;
+	uF_z = F_z/F_norm;
+	
+	#pragma omp parallel for private(grid_occ) if (n_frame >= int(omp_get_max_threads))
 	
 	// Start the FRM algorithm
 	for (int i=0; i<n_frame; i++){
@@ -2494,11 +2855,6 @@ void MC_FRM_MT(string output_folder){
 		
 		// Total time and distance
 		double total_time_try, total_dist_try;
-
-		double uF_x, uF_y, uF_z;
-		uF_x = F_x/F_norm;
-		uF_y = F_y/F_norm;
-		uF_z = F_z/F_norm;
 		
 		// ---------------------------------------------------------------------
 		
@@ -2525,10 +2881,6 @@ void MC_FRM_MT(string output_folder){
 			}
 		}
 		fprintf(pFile,"===============================================================================\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
 		fclose(pFile);	
 		
@@ -2819,7 +3171,7 @@ void MC_FRM_MT(string output_folder){
 				curr_mol[event_charge[event]] = tmp_curr_mol;
 				
 				// Check if the charge reached the end of the grid
-				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1)){
+				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
 					
 					// The charge is removed
 					// curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -2829,8 +3181,10 @@ void MC_FRM_MT(string output_folder){
 					int *pos;
 					pos = new int[2];
 					
-					//Dispatch_Mol_begin(i, grid_occ, pos);
-					Dispatch_Mol_begin_layer(i, grid_occ, pos);
+					if (F_dir.compare("a") == 0  || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
+						Dispatch_Mol_begin_layer(i, grid_occ, pos);
+					else 
+						Dispatch_Mol_RND_layer(i, grid_occ, pos);
 					
 					curr_grid[event_charge[event]] = pos[1];
 					curr_mol[event_charge[event]] = pos[0];
@@ -2854,6 +3208,11 @@ void MC_FRM_MT(string output_folder){
 								exit (1);
 							}
 						}
+						fprintf(pFile,"Frame = %d\n", i);
+						fprintf(pFile,"Electric_Field_Angle = %d\n", int(F_angle));
+						fprintf(pFile,"Electric_Field_Unit_Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+						fprintf(pFile,"Number_of_Charges = %d\n", n_charges);
+						fprintf(pFile,"Density_of_Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 						fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
 						fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
 						fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
@@ -2899,10 +3258,15 @@ void MC_FRM_MT(string output_folder){
 			}
 		}
 		fprintf(pFile,"-------------------------------------------------------------------------------\n");
+		fprintf(pFile,"Frame = %d\n", i);
 		fprintf(pFile,"Number of tries = %d\n", n_try);
+		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+		fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+		fprintf(pFile,"Number of Charges = %d\n", n_charges);
+		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
 		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
 		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
-		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame[i]);
+		fprintf(pFile,"Mobility = %lf\n", mu_frame[i]);
 		fclose(pFile);
 		
 		// ---------------------------------------------------------------------
@@ -2954,41 +3318,15 @@ void MC_FRM_MT(string output_folder){
 			exit (1);
 		}
 	}
-	fprintf(pFile,"mu_av = %lf\n", mu_moy);
+	fprintf(pFile,"-------------------------------------------------\n");
+	fprintf(pFile,"Number of tries = %d\n", n_try);
+	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
+	fprintf(pFile,"Electric Field Unit Vectors: (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number of Charges = %d\n", n_charges);
+	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*10e-24));
+	fprintf(pFile,"Mobility = %lf\n", mu_moy);
 	fclose(pFile);
 	
-}
-
-// =============================================================================
-// --------------------------------- Clear part --------------------------------
-// =============================================================================
-
-void Clear_All(){
-	a.clear(); b.clear(); c.clear(); alpha_deg.clear(); beta_deg.clear(); gamma_deg.clear(); vol_box.clear(); 
-	temp_alpha_cos.clear(); temp_beta_sin.clear(); temp_beta_cos.clear(); temp_gamma_sin.clear(); temp_gamma_cos.clear(); temp_beta_term.clear(); temp_gamma_term.clear(); 
-
-	mol_label.clear();
-	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
-	E_0.clear(); E_1.clear();
-
-	box_a.clear(); box_b.clear(); box_c.clear(); 
-	grid_occ.clear();
-	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear(); box_neigh_label.clear(); 
-
-	neigh_label.clear();
-	d_x.clear(); d_y.clear(); d_z.clear();
-	dE.clear();
-	J_H.clear(); J_L.clear();
-	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear(); 
-	k.clear(); k_inv.clear();
-
-	MLJ_CST3.clear();
-
-	event_k_1.clear(); event_k_2.clear(); 
-	event_charge_1.clear(); event_mol_index_1.clear(); event_neigh_num_1.clear(); event_neigh_index_1.clear(); event_charge_2.clear(); event_mol_index_2.clear(); event_neigh_num_2.clear(), event_neigh_index_2.clear();
-
-	min_layer.clear(); max_layer.clear();
-	mol_layer.clear(); list_layer.clear();
 }
 
 int main(int argc, char **argv){
@@ -3023,6 +3361,7 @@ int main(int argc, char **argv){
 				struct stat st_in;
 				if(stat(input_folder.c_str(), &st_in) != 0){
 					cout << "[ERROR] Input folder " << input_folder << " doesn't exist! Exiting..." << endl;
+					Clear_All();
 					exit(1);
 				}
 	  			break;
@@ -3064,14 +3403,19 @@ int main(int argc, char **argv){
 		
 	else {
 		cerr << "[ERROR] Charge not specified! Please use -c {e,h}. Exiting..." << endl;
+		Clear_All();
 		exit(1);
 	}
 	
 	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
 		cout << "[INFO] Electric field is along the '" << F_dir << "' direction." << endl;
 		
+	else if (F_dir.compare("ab") == 0 || F_dir.compare("ac") == 0 || F_dir.compare("bc") == 0)
+		cout << "[INFO] Electric field will probe the anisotropy in the '" << F_dir << "'plane." << endl;
+		
 	else {
-		cerr << "[ERROR] Direction of the electric field not specified! Please use -d {a,b,c}. Exiting..." << endl;
+		cerr << "[ERROR] Direction of the electric field not specified! Please use -d {a,b,c,ab,ac,bc}. Exiting..." << endl;
+		Clear_All();
 		exit(1);
 	}
 
@@ -3080,15 +3424,26 @@ int main(int argc, char **argv){
 		
 	else {
 		cerr << "[ERROR] Layer not specified. Please use -l. Exiting..." << endl;
+		Clear_All();
 		exit(1);
 	}
-
 
 	// Read the required files
 	Read_MC(input_file, input_folder, false);
 	Read_CELL(input_file, input_folder, false);
 	Read_CM(input_file, input_folder, false);
 	Read_E_av(input_file, input_folder, false);
+
+	// Set up lambda_i
+	if (charge.compare("e") == 0) {
+		LAMBDA_I = LAMBDA_I_E;
+	}
+	else {
+		LAMBDA_I = LAMBDA_I_H;
+	}
+
+	// Calculates Electric field vectors
+	Calcul_F_vector(false);
 	
 	// Calculates distances and DeltaE
 	Calcul_Dist(false);
@@ -3104,133 +3459,60 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > J_H_ref = J_H, J_L_ref = J_L;
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
 	vector< vector< vector<double> > > dE_ref = dE;				
-		
-//	for (int i=90; i<91; i=i+15){
-//		for (int j=0; j<1; j=j+15){
-			
-//			cout << "[INFO] Running simulation for phi = " << j << endl;
-
-			// theta_deg = i; phi_deg = j;
-			
-			// theta_rad = 2 * PI * i; theta_rad = theta_rad/360.0;
-      		// phi_rad = 2 * PI * j; phi_rad = phi_rad/360.0;
-      		
-			// F_x = sin(theta_rad); F_x = F_x * cos(phi_rad); 
-			// F_y = sin(theta_rad); F_y = F_y * sin(phi_rad); 
-			// F_z = cos(theta_rad); 
-
-			// Calculates the electric field unit vector
-			double *F_tmp_frac, *F_tmp_cart;
-			F_tmp_frac = new double[3];
-			F_tmp_cart = new double[3];
-
-			if (F_dir.compare("a") == 0) {
-				if (charge.compare("e") == 0) {
-					F_tmp_frac[0] = 1.0;
-					LAMBDA_I = LAMBDA_I_E;
-				}
-				else {
-					F_tmp_frac[0] = -1.0;
-					LAMBDA_I = LAMBDA_I_H;
-				}
-				F_tmp_frac[1] = 0.0;
-				F_tmp_frac[2] = 0.0;
-			}
-				
-			else if (F_dir.compare("b") == 0) {
-				F_tmp_frac[0] = 0.0;
-				if (charge.compare("e") == 0) {
-					F_tmp_frac[1] = 1.0;
-					LAMBDA_I = LAMBDA_I_E;
-				}
-				else {
-					F_tmp_frac[1] = -1.0;
-					LAMBDA_I = LAMBDA_I_H;
-				}
-				F_tmp_frac[2] = 0.0;
-			}
-				
-			else if (F_dir.compare("c") == 0) {
-				F_tmp_frac[0] = 0.0;
-				F_tmp_frac[1] = 0.0;
-				if (charge.compare("e") == 0) {
-					F_tmp_frac[2] = 1.0;
-					LAMBDA_I = LAMBDA_I_E;
-				}
-				else {
-					F_tmp_frac[2] = -1.0;
-					LAMBDA_I = LAMBDA_I_H;
-				}
-			}
-						
-			Fractional_To_Cartesian(F_tmp_frac, F_tmp_cart, 0);
-			
-			double F_norm_tmp = sqrt(pow(F_tmp_cart[0],2) + pow(F_tmp_cart[1],2) + pow(F_tmp_cart[2],2));
-			F_x = F_tmp_cart[0]/F_norm_tmp;
-			F_y = F_tmp_cart[1]/F_norm_tmp;
-			F_z = F_tmp_cart[2]/F_norm_tmp;
-			
-			delete [] F_tmp_frac; delete [] F_tmp_cart;
-			
-			if (fabs(F_x) < 1E-10) F_x = 0.0;
-			if (fabs(F_y) < 1E-10) F_y = 0.0;
-			if (fabs(F_z) < 1E-10) F_z = 0.0;
-			
-			F_x = F_x * F_norm; 
-			F_y = F_y * F_norm; 
-			F_z = F_z * F_norm;
-			
-			// Calculate transfer rates and the full matrix, mostly for information
-			Marcus_Levich_Jortner_CST(); // Calculates constants
-			Calcul_k(false);
-			Full_Matrix();
 	
-			// Print a summary
-			Print_Summary(output_folder);
-			
-			// Clear some tables
-			// J_H.clear();
-			// J_L.clear();
-			// dE.clear();
-			
-			// Calculates 1/k and clear the k table
-			Inverse_Clear_k(false);
-			k.clear();
+	#pragma omp parallel for private(F_x, F_y, F_z, F_angle, k, k_inv, grid_occ) if (n_frame < int(omp_get_max_threads))
+	for (unsigned int m=0; m<F_angle_list.size(); m++) {
+		
+		F_x = F_x_list[m];
+		F_y = F_y_list[m];
+		F_z = F_z_list[m];
+		F_angle = F_angle_list[m];
+		
+		// Calculate transfer rates and the full matrix, mostly for information
+		Marcus_Levich_Jortner_CST(); // Calculates constants
+		Calcul_k(false);
+		Full_Matrix();
 
-			if(method.compare("bkl") == 0) {
-				if(MT) {
-					MC_BKL_MT(output_folder);
-				}
-				else {
-					MC_BKL(output_folder);
-				}
+		// Print a summary
+		Print_Summary(output_folder);
+		
+		// Calculates 1/k and clear the k table
+		Inverse_Clear_k(false);
+		k.clear();
+
+		if(method.compare("bkl") == 0) {
+			if(MT) {
+				MC_BKL_MT(output_folder);
 			}
-
 			else {
-				if(MT) {
-					MC_FRM_MT(output_folder);
-				}
-				else {
-					MC_FRM(output_folder);
-				}
+				MC_BKL(output_folder);
 			}
+		}
 
-			// Clear everything (not necessary) and set to reference values
-			neigh_label.clear(); neigh_label = neigh_label_ref;
-			neigh_jump_vec_a.clear(); neigh_jump_vec_a = neigh_jump_vec_a_ref;
-			neigh_jump_vec_b.clear(); neigh_jump_vec_b = neigh_jump_vec_b_ref;
-			neigh_jump_vec_c.clear(); neigh_jump_vec_c = neigh_jump_vec_c_ref;
-			J_H.clear(); J_H = J_H_ref;
-			J_L.clear(); J_L = J_L_ref;
-			d_x.clear(); d_x = d_x_ref;
-			d_y.clear(); d_y = d_y_ref;
-			d_z.clear(); d_z = d_z_ref;
-			dE.clear();	dE = dE_ref;
-			k.clear();
-			k_inv.clear();
-			
-//		}
-//	}
+		else {
+			if(MT) {
+				MC_FRM_MT(output_folder);
+			}
+			else {
+				MC_FRM(output_folder);
+			}
+		}
+
+		// Clear everything (not necessary) and set to reference values
+		neigh_label.clear(); neigh_label = neigh_label_ref;
+		neigh_jump_vec_a.clear(); neigh_jump_vec_a = neigh_jump_vec_a_ref;
+		neigh_jump_vec_b.clear(); neigh_jump_vec_b = neigh_jump_vec_b_ref;
+		neigh_jump_vec_c.clear(); neigh_jump_vec_c = neigh_jump_vec_c_ref;
+		J_H.clear(); J_H = J_H_ref;
+		J_L.clear(); J_L = J_L_ref;
+		d_x.clear(); d_x = d_x_ref;
+		d_y.clear(); d_y = d_y_ref;
+		d_z.clear(); d_z = d_z_ref;
+		dE.clear();	dE = dE_ref;
+		k.clear();
+		k_inv.clear();
+	}
+	#pragma omp barrier
 
 	min_layer.clear(); max_layer.clear();
 	mol_layer.clear(); list_layer.clear();
