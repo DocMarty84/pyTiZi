@@ -91,6 +91,7 @@ vector< vector< vector<double> > > k, k_inv;
 //double theta_deg, phi_deg, theta_rad, phi_rad;
 vector<double>  F_x_list, F_y_list, F_z_list, F_angle_list;
 double F_x, F_y, F_z, F_angle;
+bool anisotropy = false;
 
 // Constants for the MLJ theory
 double S, MLJ_CST1, MLJ_CST2; 
@@ -139,6 +140,9 @@ void Clear_All(){
 
 	event_k_1.clear(); event_k_2.clear(); 
 	event_charge_1.clear(); event_mol_index_1.clear(); event_neigh_num_1.clear(); event_neigh_index_1.clear(); event_charge_2.clear(); event_mol_index_2.clear(); event_neigh_num_2.clear(), event_neigh_index_2.clear();
+
+	min_layer.clear(); max_layer.clear();
+	mol_layer.clear(); list_layer.clear();
 }
 
 // =============================================================================
@@ -589,13 +593,14 @@ void Calcul_F_vector(bool print_results) {
 	}
 	
 	else {
+		anisotropy = true;
 		double *v1, *v2, *v3, *v_tmp_frac, *v_tmp_cart;
 		v1 = new double[3];
 		v2 = new double[3];
 		v3 = new double[3];
 		v_tmp_frac = new double[3];
 		v_tmp_cart = new double[3];
-		
+	
 		vector< vector<double> > Rot_Matrix (4, vector<double> (4, 0.0));
 		vector< vector<double> > F_0_tmp_cart (4, vector<double> (1, 0.0));
 		vector< vector<double> > F_tmp_cart (4, vector<double> (1, 0.0));
@@ -618,11 +623,6 @@ void Calcul_F_vector(bool print_results) {
 			v2[0] = v_tmp_cart[0];
 			v2[1] = v_tmp_cart[1];
 			v2[2] = v_tmp_cart[2];
-			
-			// Get the third axis perpendicular to the ab plane
-			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
-			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
-			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);	
 		}
 		
 		else if (F_dir.compare("ac") == 0) {
@@ -643,11 +643,6 @@ void Calcul_F_vector(bool print_results) {
 			v2[0] = v_tmp_cart[0];
 			v2[1] = v_tmp_cart[1];
 			v2[2] = v_tmp_cart[2];
-			
-			// Get the third axis perpendicular to the ac plane
-			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
-			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
-			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);	
 		}
 
 		else if (F_dir.compare("bc") == 0) {
@@ -668,16 +663,16 @@ void Calcul_F_vector(bool print_results) {
 			v2[0] = v_tmp_cart[0];
 			v2[1] = v_tmp_cart[1];
 			v2[2] = v_tmp_cart[2];
-			
-			// Get the third axis perpendicular to the bc plane
-			v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
-			v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
-			v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);
 		}
 		
+		// Get the third axis perpendicular to the plane
+		v3[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+		v3[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+		v3[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);
+
 		for (int angle=0; angle<360; angle = angle + 15) {
 			// Get the rotation matrix
-			double theta_deg = angle;
+			double theta_deg = float(angle);
 			vector<double> origin (3, 0.0);
 			vector<double> rot_axis (3, 0.0);
 			rot_axis[0] = v3[0];
@@ -687,16 +682,16 @@ void Calcul_F_vector(bool print_results) {
 			
 			// Get the rotated electric field axis
 			F_0_tmp_cart[0][0] = v1[0];
-			F_0_tmp_cart[0][1] = v1[1];
-			F_0_tmp_cart[0][2] = v1[2];
-			F_0_tmp_cart[0][3] = 1.0;
+			F_0_tmp_cart[1][0] = v1[1];
+			F_0_tmp_cart[2][0] = v1[2];
+			F_0_tmp_cart[3][0] = 1.0;
 			F_tmp_cart = Matrix_Product(Rot_Matrix, F_0_tmp_cart, 4, 4);
-			double F_norm_tmp = sqrt(pow(F_0_tmp_cart[0][0],2) + pow(F_0_tmp_cart[0][1],2) + pow(F_0_tmp_cart[0][2],2));
+			double F_norm_tmp = sqrt(pow(F_0_tmp_cart[0][0],2) + pow(F_0_tmp_cart[1][0],2) + pow(F_0_tmp_cart[2][0],2));
 			
 			F_angle_list.push_back(theta_deg);
 			F_x_list.push_back(F_tmp_cart[0][0]/F_norm_tmp);
-			F_y_list.push_back(F_tmp_cart[0][1]/F_norm_tmp);
-			F_z_list.push_back(F_tmp_cart[0][2]/F_norm_tmp);
+			F_y_list.push_back(F_tmp_cart[1][0]/F_norm_tmp);
+			F_z_list.push_back(F_tmp_cart[2][0]/F_norm_tmp);
 		}	
 		
 		delete [] v1; delete [] v2; delete [] v3;
@@ -704,9 +699,9 @@ void Calcul_F_vector(bool print_results) {
 	}
 	
 	for (unsigned int m=0; m<F_angle_list.size(); m++){
-		if (fabs(F_x_list[m]) < 1E-10) F_x = 0.0;
-		if (fabs(F_y_list[m]) < 1E-10) F_y = 0.0;
-		if (fabs(F_z_list[m]) < 1E-10) F_z = 0.0;
+		if (fabs(F_x_list[m]) < 1E-10) F_x_list[m] = 0.0;
+		if (fabs(F_y_list[m]) < 1E-10) F_y_list[m] = 0.0;
+		if (fabs(F_z_list[m]) < 1E-10) F_z_list[m] = 0.0;
 		
 		F_x_list[m] = F_x_list[m] * F_norm; 
 		F_y_list[m] = F_y_list[m] * F_norm; 
@@ -718,7 +713,6 @@ void Calcul_F_vector(bool print_results) {
 			cout << F_dir << " plane: angle = " << F_angle_list[m] << " | F_x = " << F_x_list[m] << " | F_y = " << F_y_list[m] << " | F_z = " << F_z_list[m] << endl;
 		}
 	}
-	
 }
 
 // Calculates distance between molecules
@@ -1219,7 +1213,49 @@ void Build_Grid(bool print_results) {
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
 				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
 				box_neigh_label[x].push_back( y );
-				
+			}
+
+			// Create an infinite box in the case of an anisotropy calculation
+			if (anisotropy && box_a[x] == 0 && box_a[y] == n_mini_grid_a-1 && abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+				box_neigh_a[x].push_back( -1 );
+				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
+				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
+				box_neigh_label[x].push_back( y );
+			}
+
+			if (anisotropy && box_b[x] == 0 && box_b[y] == n_mini_grid_b-1 && abs(box_a[y]-box_a[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+				box_neigh_b[x].push_back( -1 );
+				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
+				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
+				box_neigh_label[x].push_back( y );
+			}
+
+			if (anisotropy && box_c[x] == 0 && box_c[y] == n_mini_grid_c-1 && abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2) {
+				box_neigh_c[x].push_back( -1 );
+				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
+				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
+				box_neigh_label[x].push_back( y );
+			}
+
+			if (anisotropy && box_a[x] == n_mini_grid_a-1 && box_a[y] == 0 && abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+				box_neigh_a[x].push_back( 1 );
+				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
+				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
+				box_neigh_label[x].push_back( y );
+			}
+
+			if (anisotropy && box_b[x] == n_mini_grid_b-1 && box_b[y] == 0 && abs(box_a[y]-box_a[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+				box_neigh_b[x].push_back( 1 );
+				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
+				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
+				box_neigh_label[x].push_back( y );
+			}
+
+			if (anisotropy && box_c[x] == n_mini_grid_c-1 && box_c[y] == 0 && abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2) {
+				box_neigh_c[x].push_back( 1 );
+				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
+				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
+				box_neigh_label[x].push_back( y );
 			}
 		}
 	}
@@ -1567,7 +1603,6 @@ void MC_BKL(string output_folder){
 		pos = new int[2];
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			//Dispatch_Mol_RND(i, grid_occ, pos);
 			Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
@@ -1754,8 +1789,7 @@ void MC_BKL(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
-							
+						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 							// curr_grid.erase(curr_grid.begin()+event_charge[event]);
@@ -1772,6 +1806,7 @@ void MC_BKL(string output_folder){
 							curr_grid[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
 							grid_occ[pos[0]][pos[1]] = true;
+							dist[event_charge[event]] = 0.0;
 							
 							delete [] pos;
 							
@@ -1901,7 +1936,7 @@ void MC_BKL_MT(string output_folder){
 	uF_y = F_y/F_norm;
 	uF_z = F_z/F_norm;
 	
-	#pragma omp parallel for private(grid_occ) if (n_frame >= int(omp_get_max_threads))
+	#pragma omp parallel for private(grid_occ) //if (n_frame >= int(omp_get_max_threads()))
 	
 	// Start the BKL algorithm
 	for (int i=0; i<n_frame; i++){
@@ -1967,7 +2002,6 @@ void MC_BKL_MT(string output_folder){
 		pos = new int[2];
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			//Dispatch_Mol_RND(i, grid_occ, pos);
 			Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
@@ -2154,8 +2188,7 @@ void MC_BKL_MT(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
-							
+						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 							// curr_grid.erase(curr_grid.begin()+event_charge[event]);
@@ -2172,6 +2205,7 @@ void MC_BKL_MT(string output_folder){
 							curr_grid[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
 							grid_occ[pos[0]][pos[1]] = true;
+							dist[event_charge[event]] = 0.0;
 							
 							delete [] pos;
 							
@@ -2411,7 +2445,6 @@ void MC_FRM(string output_folder){
 		pos = new int[2];
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			//Dispatch_Mol_RND(i, grid_occ, pos);
 			Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
@@ -2678,8 +2711,7 @@ void MC_FRM(string output_folder){
 				curr_mol[event_charge[event]] = tmp_curr_mol;
 				
 				// Check if the charge reached the end of the grid
-				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
-					
+				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){					
 					// The charge is removed
 					// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 					// curr_grid.erase(curr_grid.begin()+event_charge[event]);
@@ -2696,6 +2728,7 @@ void MC_FRM(string output_folder){
 					curr_grid[event_charge[event]] = pos[1];
 					curr_mol[event_charge[event]] = pos[0];
 					grid_occ[pos[0]][pos[1]] = true;
+					dist[event_charge[event]] = 0.0;
 					
 					delete [] pos;
 					
@@ -2839,8 +2872,8 @@ void MC_FRM_MT(string output_folder){
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
 	uF_z = F_z/F_norm;
-	
-	#pragma omp parallel for private(grid_occ) if (n_frame >= int(omp_get_max_threads))
+
+	#pragma omp parallel for private(grid_occ) //if (n_frame >= int(omp_get_max_threads()))
 	
 	// Start the FRM algorithm
 	for (int i=0; i<n_frame; i++){
@@ -2906,7 +2939,6 @@ void MC_FRM_MT(string output_folder){
 		pos = new int[2];
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			//Dispatch_Mol_RND(i, grid_occ, pos);
 			Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
@@ -3169,10 +3201,10 @@ void MC_FRM_MT(string output_folder){
 				// Set the new position in the grid from temp values
 				curr_grid[event_charge[event]] = tmp_curr_grid;
 				curr_mol[event_charge[event]] = tmp_curr_mol;
-				
+
 				// Check if the charge reached the end of the grid
-				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("ac") == 0 && dist[event_charge[event]] > dist_tot) || (F_dir.compare("bc") == 0 && dist[event_charge[event]] > dist_tot)){
-					
+				if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){
+				
 					// The charge is removed
 					// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 					// curr_grid.erase(curr_grid.begin()+event_charge[event]);
@@ -3189,6 +3221,7 @@ void MC_FRM_MT(string output_folder){
 					curr_grid[event_charge[event]] = pos[1];
 					curr_mol[event_charge[event]] = pos[0];
 					grid_occ[pos[0]][pos[1]] = true;
+					dist[event_charge[event]] = 0.0;
 					
 					delete [] pos;
 					
@@ -3460,14 +3493,14 @@ int main(int argc, char **argv){
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
 	vector< vector< vector<double> > > dE_ref = dE;				
 	
-	#pragma omp parallel for private(F_x, F_y, F_z, F_angle, k, k_inv, grid_occ) if (n_frame < int(omp_get_max_threads))
+	//#pragma omp parallel for private(F_x, F_y, F_z, F_angle, F_x_list, F_y_list, F_z_list, F_angle_list, k, k_inv, grid_occ) //if (n_frame < int(omp_get_max_threads()) && anisotropy == true)
 	for (unsigned int m=0; m<F_angle_list.size(); m++) {
 		
 		F_x = F_x_list[m];
 		F_y = F_y_list[m];
 		F_z = F_z_list[m];
 		F_angle = F_angle_list[m];
-		
+
 		// Calculate transfer rates and the full matrix, mostly for information
 		Marcus_Levich_Jortner_CST(); // Calculates constants
 		Calcul_k(false);
@@ -3512,11 +3545,8 @@ int main(int argc, char **argv){
 		k.clear();
 		k_inv.clear();
 	}
-	#pragma omp barrier
+	//#pragma omp barrier
 
-	min_layer.clear(); max_layer.clear();
-	mol_layer.clear(); list_layer.clear();
-		
 	Clear_All();
 		
 	// Get stop time
