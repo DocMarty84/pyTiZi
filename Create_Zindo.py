@@ -476,7 +476,7 @@ if __name__ == '__main__':
 			box = molecular_system.SimulationBox(n_frame, a, b, c, alpha, beta, gamma)
 			if verb > 2:
 				print "[INFO] Generation of simulation box done!"
-			qs = molecular_system.MolecularSystem(n_frame, n_mol, [n_atom])
+			qs = molecular_system.MolecularSystem(n_frame, n_mol, n_atom)
 			if verb > 2:
 				print "[INFO] Generation of molecular system done!"
 

@@ -1923,3 +1923,79 @@ def ScriptVBHFLaunch(dir_cluster):
 	
 	foutput.write(tmp)
 	foutput.close()
+
+# ******************************************************************************
+#                Functions related to Interface_VBHF_Creation.py
+# ******************************************************************************
+
+def CreateVBHFInput_Interface(mol, box):
+	""" Creation of the VBHF input files
+	"""
+	for charge in [-1, 0, 1]:
+		try:
+			dir_all="VBHF/all_%d" % (charge)
+			os.makedirs(dir_all)
+		except:
+			pass
+		try:
+			dir_mono="VBHF/mono_%d" % (charge)
+			os.makedirs(dir_mono)
+		except:
+			pass
+		
+		#for mol_num_i in mol_list:	
+		for mol_num_i in xrange(1025, 1050, 1):	
+			# All cluster
+			name = "%s/molecule_%d_.dat" % (dir_all, mol_num_i)
+				
+			foutput = open(name, 'w')
+			
+			if foutput:
+				tmp = ''
+				tmp = "AM1 1SCF VBHF\n\n"
+				tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n" 
+
+				#for mol_num_j in mol_list:	
+				for mol_num_j in xrange(1025, 1080, 1):	
+					for i in xrange(mol.n_atom[mol_num_j-1]):
+						tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_j-1][i], mol.x[0,mol_num_j-1,i], mol.y[0,mol_num_j-1,i], mol.z[0,mol_num_j-1,i])
+				
+				tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
+				#for mol_num_j in mol_list:
+				for mol_num_j in xrange(1025, 1080, 1):	
+					if mol_num_j != mol_num_i:
+						tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j-1], 0)
+					else:
+						tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j-1], charge)
+
+				foutput.write(tmp)		
+				foutput.close() 
+
+
+			# Molecule alone
+			name = "%s/molecule_%d_.dat" % (dir_mono, mol_num_i)
+				
+			foutput = open(name, 'w')
+			
+			if foutput:
+				tmp = ''
+				tmp = "AM1 1SCF VBHF\n\n"
+				tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        1.0000 1     0.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
+				tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
+
+				for i in xrange(mol.n_atom[mol_num_i-1]):
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_i-1][i], mol.x[0,mol_num_i-1,i], mol.y[0,mol_num_i-1,i], mol.z[0,mol_num_i-1,i])
+				
+				tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
+				tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_i-1], charge)
+
+				foutput.write(tmp)		
+				foutput.close()
+			
