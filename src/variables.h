@@ -21,7 +21,7 @@
 #ifndef _VARIABLES_H
 #define _VARIABLES_H 1
 
-#ifdef INSIDE_MC_BKL
+#ifdef _INSIDE_MC_BKL
 #define EXTERN
 #else
 #define EXTERN extern
@@ -30,7 +30,6 @@
 // C++ libraries
 #include <string>
 #include <vector>
-#include <limits>
 
 using namespace std;
 
@@ -72,7 +71,7 @@ EXTERN vector< vector< vector<double> > > J_H, J_L;			// Transf. integrals
 EXTERN vector< vector< vector<int> > > neigh_jump_vec_a,\
 								neigh_jump_vec_b,\
 								neigh_jump_vec_c;	// Vect for mini-grid change
-EXTERN vector< vector< vector<double> > > k, k_inv;		// Transf. rates and inverse
+EXTERN vector< vector< vector<double> > > k, k_inv;	// Transf. rates and inverse
 
 // Variables for the electric field direction
 //double theta_deg, phi_deg, theta_rad, phi_rad;
@@ -84,15 +83,12 @@ EXTERN bool anisotropy;
 EXTERN double S, MLJ_CST1, MLJ_CST2; 
 EXTERN vector <double> MLJ_CST3;
 
-// Variables for MT
-EXTERN const bool MT = true;
-
 // Variables for Layer
-EXTERN int n_layer = 4;								// Total number of layers
-EXTERN int layer = numeric_limits<int>::max();	// Layer to run the simulation
-EXTERN vector<double> min_layer (n_layer, 0.0);
-EXTERN vector<double> max_layer (n_layer, 0.0);
+EXTERN int n_layer;								// Total number of layers
+EXTERN int layer;								// Layer to run the simulation
+EXTERN vector<double> min_layer;
+EXTERN vector<double> max_layer;
 EXTERN vector< vector< vector<int> > > mol_layer;
 EXTERN vector< vector<int> > list_layer;
 
-#endif
+#endif // variables.h

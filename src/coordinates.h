@@ -18,26 +18,11 @@
  *******************************************************************************
  */
 
-#ifndef _CONSTANTS_H
-#define _CONSTANTS_H 1
+#ifndef _COORDINATES_H
+#define _COORDINATES_H 1
 
-// Physical contants in the correct units
-#define K_BOLTZ			8.617343e-5			// Boltzmann const (eV)
-#define H_BAR			6.58211899e-16		// h/2PI in eV
-#define EPSILON_0		(0.5)*(137.035999084)* (1.0/4.13566733e-15)\
-						*(1.0/299792458e10) // Vacuum permittivity 
-											// e/(V.Ang)
+void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i);
 
-// Special numbers
-#define PI				3.14159265358979323846	// Pi
+void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i);
 
-// Cutoff definition
-#define CUTOFF_ELECTRO	150		// Cutoff electrostatic inter. (Ang)
-
-// Various physical parameters
-#define EPSILON_R		1.0		// Relative permittivity 
-
-// Variables for MT
-#define MT				true
-
-#endif // constants.h
+#endif // coordinates.h

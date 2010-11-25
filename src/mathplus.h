@@ -18,26 +18,33 @@
  *******************************************************************************
  */
 
-#ifndef _CONSTANTS_H
-#define _CONSTANTS_H 1
+#ifndef _MATHPLUS_H
+#define _MATHPLUS_H 1
 
-// Physical contants in the correct units
-#define K_BOLTZ			8.617343e-5			// Boltzmann const (eV)
-#define H_BAR			6.58211899e-16		// h/2PI in eV
-#define EPSILON_0		(0.5)*(137.035999084)* (1.0/4.13566733e-15)\
-						*(1.0/299792458e10) // Vacuum permittivity 
-											// e/(V.Ang)
+// =============================================================================
+// ----------------------------- Simple functions ------------------------------
+// =============================================================================
 
-// Special numbers
-#define PI				3.14159265358979323846	// Pi
+// Return random number between 0 and 1
+double Rand_0_1();
 
-// Cutoff definition
-#define CUTOFF_ELECTRO	150		// Cutoff electrostatic inter. (Ang)
+// Calculates n!
+double Facto(int n);
 
-// Various physical parameters
-#define EPSILON_R		1.0		// Relative permittivity 
+// Product of two matrix
+vector< vector<double> > Matrix_Product (vector< vector<double> > M1,\
+                                         vector< vector<double> > M2,\
+                                         unsigned int n_line_M1,\
+                                         unsigned int n_line_M2);
 
-// Variables for MT
-#define MT				true
+// =============================================================================
+// --------------------------------- Rotation ----------------------------------
+// =============================================================================
 
-#endif // constants.h
+// Calculates the rotation matrix related to any angle around any axis
+// The rotation axis is defined by the vector rot_axis and the point origin
+vector< vector<double> > Calcul_Rot_Matrix (double angle_deg,\
+                                            vector<double> rot_axis,\
+                                            vector<double> origin);
+
+#endif // mathplus.h

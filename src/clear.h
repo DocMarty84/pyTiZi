@@ -1,7 +1,7 @@
 /**
  *******************************************************************************
  * Copyright (C) 2010 Nicolas Martinelli, nicolas.martinelli@gmail.com         *
- * Adapted from routines done by Yoann Olivier.                                *
+ * This library is part of the MC_BKL and MC_BKL_layer software                *
  *                                                                             *
  * This program is free software: you can redistribute it and/or modify        *
  * it under the terms of the GNU General Public License as published by        *
@@ -21,10 +21,6 @@
 #ifndef _CLEAR_H
 #define _CLEAR_H 1
 
-// =============================================================================
-// --------------------------------- Clear part --------------------------------
-// =============================================================================
-
 void Clear_All();
 
-#endif
+#endif // clear.h

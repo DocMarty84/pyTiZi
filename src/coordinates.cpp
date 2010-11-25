@@ -18,26 +18,33 @@
  *******************************************************************************
  */
 
-#ifndef _CONSTANTS_H
-#define _CONSTANTS_H 1
+// Local libraries
+#include "variables.h"
 
-// Physical contants in the correct units
-#define K_BOLTZ			8.617343e-5			// Boltzmann const (eV)
-#define H_BAR			6.58211899e-16		// h/2PI in eV
-#define EPSILON_0		(0.5)*(137.035999084)* (1.0/4.13566733e-15)\
-						*(1.0/299792458e10) // Vacuum permittivity 
-											// e/(V.Ang)
+using namespace std;
 
-// Special numbers
-#define PI				3.14159265358979323846	// Pi
+// =============================================================================
+// ------------------------ Coordinates transformations ------------------------
+// =============================================================================
 
-// Cutoff definition
-#define CUTOFF_ELECTRO	150		// Cutoff electrostatic inter. (Ang)
+void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i){
+	double x = Dist_Cart[0];
+	double y = Dist_Cart[1];
+	double z = Dist_Cart[2];
+	
+	z = (z/temp_gamma_term[i]) / c[i];
+	y = ((y-z*c[i]*temp_beta_term[i])/temp_gamma_sin[i]) / b[i];
+	x = (x-y*b[i]*temp_gamma_cos[i]-z*c[i]*temp_beta_cos[i]) / a[i];
+	Dist_Frac[0] = x; Dist_Frac[1] = y; Dist_Frac[2] = z;	
+}
 
-// Various physical parameters
-#define EPSILON_R		1.0		// Relative permittivity 
-
-// Variables for MT
-#define MT				true
-
-#endif // constants.h
+void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i){
+	double x = Dist_Frac[0];
+	double y = Dist_Frac[1];
+	double z = Dist_Frac[2];
+		
+	x = x*a[i] + y*b[i]*temp_gamma_cos[i] + z*c[i]*temp_beta_cos[i];
+	y = y*b[i]*temp_gamma_sin[i] + z*c[i]*temp_beta_term[i];
+	z = z*c[i]*temp_gamma_term[i];
+	Dist_Cart[0] = x; Dist_Cart[1] = y; Dist_Cart[2] = z;
+}

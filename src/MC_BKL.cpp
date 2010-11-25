@@ -23,7 +23,7 @@
 //#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
 //#include <boost/thread.hpp>
 
-#define INSIDE_MC_BKL
+#define _INSIDE_MC_BKL
 
 // C++ libraries
 #include <iostream> //Entrées-sorties standard
@@ -51,137 +51,10 @@
 #include "constants.h"
 #include "variables.h"
 #include "clear.h"
+#include "coordinates.h"
+#include "mathplus.h"
 
 using namespace std;
-
-// Various constants
-const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
-const double CUTOFF_ELECTRO = 150; //Cutoff for electrostatic interactions in Angstrom
-
-/*
-// =============================================================================
-// --------------------------------- Clear part --------------------------------
-// =============================================================================
-
-void Clear_All(){
-	a.clear(); b.clear(); c.clear(); alpha_deg.clear(); beta_deg.clear(); gamma_deg.clear(); vol_box.clear(); 
-	temp_alpha_cos.clear(); temp_beta_sin.clear(); temp_beta_cos.clear(); temp_gamma_sin.clear(); temp_gamma_cos.clear(); temp_beta_term.clear(); temp_gamma_term.clear(); 
-
-	mol_label.clear();
-	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
-	E_0.clear(); E_1.clear();
-
-	box_a.clear(); box_b.clear(); box_c.clear(); 
-	grid_occ.clear();
-	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear(); box_neigh_label.clear(); 
-
-	neigh_label.clear();
-	d_x.clear(); d_y.clear(); d_z.clear();
-	dE.clear();
-	J_H.clear(); J_L.clear();
-	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear(); 
-	k.clear(); k_inv.clear();
-
-	F_x_list.clear(); F_y_list.clear(); F_z_list.clear();
-	F_angle_list.clear();
-
-	MLJ_CST3.clear();
-
-}
-*/
-
-// =============================================================================
-// ------------------------ Coordinates transformations ------------------------
-// =============================================================================
-
-void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i){
-	double x = Dist_Cart[0];
-	double y = Dist_Cart[1];
-	double z = Dist_Cart[2];
-	
-	z = (z/temp_gamma_term[i]) / c[i];
-	y = ((y-z*c[i]*temp_beta_term[i])/temp_gamma_sin[i]) / b[i];
-	x = (x-y*b[i]*temp_gamma_cos[i]-z*c[i]*temp_beta_cos[i]) / a[i];
-	Dist_Frac[0] = x; Dist_Frac[1] = y; Dist_Frac[2] = z;	
-}
-
-void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i){
-	double x = Dist_Frac[0];
-	double y = Dist_Frac[1];
-	double z = Dist_Frac[2];
-		
-	x = x*a[i] + y*b[i]*temp_gamma_cos[i] + z*c[i]*temp_beta_cos[i];
-	y = y*b[i]*temp_gamma_sin[i] + z*c[i]*temp_beta_term[i];
-	z = z*c[i]*temp_gamma_term[i];
-	Dist_Cart[0] = x; Dist_Cart[1] = y; Dist_Cart[2] = z;
-}
-
-// =============================================================================
-// ----------------------------- Simple functions ------------------------------
-// =============================================================================
-
-// Return random number between 0 and 1
-double Rand_0_1(){
-	double x;
-	do {
-		x = rand();
-		x = x/RAND_MAX;
-	}
-	while(x==0);
-	
-	return x;
-}
-
-// Calculates n!
-double Facto(int n) {
-	if (n < 2) 
-		return 1.0;
-  
-  	else {
-		double x = 1.0;
-		for (int i = 2; i <= n; i++) {
-			x *= i;
-		}
-		return x;
-	}
-}
-
-// Product of two matrix
-vector< vector<double> > Matrix_Product (vector< vector<double> > M1, vector< vector<double> > M2, unsigned int n_line_M1, unsigned int n_line_M2) {
-
-	if (M1[0].size() != n_line_M2) {
-		cerr << "[ERROR] Could not multiply matrix!\nExiting..." << endl;
-		Clear_All();
-		exit(1);
-	}
-
-	vector< vector<double> > M_res;
-	
-	for(unsigned int i=0; i<n_line_M1; i++) {
-		M_res.push_back( vector<double> ());
-		
-		for(unsigned int j=0; j<M2[0].size(); j++){
-			M_res[i].push_back(0.0);
-		}
-	}
-
-	for (unsigned int i=0; i<n_line_M1; i++) {
-		double sum = 0.0;
-		for (unsigned int j=0; j<M2[0].size(); j++) {
-			sum = 0.0;
-			for (unsigned int k=0; k<M1[0].size(); k++) {
-				sum += M1[i][k] * M2[k][j];
-			}
-			//if (sum < 1e-13) {
-			//	sum = 0.0;
-			//}
-			M_res[i][j] = sum;
-		}
-	}
-	
-	return(M_res);
-
-}
 
 // =============================================================================
 // --------------------------------- Read part ---------------------------------
@@ -439,50 +312,6 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 // =============================================================================
 // ------------------- Physical parameters between neighbors -------------------
 // =============================================================================
-
-vector< vector<double> > Calcul_Rot_Matrix (double angle_deg, vector<double> rot_axis, vector<double> origin) {
-	
-	vector< vector<double> > Rot_Matrix (4, vector<double> (4, 0.0));
-	
-	double u, v, w, u2, v2, w2, L, L2;
-	double i,j,k;
-	double angle_rad;
-	
-	u = rot_axis[0];
-	v = rot_axis[1];
-	w = rot_axis[2];
-	u2 = u*u;
-	v2 = v*v;
-	w2 = w*w;
-	L2 = u2 + v2 + w2;
-	L = sqrt(L2);
-	
-	i = origin[0];
-	j = origin[1];
-	k = origin[2];
-	
-	angle_rad = (PI/180.0) * angle_deg;
-	
-	Rot_Matrix[0][0] = (u2 + (v2 + w2) * cos(angle_rad))/L2;
-	Rot_Matrix[0][1] = (u * v * (1.0 - cos(angle_rad)) - w * L * sin(angle_rad))/L2;
-	Rot_Matrix[0][2] = (u * w * (1.0 - cos(angle_rad)) + v * L * sin(angle_rad))/L2;
-	Rot_Matrix[0][3] = (i*(v2 + w2) - u*(j*v + k*w) + (u*(j*v + k*w) - i*(v2+w2)) * cos(angle_rad) + (j*w - k*v) * L * sin(angle_rad))/L2;
-	Rot_Matrix[1][0] = (u * v * (1.0 - cos(angle_rad)) + w * L * sin(angle_rad))/L2;
-	Rot_Matrix[1][1] = (v2 + (u2 + w2) * cos(angle_rad))/L2;
-	Rot_Matrix[1][2] = (v * w * (1.0 - cos(angle_rad)) - u * L * sin(angle_rad))/L2;
-	Rot_Matrix[1][3] = (j*(u2 + w2) - v*(i*u + k*w) + (v*(i*u + k*w) - j*(u2+w2)) * cos(angle_rad) + (k*u - i*w) * L * sin(angle_rad))/L2;
-	Rot_Matrix[2][0] = (u * w * (1.0 - cos(angle_rad)) - v * L * sin(angle_rad))/L2;
-	Rot_Matrix[2][1] = (v * w * (1.0 - cos(angle_rad)) + u * L * sin(angle_rad))/L2;
-	Rot_Matrix[2][2] = (w2 + (u2 + v2) * cos(angle_rad))/L2;
-	Rot_Matrix[2][3] = (k*(u2 + v2) - w*(i*u + j*v) + (w*(i*u + j*v) - k*(u2+v2)) * cos(angle_rad) + (i*v - j*u) * L * sin(angle_rad))/L2;
-	Rot_Matrix[3][0] = 0.0;
-	Rot_Matrix[3][1] = 0.0;
-	Rot_Matrix[3][2] = 0.0;
-	Rot_Matrix[3][3] = 1.0;
-	
-	return Rot_Matrix ;
-	
-}
 
 // Calculates the electric field unit vector
 void Calcul_F_vector(bool print_results) {
