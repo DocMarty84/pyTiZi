@@ -23,6 +23,8 @@
 //#include "/home/nmartine/lib/boost_1_43_0/boost/thread/thread.hpp"
 //#include <boost/thread.hpp>
 
+#define INSIDE_MC_BKL
+
 // C++ libraries
 #include <iostream> //Entrées-sorties standard
 #include <fstream> //Entrées-sorties sur fichiers
@@ -45,64 +47,18 @@
 
 #include <omp.h>
 
+// Local libraries
+#include "constants.h"
+#include "variables.h"
+#include "clear.h"
+
 using namespace std;
 
 // Various constants
-const double K_BOLTZ = 8.617343e-5; //Boltzmann constant in eV
-const double H_BAR = 6.58211899e-16; // h/2PI in eV
-const double EPSILON_0 = (0.5)*(137.035999084)*(1.0/4.13566733e-15)*(1.0/299792458e10) ; //Epsilon_0 (Vacuum permittivity in e/(V.Ang))
-const double PI = 3.14159265358979323846;
 const double EPSILON_R = 1.0; //Epsilon_r (Relative permittivity in A.s/(V.cm))
 const double CUTOFF_ELECTRO = 150; //Cutoff for electrostatic interactions in Angstrom
 
-// Variables read in the input file
-int n_frame, n_mol; // Number of frame and molecule
-double snap_delay;
-double LAMBDA_I, LAMBDA_I_H, LAMBDA_I_E, LAMBDA_S, T, H_OMEGA, dist_tot;
-unsigned int n_try, n_charges;
-int n_mini_grid_a, n_mini_grid_b, n_mini_grid_c;
-double F_norm; 
-string F_dir;
-string charge;
-
-// Variables for the unit cell parameters
-bool pbc[3]; // Periodic boundary conditions
-vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg, vol_box; // Cell parameters
-vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos, temp_gamma_sin, temp_gamma_cos, temp_beta_term, temp_gamma_term; // Parameters for fractional coordinates
-
-// Variables for each molecule
-vector<int> mol_label;
-vector< vector<double> > CM_x, CM_y, CM_z; // Center of masses
-vector< vector<double> > E_0, E_1;
-
-// Variables for the grid
-vector<int> box_a, box_b, box_c; // Position of the mini-grids
-vector< vector<bool> > grid_occ;
-vector< vector<int> > box_neigh_a, box_neigh_b, box_neigh_c, box_neigh_label; // Neighbor of each mini-grid
-
-// Variables for neighbors
-vector< vector< vector<int> > > neigh_label;
-vector< vector< vector<double> > > d_x, d_y, d_z;
-vector< vector< vector<double> > > dE;
-vector< vector< vector<double> > > J_H, J_L;
-vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c; // Vector for the change in mini-grid
-vector< vector< vector<double> > > k, k_inv;
-
-// Variables for the electric field direction
-//double theta_deg, phi_deg, theta_rad, phi_rad;
-vector<double>  F_x_list, F_y_list, F_z_list, F_angle_list;
-double F_x, F_y, F_z, F_angle;
-bool anisotropy = false;
-
-// Constants for the MLJ theory
-double S, MLJ_CST1, MLJ_CST2; 
-vector <double> MLJ_CST3;
-
-// Variables for MT
-bool MT = 1;
-vector<double> event_k_1, event_k_2; // Transfer rate
-vector<int> event_charge_1, event_mol_index_1, event_neigh_num_1, event_neigh_index_1, event_charge_2, event_mol_index_2, event_neigh_num_2, event_neigh_index_2; // Initial molecule and neighbor
-
+/*
 // =============================================================================
 // --------------------------------- Clear part --------------------------------
 // =============================================================================
@@ -131,9 +87,8 @@ void Clear_All(){
 
 	MLJ_CST3.clear();
 
-	event_k_1.clear(); event_k_2.clear(); 
-	event_charge_1.clear(); event_mol_index_1.clear(); event_neigh_num_1.clear(); event_neigh_index_1.clear(); event_charge_2.clear(); event_mol_index_2.clear(); event_neigh_num_2.clear(), event_neigh_index_2.clear();
 }
+*/
 
 // =============================================================================
 // ------------------------ Coordinates transformations ------------------------
@@ -533,6 +488,7 @@ vector< vector<double> > Calcul_Rot_Matrix (double angle_deg, vector<double> rot
 void Calcul_F_vector(bool print_results) {
 	
 	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0) {
+		anisotropy = false;
 		double *F_tmp_frac, *F_tmp_cart;
 		F_tmp_frac = new double[3];
 		F_tmp_cart = new double[3];
