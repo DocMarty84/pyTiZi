@@ -25,7 +25,7 @@ if __name__ == '__main__':
 	"""
 	t1 = time.clock()
 	
-	filename_base = "vertical300K"
+	filename_base = "cone_MD"
 	file_pdb = "%s.pdb" % (filename_base)
 	
 	# Get the cell parameters as well as the number frame, molecules and atoms
@@ -40,7 +40,15 @@ if __name__ == '__main__':
 	read_input_MD.Read_PDB_File_Second(file_pdb, coord)
 	#print coord
 	
-	write_cluster_files.CreateVBHFInput_Interface(coord, box)
+	mol_list_charged = read_input_MD.Read_mol_List("mol_list_charged")
+	mol_list_full = read_input_MD.Read_mol_List("mol_list_full")
+	
+	coord.Center_of_Masses_MT(mol_list_full)
+	write_cluster_files.CreateVBHFInput_Interface(coord, box, mol_list_charged, mol_list_full)
+	
+	# Create a script which will create all the needed pbs
+	string = "/home/nmartine/VBHF/%s" % (filename_base)
+	write_cluster_files.ScriptVBHFLaunch(string)
 
 	t2 = time.clock()
 	print t2-t1

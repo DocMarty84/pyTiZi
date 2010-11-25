@@ -1928,7 +1928,7 @@ def ScriptVBHFLaunch(dir_cluster):
 #                Functions related to Interface_VBHF_Creation.py
 # ******************************************************************************
 
-def CreateVBHFInput_Interface(mol, box):
+def CreateVBHFInput_Interface(mol, box, mol_list_charged, mol_list_full):
 	""" Creation of the VBHF input files
 	"""
 	for charge in [-1, 0, 1]:
@@ -1943,10 +1943,9 @@ def CreateVBHFInput_Interface(mol, box):
 		except:
 			pass
 		
-		#for mol_num_i in mol_list:	
-		for mol_num_i in xrange(1025, 1050, 1):	
+		for mol_num_i in mol_list_charged:	
 			# All cluster
-			name = "%s/molecule_%d_.dat" % (dir_all, mol_num_i)
+			name = "%s/molecule_%d_.dat" % (dir_all, mol_num_i+1)
 				
 			foutput = open(name, 'w')
 			
@@ -1959,18 +1958,20 @@ def CreateVBHFInput_Interface(mol, box):
 				tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
 				tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n" 
 
-				#for mol_num_j in mol_list:	
-				for mol_num_j in xrange(1025, 1080, 1):	
-					for i in xrange(mol.n_atom[mol_num_j-1]):
-						tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_j-1][i], mol.x[0,mol_num_j-1,i], mol.y[0,mol_num_j-1,i], mol.z[0,mol_num_j-1,i])
+				for mol_num_j in mol_list_full:
+					dist = numpy.power(mol.CM_x[0,mol_num_j]-mol.CM_x[0,mol_num_i],2) + numpy.power(mol.CM_y[0,mol_num_j]-mol.CM_y[0,mol_num_i],2) + numpy.power(mol.CM_z[0,mol_num_j]-mol.CM_z[0,mol_num_i],2)
+					if dist < 400:
+						for i in xrange(mol.n_atom[mol_num_j]):
+							tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_j][i], mol.x[0,mol_num_j,i], mol.y[0,mol_num_j,i], mol.z[0,mol_num_j,i])
 				
-				tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
-				#for mol_num_j in mol_list:
-				for mol_num_j in xrange(1025, 1080, 1):	
-					if mol_num_j != mol_num_i:
-						tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j-1], 0)
-					else:
-						tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j-1], charge)
+				tmp += "$$VBHF NITERMAX=9000 ENERDIFFITER DAMPING=0.2\n"
+				for mol_num_j in mol_list_full:
+					dist = numpy.power(mol.CM_x[0,mol_num_j]-mol.CM_x[0,mol_num_i],2) + numpy.power(mol.CM_y[0,mol_num_j]-mol.CM_y[0,mol_num_i],2) + numpy.power(mol.CM_z[0,mol_num_j]-mol.CM_z[0,mol_num_i],2)
+					if dist < 400:
+						if mol_num_j != mol_num_i:
+							tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j], 0)
+						else:
+							tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_j], charge)
 
 				foutput.write(tmp)		
 				foutput.close() 
@@ -1990,11 +1991,11 @@ def CreateVBHFInput_Interface(mol, box):
 				tmp += "Xx        0.0000 1     1.0000 1     0.0000 1\n"
 				tmp += "Xx        0.0000 1     0.0000 1     1.0000 1\n"
 
-				for i in xrange(mol.n_atom[mol_num_i-1]):
-					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_i-1][i], mol.x[0,mol_num_i-1,i], mol.y[0,mol_num_i-1,i], mol.z[0,mol_num_i-1,i])
+				for i in xrange(mol.n_atom[mol_num_i]):
+					tmp += "%4s %12f 1 %12f 1 %12f 1\n" % (mol.symbol[0][mol_num_i][i], mol.x[0,mol_num_i,i], mol.y[0,mol_num_i,i], mol.z[0,mol_num_i,i])
 				
-				tmp += "$$VBHF NITERMAX=500 ENERDIFFITER DAMPING=0.2\n"
-				tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_i-1], charge)
+				tmp += "$$VBHF NITERMAX=9000 ENERDIFFITER DAMPING=0.2\n"
+				tmp += "%d %d AM1 OMF-OPT\n" % (mol.n_atom[mol_num_i], charge)
 
 				foutput.write(tmp)		
 				foutput.close()

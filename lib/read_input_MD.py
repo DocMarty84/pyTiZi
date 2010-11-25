@@ -27,11 +27,12 @@ def Read_PDB_File_First(name, verb=2):
 	beta_tmp = []
 	gamma_tmp = []
 	
-	while 1:
+	while True:
 		line = finput.readline()
 		words1 = line.split()
 		
-		if words1[0] == "END_OF_FILE":
+		if line == "":
+			finput.close()
 			break
 			
 		elif words1[0] == "REMARK":
@@ -105,11 +106,11 @@ def Read_PDB_File_Second(name, mol, verb=2):
 		
 	i = -1
 		
-	while 1:		
+	while True:		
 		line = finput.readline()
 		words = line.split()
 		
-		if words[0] == "END_OF_FILE":
+		if line == "":
 			finput.close()
 			break
 			
@@ -296,5 +297,24 @@ def Read_TINKER_vec_File(name, mol, data):
 		line = finput.readline()
 		
 	finput.close()
+	
+def Read_mol_List(name):
+	""" Read a list of molecule """
+	mol_list = []
+	
+	try:
+		finput = open(name, 'r')
+	except:
+		print "Could not open %s" % (name)
+		exit(1)
+
+	for line in finput:
+		words = line.split()
+		if (len(words)!=0):
+			mol_list.append(int(words[0])-1)
 		
+	finput.close()
+	
+	return mol_list
+	
 #	print "Reading of input file done!"
