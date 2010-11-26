@@ -179,7 +179,7 @@ int main(int argc, char **argv){
 	Calcul_DeltaE(false);
 
 	// Build the grid
-	Build_Grid(true);
+	Build_Grid(false);
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
