@@ -47,7 +47,8 @@ LINKDIR = /usr/local/bin
 ##
 
 CPP = /usr/bin/g++
-LIBS = -lm -fopenmp
+LIBS = -lm
+OMPLIBS = -fopenmp
 CPPFLAGS = -Wall -c
 OPTFLAGS = -O3
 LIBFLAGS = -crusv
@@ -62,6 +63,7 @@ LINKFLAGS =
 
 #CPP = /opt/pgi/linux86/bin/pgcpp
 #LIBS =
+#OMPLIBS = -mp
 #CPPFLAGS = -c
 #OPTFLAGS = -fast -O3
 #LIBFLAGS = -crusv
@@ -77,11 +79,14 @@ OBJS = buildgrid.o \
        coordinates.o \
        deltae.o \
        deltav.o \
+       dispatch.o \
        distance.o \
        electricfield.o \
        mathplus.o \
+       mcbkl.o \
        MC_BKL.o \
        MC_BKL_layer.o \
+       printsummary.o \
        read.o \
        transferrate.o
 
@@ -89,10 +94,10 @@ EXEFILES = MC_BKL.x \
            MC_BKL_layer.x
 
 .cpp.o:
-	${CPP} ${CPPFLAGS} $*.cpp ${LIBS} ${OPTFLAGS}
+	${CPP} ${CPPFLAGS} $*.cpp ${OMPLIBS} ${OPTFLAGS}
 
 %.x: %.o libmonte.a
-	${CPP} ${LINKFLAGS} -o $@ $^ ${LIBS}
+	${CPP} ${LINKFLAGS} -o $@ $^ ${LIBS} ${OMPLIBS}
 
 all:	${EXEFILES}
 
@@ -113,9 +118,12 @@ libmonte.a: ${OBJS}
 	coordinates.o \
 	deltae.o \
 	deltav.o \
+	dispatch.o \
 	distance.o \
 	electricfield.o \
 	mathplus.o \
+	mcbkl.o \
+	printsummary.o \
 	read.o \
 	transferrate.o
 
