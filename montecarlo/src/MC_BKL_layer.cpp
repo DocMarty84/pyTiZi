@@ -63,6 +63,7 @@
 #include "dispatch.h"
 #include "printsummary.h"
 #include "mcbkl.h"
+#include "mcfrm.h"
 
 using namespace std;
 
