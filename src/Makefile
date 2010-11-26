@@ -48,7 +48,7 @@ LINKDIR = /usr/local/bin
 
 CPP = /usr/bin/g++
 LIBS = -lm -fopenmp
-CPPFLAGS = -c
+CPPFLAGS = -Wall -c
 OPTFLAGS = -O3
 LIBFLAGS = -crusv
 LINKFLAGS =
@@ -72,17 +72,24 @@ LINKFLAGS =
 ##  Should not be Necessary to Change Things Below this Point  ##
 #################################################################
 
-OBJS = clear.o \
+OBJS = buildgrid.o \
+       clear.o \
        coordinates.o \
+       deltae.o \
+       deltav.o \
+       distance.o \
+       electricfield.o \
        mathplus.o \
        MC_BKL.o \
-       MC_BKL_layer.o
+       MC_BKL_layer.o \
+       read.o \
+       transferrate.o
 
 EXEFILES = MC_BKL.x \
            MC_BKL_layer.x
 
 .cpp.o:
-	${CPP} ${CPPFLAGS} ${OPTFLAGS} $*.cpp
+	${CPP} ${CPPFLAGS} $*.cpp ${LIBS} ${OPTFLAGS}
 
 %.x: %.o libmonte.a
 	${CPP} ${LINKFLAGS} -o $@ $^ ${LIBS}
@@ -101,7 +108,14 @@ rename:
 
 libmonte.a: ${OBJS} 
 	ar ${LIBFLAGS} libmonte.a \
-        clear.o \
-        coordinates.o \
-        mathplus.o
+	buildgrid.o \
+	clear.o \
+	coordinates.o \
+	deltae.o \
+	deltav.o \
+	distance.o \
+	electricfield.o \
+	mathplus.o \
+	read.o \
+	transferrate.o
 
