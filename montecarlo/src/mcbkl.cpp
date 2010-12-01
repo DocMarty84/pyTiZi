@@ -49,7 +49,7 @@ void MC_BKL(string output_folder){
 	cout << "[INFO] Using the BKL algorithm." << endl;
 	
 	// Variables for each charge
-	vector<int> curr_mol, curr_grid; // Number of the molecule in the mini-grid, and number of this mini-grid
+	vector<int> curr_mol, curr_box; // Number of the molecule in the mini-grid, and number of this mini-grid
 	vector<double> dist, jump; // Distance and number of jumps for each charge
 	
 	// Variables for a chosen event
@@ -137,7 +137,7 @@ void MC_BKL(string output_folder){
 
 		// Put the charges in the grid
 		curr_mol.clear();
-		curr_grid.clear();
+		curr_box.clear();
 		int *pos;
 		pos = new int[2];
 		
@@ -148,7 +148,7 @@ void MC_BKL(string output_folder){
 				Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
-			curr_grid.push_back(pos[1]);
+			curr_box.push_back(pos[1]);
 			grid_occ[pos[0]][pos[1]] = true;
 		}
 
@@ -204,7 +204,7 @@ void MC_BKL(string output_folder){
 						
 						double k_tmp = numeric_limits<double>::min();
 						if (tmp_neigh_index != tmp_mol_index){
-							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
 						}
 
 						event_k.push_back(k_tmp);
@@ -248,33 +248,33 @@ void MC_BKL(string output_folder){
 					// event_neigh_num[event]: number of the neighbor of the molecule where the chosen charge is (= jj)
 					// event_neigh_index[event]: index of the molecule where the chosen charge is going to jump (= ii for the neighbor)
 					// curr_mol[event_charge[event]]: index of the molecule where the chosen charge is (= ii)
-					// curr_grid[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
+					// curr_box[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
 					//
 					// =======================================
 			
 					// Calculate the new position in the grid
 					int tmp_curr_mol = 0; // Expected final molecule index
-					int tmp_curr_grid = 0; // Expected final mini-grid index
-					int tmp_curr_grid_a = 0, tmp_curr_grid_b = 0, tmp_curr_grid_c = 0;
+					int tmp_curr_box = 0; // Expected final mini-grid index
+					int tmp_curr_box_a = 0, tmp_curr_box_b = 0, tmp_curr_box_c = 0;
 					bool out_of_system = true;
 					
 					// Find next mini-grid
 					if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
-						tmp_curr_grid = curr_grid[event_charge[event]];
-						tmp_curr_grid_a = box_a[tmp_curr_grid];
-						tmp_curr_grid_b = box_b[tmp_curr_grid];
-						tmp_curr_grid_c = box_c[tmp_curr_grid];
+						tmp_curr_box = curr_box[event_charge[event]];
+						tmp_curr_box_a = box_a[tmp_curr_box];
+						tmp_curr_box_b = box_b[tmp_curr_box];
+						tmp_curr_box_c = box_c[tmp_curr_box];
 						out_of_system = false;
 						
 					}
 					
 					else {
-						for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_charge[event]]].size(); xx++){
-							if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
-								tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
-								tmp_curr_grid_a = box_a[tmp_curr_grid];
-								tmp_curr_grid_b = box_b[tmp_curr_grid];
-								tmp_curr_grid_c = box_c[tmp_curr_grid];
+						for (unsigned int xx=0; xx<box_neigh_label[curr_box[event_charge[event]]].size(); xx++){
+							if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_box[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_box[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_box[event_charge[event]]][xx]){
+								tmp_curr_box = box_neigh_label[curr_box[event_charge[event]]][xx];
+								tmp_curr_box_a = box_a[tmp_curr_box];
+								tmp_curr_box_b = box_b[tmp_curr_box];
+								tmp_curr_box_c = box_c[tmp_curr_box];
 								out_of_system = false;
 								break;
 							}
@@ -293,7 +293,7 @@ void MC_BKL(string output_folder){
 					}
 					
 					// Do not jump if the next molecule is occupied
-					else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
+					else if (grid_occ[tmp_curr_mol][tmp_curr_box] == true){
 						previous_jump_ok = false;
 						exit_loop = true;
 						//printf("occupied\n");
@@ -324,17 +324,17 @@ void MC_BKL(string output_folder){
 						jump[event_charge[event]] += 1.0;
 						
 						// Set the occupancy of the grid
-						grid_occ[event_mol_index[event]][curr_grid[event_charge[event]]] = false;
+						grid_occ[event_mol_index[event]][curr_box[event_charge[event]]] = false;
 						
 						// Set the new position in the grid from temp values
-						curr_grid[event_charge[event]] = tmp_curr_grid;
+						curr_box[event_charge[event]] = tmp_curr_box;
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
+						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
-							// curr_grid.erase(curr_grid.begin()+event_charge[event]);
+							// curr_box.erase(curr_box.begin()+event_charge[event]);
 							
 							// The charge appears at the beginning of the system
 							int *pos;
@@ -353,7 +353,7 @@ void MC_BKL(string output_folder){
 									Dispatch_Mol_RND_layer(i, grid_occ, pos);
 							}
 							
-							curr_grid[event_charge[event]] = pos[1];
+							curr_box[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
 							grid_occ[pos[0]][pos[1]] = true;
 							dist[event_charge[event]] = 0.0;
@@ -398,7 +398,7 @@ void MC_BKL(string output_folder){
 						}
 						
 						else{
-							grid_occ[tmp_curr_mol][tmp_curr_grid] = true;
+							grid_occ[tmp_curr_mol][tmp_curr_box] = true;
 						}
 						
 						previous_jump_ok = true;
@@ -492,7 +492,7 @@ void MC_BKL_MT(string output_folder){
 	for (int i=0; i<n_frame; i++){
 		
 		// Variables for each charge
-		vector<int> curr_mol, curr_grid; // Number of the molecule in the mini-grid, and number of this mini-grid
+		vector<int> curr_mol, curr_box; // Number of the molecule in the mini-grid, and number of this mini-grid
 		vector<double> dist, jump; // Distance and number of jumps for each charge
 		
 		// Variables for a chosen event
@@ -547,7 +547,7 @@ void MC_BKL_MT(string output_folder){
 
 		// Put the charges in the grid
 		curr_mol.clear();
-		curr_grid.clear();
+		curr_box.clear();
 		int *pos;
 		pos = new int[2];
 		
@@ -558,7 +558,7 @@ void MC_BKL_MT(string output_folder){
 				Dispatch_Mol_RND_layer(i, grid_occ, pos);
 			
 			curr_mol.push_back(pos[0]);
-			curr_grid.push_back(pos[1]);
+			curr_box.push_back(pos[1]);
 			grid_occ[pos[0]][pos[1]] = true;
 		}
 
@@ -614,7 +614,7 @@ void MC_BKL_MT(string output_folder){
 						
 						double k_tmp = numeric_limits<double>::min();
 						if (tmp_neigh_index != tmp_mol_index){
-							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_grid, charge_i);
+							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
 						}
 
 						event_k.push_back(k_tmp);
@@ -658,33 +658,33 @@ void MC_BKL_MT(string output_folder){
 					// event_neigh_num[event]: number of the neighbor of the molecule where the chosen charge is (= jj)
 					// event_neigh_index[event]: index of the molecule where the chosen charge is going to jump (= ii for the neighbor)
 					// curr_mol[event_charge[event]]: index of the molecule where the chosen charge is (= ii)
-					// curr_grid[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
+					// curr_box[event_charge[event]]: index of the mini-grid where the chosen charge is (= x)
 					//
 					// =======================================
 			
 					// Calculate the new position in the grid
 					int tmp_curr_mol = 0; // Expected final molecule index
-					int tmp_curr_grid = 0; // Expected final mini-grid index
-					int tmp_curr_grid_a = 0, tmp_curr_grid_b = 0, tmp_curr_grid_c = 0;
+					int tmp_curr_box = 0; // Expected final mini-grid index
+					int tmp_curr_box_a = 0, tmp_curr_box_b = 0, tmp_curr_box_c = 0;
 					bool out_of_system = true;
 					
 					// Find next mini-grid
 					if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == 0 && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == 0){
-						tmp_curr_grid = curr_grid[event_charge[event]];
-						tmp_curr_grid_a = box_a[tmp_curr_grid];
-						tmp_curr_grid_b = box_b[tmp_curr_grid];
-						tmp_curr_grid_c = box_c[tmp_curr_grid];
+						tmp_curr_box = curr_box[event_charge[event]];
+						tmp_curr_box_a = box_a[tmp_curr_box];
+						tmp_curr_box_b = box_b[tmp_curr_box];
+						tmp_curr_box_c = box_c[tmp_curr_box];
 						out_of_system = false;
 						
 					}
 					
 					else {
-						for (unsigned int xx=0; xx<box_neigh_label[curr_grid[event_charge[event]]].size(); xx++){
-							if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_grid[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_grid[event_charge[event]]][xx]){
-								tmp_curr_grid = box_neigh_label[curr_grid[event_charge[event]]][xx];
-								tmp_curr_grid_a = box_a[tmp_curr_grid];
-								tmp_curr_grid_b = box_b[tmp_curr_grid];
-								tmp_curr_grid_c = box_c[tmp_curr_grid];
+						for (unsigned int xx=0; xx<box_neigh_label[curr_box[event_charge[event]]].size(); xx++){
+							if (neigh_jump_vec_a[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_a[curr_box[event_charge[event]]][xx] && neigh_jump_vec_b[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_b[curr_box[event_charge[event]]][xx] && neigh_jump_vec_c[i][event_mol_index[event]][event_neigh_num[event]] == box_neigh_c[curr_box[event_charge[event]]][xx]){
+								tmp_curr_box = box_neigh_label[curr_box[event_charge[event]]][xx];
+								tmp_curr_box_a = box_a[tmp_curr_box];
+								tmp_curr_box_b = box_b[tmp_curr_box];
+								tmp_curr_box_c = box_c[tmp_curr_box];
 								out_of_system = false;
 								break;
 							}
@@ -703,7 +703,7 @@ void MC_BKL_MT(string output_folder){
 					}
 					
 					// Do not jump if the next molecule is occupied
-					else if (grid_occ[tmp_curr_mol][tmp_curr_grid] == true){
+					else if (grid_occ[tmp_curr_mol][tmp_curr_box] == true){
 						previous_jump_ok = false;
 						exit_loop = true;
 						//printf("occupied\n");
@@ -734,17 +734,17 @@ void MC_BKL_MT(string output_folder){
 						jump[event_charge[event]] += 1.0;
 						
 						// Set the occupancy of the grid
-						grid_occ[event_mol_index[event]][curr_grid[event_charge[event]]] = false;
+						grid_occ[event_mol_index[event]][curr_box[event_charge[event]]] = false;
 						
 						// Set the new position in the grid from temp values
-						curr_grid[event_charge[event]] = tmp_curr_grid;
+						curr_box[event_charge[event]] = tmp_curr_box;
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_grid_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_grid_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_grid_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
+						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
-							// curr_grid.erase(curr_grid.begin()+event_charge[event]);
+							// curr_box.erase(curr_box.begin()+event_charge[event]);
 							
 							// The charge appears at the beginning of the system
 							int *pos;
@@ -763,7 +763,7 @@ void MC_BKL_MT(string output_folder){
 									Dispatch_Mol_RND_layer(i, grid_occ, pos);
 							}
 							
-							curr_grid[event_charge[event]] = pos[1];
+							curr_box[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
 							grid_occ[pos[0]][pos[1]] = true;
 							dist[event_charge[event]] = 0.0;
@@ -808,7 +808,7 @@ void MC_BKL_MT(string output_folder){
 						}
 						
 						else{
-							grid_occ[tmp_curr_mol][tmp_curr_grid] = true;
+							grid_occ[tmp_curr_mol][tmp_curr_box] = true;
 						}
 						
 						previous_jump_ok = true;
@@ -853,7 +853,7 @@ void MC_BKL_MT(string output_folder){
 		// Cleaning everything
 		
 		curr_mol.clear();
-		curr_grid.clear();
+		curr_box.clear();
 		dist.clear(); 
 		jump.clear();
 		

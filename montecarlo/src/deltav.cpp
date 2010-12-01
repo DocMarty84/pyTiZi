@@ -33,7 +33,7 @@
 using namespace std;
 
 // Calculates deltaV (electrostatic interactions) between molecules
-double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_grid_tmp){
+double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_box_tmp){
 		
 	const double CST1 = 1.0/(4.0*PI*EPSILON_0*EPSILON_R);
 	const double CUTOFF_2 = pow(CUTOFF_ELECTRO,2); //Cutoff electro square
@@ -56,18 +56,18 @@ double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_nu
 	CM_1_Cart[2] = CM_z[i][mol_index_tmp];
 	Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac, i);
 	
-	CM_1_Frac[0] += double(box_a[curr_grid_tmp[charge_i_tmp]]);
-	CM_1_Frac[1] += double(box_b[curr_grid_tmp[charge_i_tmp]]);
-	CM_1_Frac[2] += double(box_c[curr_grid_tmp[charge_i_tmp]]);
+	CM_1_Frac[0] += double(box_a[curr_box_tmp[charge_i_tmp]]);
+	CM_1_Frac[1] += double(box_b[curr_box_tmp[charge_i_tmp]]);
+	CM_1_Frac[2] += double(box_c[curr_box_tmp[charge_i_tmp]]);
 	
 	CM_1_Neigh_Cart[0] = CM_x[i][neigh_index_tmp];
 	CM_1_Neigh_Cart[1] = CM_y[i][neigh_index_tmp];
 	CM_1_Neigh_Cart[2] = CM_z[i][neigh_index_tmp];
 	Cartesian_To_Fractional(CM_1_Neigh_Cart, CM_1_Neigh_Frac, i);
 	
-	CM_1_Neigh_Frac[0] += double(box_a[curr_grid_tmp[charge_i_tmp]]) + neigh_jump_vec_a[i][mol_index_tmp][neigh_num_tmp];
-	CM_1_Neigh_Frac[1] += double(box_b[curr_grid_tmp[charge_i_tmp]]) + neigh_jump_vec_b[i][mol_index_tmp][neigh_num_tmp];
-	CM_1_Neigh_Frac[2] += double(box_c[curr_grid_tmp[charge_i_tmp]]) + neigh_jump_vec_c[i][mol_index_tmp][neigh_num_tmp];
+	CM_1_Neigh_Frac[0] += double(box_a[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_a[i][mol_index_tmp][neigh_num_tmp];
+	CM_1_Neigh_Frac[1] += double(box_b[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_b[i][mol_index_tmp][neigh_num_tmp];
+	CM_1_Neigh_Frac[2] += double(box_c[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_c[i][mol_index_tmp][neigh_num_tmp];
 	
 	for (unsigned int charge_i = 0; charge_i < curr_mol_tmp.size(); charge_i++){
 		if (charge_i != charge_i_tmp){
@@ -76,9 +76,9 @@ double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_nu
 			CM_2_Cart[2] = CM_z[i][curr_mol_tmp[charge_i]];
 			Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac, i);
 			
-			CM_2_Frac[0] += double(box_a[curr_grid_tmp[charge_i]]);
-			CM_2_Frac[1] += double(box_b[curr_grid_tmp[charge_i]]);
-			CM_2_Frac[2] += double(box_c[curr_grid_tmp[charge_i]]);
+			CM_2_Frac[0] += double(box_a[curr_box_tmp[charge_i]]);
+			CM_2_Frac[1] += double(box_b[curr_box_tmp[charge_i]]);
+			CM_2_Frac[2] += double(box_c[curr_box_tmp[charge_i]]);
 			
 			Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
 			Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];

@@ -57,11 +57,24 @@ EXTERN vector<int> mol_label;
 EXTERN vector< vector<double> > CM_x, CM_y, CM_z; 		// Center of masses
 EXTERN vector< vector<double> > E_0, E_1;
 
+// Variables for each charge
+EXTERN vector< vector<double> > chrg_E_electrostatic, chrg_E_0, chrg_E_1;
+
+
 // Variables for the grid
+// grid_ is used for a detailed table (frame/box/molecule)
+// box_ is used for a box parameters (relative position between 2 boxes)
 EXTERN vector<int> box_a, box_b, box_c; 		// Position of the mini-grids
-EXTERN vector< vector<bool> > grid_occ;
 EXTERN vector< vector<int> > box_neigh_a, box_neigh_b, box_neigh_c,\
                       box_neigh_label;			// Neighbor of each mini-grid
+EXTERN vector< vector<bool> > grid_occ;			// Occupation of each site
+EXTERN vector< vector< vector< vector <double> > > > grid_probability;
+												// Occupation probability of
+												// each site
+EXTERN vector< vector< vector <double> > > grid_x, grid_y, grid_z;
+												// Coordinates of each site
+EXTERN vector< vector< vector <double> > > grid_E_0, grid_E_1;
+												// Energy of each site
 
 // Variables for neighbors
 EXTERN vector< vector< vector<int> > > neigh_label;		// Label of neighbors

@@ -42,11 +42,16 @@ void Clear_All(){
 	mol_label.clear();
 	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
 	E_0.clear(); E_1.clear();
+	
+	chrg_E_electrostatic.clear(); chrg_E_0.clear(); chrg_E_1.clear();
 
 	box_a.clear(); box_b.clear(); box_c.clear(); 
-	grid_occ.clear();
 	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear();
 	box_neigh_label.clear(); 
+	grid_occ.clear();
+	grid_probability.clear();
+	grid_x.clear(); grid_y.clear(); grid_z.clear();
+	grid_E_0.clear(); grid_E_1.clear();
 
 	neigh_label.clear();
 	d_x.clear(); d_y.clear(); d_z.clear();
