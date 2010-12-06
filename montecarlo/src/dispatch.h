@@ -24,23 +24,21 @@
 // Choose a starting molecule randomly
 int Choose_Mol_RND(int frame);
 
-// =============================================================================
-// ----------------------------- Dispatch Charges ------------------------------
-// =============================================================================
+// ===========================================================================================================
+// ------------------------------------------- Dispatch Charges ----------------------------------------------
+// ===========================================================================================================
 
 // Dispatch the charges randomly in the grid
 void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos);
 
 // Dispatch the charges randomly in the grid, but in a specific layer
-void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ,\
-																	int *pos);
+void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ, int *pos);
 
 // Dispatch the charges randomly in the fist "column" of the grid
 void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos);
 
 // Dispatch the charges randomly in the fist "column" of the grid, 
 // but in a specific layer
-void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ,\
-																	int *pos);
+void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ, int *pos);
 
 #endif // dispatch.h

@@ -41,15 +41,14 @@ int Choose_Mol_RND(int frame){
 			k_sum = k_sum + k_inv[frame][mol][jj];
 		}
 	}
-	while(neigh_label[frame][mol].size()==0 ||\
-										neigh_label[frame][mol].size() == 0);
+	while(neigh_label[frame][mol].size()==0 || neigh_label[frame][mol].size() == 0);
 
 	return mol;
 }
 
-// =============================================================================
-// ----------------------------- Dispatch Charges ------------------------------
-// =============================================================================
+// ===========================================================================================================
+// ------------------------------------------- Dispatch Charges ----------------------------------------------
+// ===========================================================================================================
 
 void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
@@ -78,14 +77,13 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 			}
 		}
 	}
-	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[box][mol] == true);
 	
 	pos[0] = mol;
 	pos[1] = box;
 }
 
-void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ,\
-																	int *pos){ 
+void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ,	int *pos){ 
 	
 	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
 	
@@ -113,7 +111,7 @@ void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ,\
 			}
 		}
 	}
-	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[box][mol] == true);
 	
 	pos[0] = mol;
 	pos[1] = box;
@@ -160,14 +158,13 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 			}
 		}
 	}
-	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[box][mol] == true);
 	
 	pos[0] = mol;
 	pos[1] = box;
 }
 
-void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ,\
-																	int *pos){ 
+void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ, int *pos){ 
 	
 	int pos_a=0, pos_b=0, pos_c=0, mol=0, box=0; 
 	
@@ -209,7 +206,7 @@ void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ,\
 			}
 		}
 	}
-	while(neigh_label[frame][mol].size() == 0 || grid_occ[mol][box] == true);
+	while(neigh_label[frame][mol].size() == 0 || grid_occ[box][mol] == true);
 	
 	pos[0] = mol;
 	pos[1] = box;

@@ -125,11 +125,11 @@ void MC_BKL(string output_folder){
 		// Generate the grid
 		grid_occ.clear();
 				
-		for (int ii=0; ii<n_mol; ii++){
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
 			grid_occ.push_back( vector<bool> ());
 			
-			for (unsigned int x=0; x<box_neigh_label.size(); x++){
-				grid_occ[ii].push_back( false );
+			for (int ii=0; ii<n_mol; ii++){
+				grid_occ[x].push_back( false );
 			}
 		}
 
@@ -149,7 +149,8 @@ void MC_BKL(string output_folder){
 			
 			curr_mol.push_back(pos[0]);
 			curr_box.push_back(pos[1]);
-			grid_occ[pos[0]][pos[1]] = true;
+			grid_occ[pos[1]][pos[0]] = true;
+			grid_probability[i][pos[1]][pos[0]][charge_i] += 1.0;
 		}
 
 		delete [] pos;
@@ -293,7 +294,7 @@ void MC_BKL(string output_folder){
 					}
 					
 					// Do not jump if the next molecule is occupied
-					else if (grid_occ[tmp_curr_mol][tmp_curr_box] == true){
+					else if (grid_occ[tmp_curr_box][tmp_curr_mol] == true){
 						previous_jump_ok = false;
 						exit_loop = true;
 						//printf("occupied\n");
@@ -324,7 +325,8 @@ void MC_BKL(string output_folder){
 						jump[event_charge[event]] += 1.0;
 						
 						// Set the occupancy of the grid
-						grid_occ[event_mol_index[event]][curr_box[event_charge[event]]] = false;
+						grid_occ[curr_box[event_charge[event]]][event_mol_index[event]] = false;
+						grid_probability[i][curr_box[event_charge[event]]][event_mol_index[event]][event_charge[event]] += 1.0;
 						
 						// Set the new position in the grid from temp values
 						curr_box[event_charge[event]] = tmp_curr_box;
@@ -355,7 +357,7 @@ void MC_BKL(string output_folder){
 							
 							curr_box[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
-							grid_occ[pos[0]][pos[1]] = true;
+							grid_occ[pos[1]][pos[0]] = true;
 							dist[event_charge[event]] = 0.0;
 							
 							delete [] pos;
@@ -398,7 +400,7 @@ void MC_BKL(string output_folder){
 						}
 						
 						else{
-							grid_occ[tmp_curr_mol][tmp_curr_box] = true;
+							grid_occ[tmp_curr_box][tmp_curr_mol] = true;
 						}
 						
 						previous_jump_ok = true;
@@ -448,6 +450,13 @@ void MC_BKL(string output_folder){
 	mu_moy = mu_moy/dbl_n_frame;
 	
 	// Writes the final mobility
+	//stringstream OUT_SIMU, OUT_ERROR;
+	
+	OUT_SIMU << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
+	OUT_ERROR << output_folder << "/error_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
+	  
+	//FILE * pFile;
+		
 	pFile=fopen(OUT_SIMU.str().c_str(), "a");
 	if (pFile==NULL) {
 		int wait = 0; 
@@ -535,11 +544,11 @@ void MC_BKL_MT(string output_folder){
 		// Generate the grid
 		grid_occ.clear();
 				
-		for (int ii=0; ii<n_mol; ii++){
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
 			grid_occ.push_back( vector<bool> ());
 			
-			for (unsigned int x=0; x<box_neigh_label.size(); x++){
-				grid_occ[ii].push_back( false );
+			for (int ii=0; ii<n_mol; ii++){
+				grid_occ[x].push_back( false );
 			}
 		}
 
@@ -559,7 +568,8 @@ void MC_BKL_MT(string output_folder){
 			
 			curr_mol.push_back(pos[0]);
 			curr_box.push_back(pos[1]);
-			grid_occ[pos[0]][pos[1]] = true;
+			grid_occ[pos[1]][pos[0]] = true;
+			grid_probability[i][pos[1]][pos[0]][charge_i] += 1.0;
 		}
 
 		delete [] pos;
@@ -703,7 +713,7 @@ void MC_BKL_MT(string output_folder){
 					}
 					
 					// Do not jump if the next molecule is occupied
-					else if (grid_occ[tmp_curr_mol][tmp_curr_box] == true){
+					else if (grid_occ[tmp_curr_box][tmp_curr_mol] == true){
 						previous_jump_ok = false;
 						exit_loop = true;
 						//printf("occupied\n");
@@ -734,7 +744,8 @@ void MC_BKL_MT(string output_folder){
 						jump[event_charge[event]] += 1.0;
 						
 						// Set the occupancy of the grid
-						grid_occ[event_mol_index[event]][curr_box[event_charge[event]]] = false;
+						grid_occ[curr_box[event_charge[event]]][event_mol_index[event]] = false;
+						grid_probability[i][curr_box[event_charge[event]]][event_mol_index[event]][event_charge[event]] += 1.0;
 						
 						// Set the new position in the grid from temp values
 						curr_box[event_charge[event]] = tmp_curr_box;
@@ -765,7 +776,7 @@ void MC_BKL_MT(string output_folder){
 							
 							curr_box[event_charge[event]] = pos[1];
 							curr_mol[event_charge[event]] = pos[0];
-							grid_occ[pos[0]][pos[1]] = true;
+							grid_occ[pos[1]][pos[0]] = true;
 							dist[event_charge[event]] = 0.0;
 							
 							delete [] pos;
@@ -808,7 +819,7 @@ void MC_BKL_MT(string output_folder){
 						}
 						
 						else{
-							grid_occ[tmp_curr_mol][tmp_curr_box] = true;
+							grid_occ[tmp_curr_box][tmp_curr_mol] = true;
 						}
 						
 						previous_jump_ok = true;

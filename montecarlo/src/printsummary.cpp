@@ -37,11 +37,11 @@
 using namespace std;
 
 
-// =============================================================================
-// --------------------------------- Print part --------------------------------
-// =============================================================================
+// ===========================================================================================================
+// --------------------------------------------- Print part --------------------------------------------------
+// ===========================================================================================================
 
-// Print all the informations used to calculate k
+// Print all the informations used to calculate k (before running any simulation)
 void Print_Summary(string output_folder) {
 	stringstream OUT_TOT, T, P;
 	double uF_x, uF_y, uF_z;
@@ -50,8 +50,7 @@ void Print_Summary(string output_folder) {
 	//P << phi_deg;
 	//OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
 
-	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << "_" <<\
-														F_dir.c_str() << ".dat";
+	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << "_" << F_dir.c_str() << ".dat";
 
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
@@ -63,31 +62,25 @@ void Print_Summary(string output_folder) {
 	if (pFile==NULL) {
 		int wait = 0; 
 		while (wait<10 && pFile==NULL){
-			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) <<\
-											" seconds to write a file" << endl;
+			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
 			usleep(10*(wait+1)*(wait+1));
 			pFile = fopen(OUT_TOT.str().c_str(), "w");
 			wait++;
 		}
 		if (wait==10 && pFile==NULL){
-			cerr << "[ERROR] Impossible to write " << OUT_TOT.str().c_str() <<\
-														"! Exiting..." << endl;
+			cerr << "[ERROR] Impossible to write " << OUT_TOT.str().c_str() << "! Exiting..." << endl;
 			exit (1);
 		}
 	}
-	fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n\n",\
-															uF_x, uF_y, uF_z);
+	fprintf(pFile,"Electric field unit vectors: (%f, %f, %f)\n\n", uF_x, uF_y, uF_z);
 	for (int i=0; i<n_frame; i++){
 		fprintf(pFile,"Frame %d\n", i);
 		for (int ii=0; ii<n_mol; ii++){
-			fprintf(pFile,"Molecule %d | %d neighbors\n", mol_label[ii],\
-												int(neigh_label[i][ii].size()));
+			fprintf(pFile,"Molecule %d | %d neighbors\n", mol_label[ii], int(neigh_label[i][ii].size()));
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-				fprintf(pFile,"%6d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %14.5"\
-								"e\n", neigh_label[i][ii][jj],\
-								d_x[i][ii][jj], d_y[i][ii][jj], d_z[i][ii][jj],\
-								dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj],\
-								k[i][ii][jj]);
+				fprintf(pFile,"%6d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %14.5e\n", neigh_label[i][ii][jj],\
+												d_x[i][ii][jj], d_y[i][ii][jj], d_z[i][ii][jj],\
+												dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj], k[i][ii][jj]);
 			}
 		}
 	}

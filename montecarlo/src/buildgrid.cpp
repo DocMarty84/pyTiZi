@@ -31,9 +31,9 @@
 
 using namespace std;
 
-// =============================================================================
-// ------------------------------- Grid building -------------------------------
-// =============================================================================
+// ===========================================================================================================
+// ---------------------------------------------- Grid building ----------------------------------------------
+// ===========================================================================================================
 
 // Find the layer for each molecule. Need to be modified.
 void Find_Layer(bool print_results) {
@@ -67,8 +67,7 @@ void Find_Layer(bool print_results) {
 			cout << "Frame " << i+1 << endl;
 			for (int k=0; k<n_layer; k++){
 				cout << endl;
-				cout << "Layer " << k << ", with " << mol_layer[i][k].size() <<\
-														" molecules" << endl;
+				cout << "Layer " << k << ", with " << mol_layer[i][k].size() <<	" molecules" << endl;
 				for (unsigned int ii=0; ii<mol_layer[i][k].size(); ii++){
 					cout << mol_layer[i][k][ii] << " ";
 				}
@@ -104,9 +103,8 @@ void Build_Grid(bool print_results) {
 		
 		for (int y=0; y<n_grid; y++){
 			// Finite size system
-			if ((abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2 &&\
-				abs(box_c[y]-box_c[x]) < 2) && (abs(box_a[y]-box_a[x]) != 0 ||\
-				abs(box_b[y]-box_b[x]) != 0 || abs(box_c[y]-box_c[x]) != 0)){
+			if ((abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) &&\
+				(abs(box_a[y]-box_a[x]) != 0 || abs(box_b[y]-box_b[x]) != 0 || abs(box_c[y]-box_c[x]) != 0)){
 					
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
@@ -114,10 +112,9 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			// Create an infinite system in the case of an 
-			// anisotropy calculation
-			if (anisotropy && box_a[x] == 0 && box_a[y] == n_mini_grid_a-1 &&\
-					abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+			// Create an infinite system in the case of an anisotropy calculation
+			if (anisotropy && box_a[x] == 0 && box_a[y] == n_mini_grid_a-1 && abs(box_b[y]-box_b[x]) < 2 &&\
+																				abs(box_c[y]-box_c[x]) < 2) {
 						
 				box_neigh_a[x].push_back( -1 );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
@@ -125,8 +122,8 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_b[x] == 0 && box_b[y] == n_mini_grid_b-1 &&\
-					abs(box_a[y]-box_a[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+			if (anisotropy && box_b[x] == 0 && box_b[y] == n_mini_grid_b-1 && abs(box_a[y]-box_a[x]) < 2 &&\
+																				abs(box_c[y]-box_c[x]) < 2) {
 						
 				box_neigh_b[x].push_back( -1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
@@ -134,8 +131,8 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_c[x] == 0 && box_c[y] == n_mini_grid_c-1 &&\
-					abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2) {
+			if (anisotropy && box_c[x] == 0 && box_c[y] == n_mini_grid_c-1 && abs(box_a[y]-box_a[x]) < 2 &&\
+																				abs(box_b[y]-box_b[x]) < 2) {
 						
 				box_neigh_c[x].push_back( -1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
@@ -143,24 +140,24 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_a[x] == n_mini_grid_a-1 && box_a[y] == 0 &&\
-					abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+			if (anisotropy && box_a[x] == n_mini_grid_a-1 && box_a[y] == 0 && abs(box_b[y]-box_b[x]) < 2 &&\
+																				abs(box_c[y]-box_c[x]) < 2) {
 				box_neigh_a[x].push_back( 1 );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
 				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_b[x] == n_mini_grid_b-1 && box_b[y] == 0 &&\
-					abs(box_a[y]-box_a[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) {
+			if (anisotropy && box_b[x] == n_mini_grid_b-1 && box_b[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
+																				abs(box_c[y]-box_c[x]) < 2) {
 				box_neigh_b[x].push_back( 1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
 				box_neigh_c[x].push_back( box_c[y]-box_c[x] );
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_c[x] == n_mini_grid_c-1 && box_c[y] == 0 &&\
-					abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2) {
+			if (anisotropy && box_c[x] == n_mini_grid_c-1 && box_c[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
+																				abs(box_b[y]-box_b[x]) < 2) {
 				box_neigh_c[x].push_back( 1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
@@ -169,8 +166,7 @@ void Build_Grid(bool print_results) {
 		}
 	}
 	
-	// Set up the grid properties: coordinates, probability and energy 
-	// of each site
+	// Set up the grid properties: coordinates, probability and energy of each site
 	double *CM_Cart, *CM_Frac;
 	CM_Cart = new double[3];
 	CM_Frac = new double[3];
@@ -212,8 +208,7 @@ void Build_Grid(bool print_results) {
 				grid_E_1[i][x].push_back( E_1[0][ii] );
 				
 				// Set up a probability for each charge
-				for (unsigned int charge_i = 0; charge_i < n_charges;\
-																	charge_i++){
+				for (unsigned int charge_i = 0; charge_i < n_charges; charge_i++){
 					grid_probability[i][x][ii].push_back( 0.0 );
 				}
 			}
@@ -228,8 +223,8 @@ void Build_Grid(bool print_results) {
 		for (unsigned int x=0; x<box_neigh_label.size(); x++){
 			cout << "mini-grid " << x << endl;			
 			for (unsigned int xx=0; xx<box_neigh_label[x].size(); xx++){
-				cout << box_neigh_label[x][xx] << " " << box_neigh_a[x][xx] <<\
-				 " " << box_neigh_b[x][xx] << " " << box_neigh_c[x][xx] << endl;
+				cout << box_neigh_label[x][xx] << " " << box_neigh_a[x][xx] << " " << box_neigh_b[x][xx] <<\
+																			" " << box_neigh_c[x][xx] << endl;
 			}
 		}
 		
@@ -242,9 +237,8 @@ void Build_Grid(bool print_results) {
 			for (int x=0; x<n_grid; x++){
 				
 				for (int ii=0; ii<n_mol; ii++){
-					cout << x << " " << ii << " " << grid_x[i][x][ii] << " " <<\
-					grid_y[i][x][ii] << " " << grid_z[i][x][ii] << " " << 
-					grid_E_0[i][x][ii] << " " << grid_E_1[i][x][ii] << endl;
+					cout << x << " " << ii << " " << grid_x[i][x][ii] << " " <<	grid_y[i][x][ii] << " " <<\
+						grid_z[i][x][ii] << " " << grid_E_0[i][x][ii] << " " << grid_E_1[i][x][ii] << endl;
 				}
 			}
 		}

@@ -21,7 +21,7 @@
 #ifndef _PRINTSUMMARY_H
 #define _PRINTSUMMARY_H 1
 
-// Print all the informations used to calculate k
+// Print all the informations used to calculate k (before running any simulation)
 void Print_Summary(string output_folder);
 
 #endif // printsummary.h
