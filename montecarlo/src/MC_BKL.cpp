@@ -202,7 +202,7 @@ int main(int argc, char **argv){
 		Full_Matrix();
 
 		// Print a summary
-		Print_Summary(output_folder);
+		Print_Summary_Beginning(output_folder);
 		
 		// Calculates 1/k and clear the k table
 		Inverse_Clear_k(false);

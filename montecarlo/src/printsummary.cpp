@@ -42,13 +42,9 @@ using namespace std;
 // ===========================================================================================================
 
 // Print all the informations used to calculate k (before running any simulation)
-void Print_Summary(string output_folder) {
-	stringstream OUT_TOT, T, P;
+void Print_Summary_Beginning(string output_folder) {
+	stringstream OUT_TOT;
 	double uF_x, uF_y, uF_z;
-  
-	//T << theta_deg;
-	//P << phi_deg;
-	//OUT_TOT << output_folder << "/info_tot_" << T.str().c_str() << "_" << P.str().c_str() << ".dat";
 
 	OUT_TOT << output_folder << "/info_tot_" << charge.c_str() << "_" << F_dir.c_str() << ".dat";
 
@@ -85,5 +81,45 @@ void Print_Summary(string output_folder) {
 		}
 	}
 
+	fclose(pFile);
+}
+
+// Print some information for each try of the MC simulation
+void Print_Summary_Try(string output_folder, int i, int charge_try, double total_dist_try,\
+																					double total_time_try) {
+	stringstream OUT_SIMU_FRAME;
+	double uF_x, uF_y, uF_z;
+
+	OUT_SIMU_FRAME << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
+
+	uF_x = F_x/F_norm;
+	uF_y = F_y/F_norm;
+	uF_z = F_z/F_norm;
+
+	FILE * pFile;
+	
+	pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
+	if (pFile==NULL) {
+		int wait = 0; 
+		while (wait<10 && pFile==NULL){
+			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
+			usleep(10*(wait+1)*(wait+1));
+			pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
+			wait++;
+		}
+		if (wait==10 && pFile==NULL){
+			cerr << "[ERROR] Impossible to write " << OUT_SIMU_FRAME.str().c_str() << "! Exiting..." << endl;
+			exit (1);
+		}
+	}
+	fprintf(pFile,"-------------------------------------------------------------------------------\n");
+	fprintf(pFile,"Frame = %d\n", i);
+	fprintf(pFile,"Electric_Field_Angle = %d\n", int(F_angle));
+	fprintf(pFile,"Electric_Field_Unit_Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
+	fprintf(pFile,"Number_of_Charges = %d\n", n_charges);
+	fprintf(pFile,"Density_of_Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*1e-24));
+	fprintf(pFile,"Time_try_%d = %e\n", (charge_try/n_charges), total_time_try/(charge_try/n_charges));
+	fprintf(pFile,"Distance_try_%d = %e\n", (charge_try/n_charges), total_dist_try/(charge_try/n_charges));
+	fprintf(pFile,"Mu_try_%d = %lf\n", (charge_try/n_charges), total_dist_try/(total_time_try*F_norm));
 	fclose(pFile);
 }

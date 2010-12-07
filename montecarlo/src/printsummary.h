@@ -22,6 +22,10 @@
 #define _PRINTSUMMARY_H 1
 
 // Print all the informations used to calculate k (before running any simulation)
-void Print_Summary(string output_folder);
+void Print_Summary_Beginning(string output_folder);
+
+// Print some information for each try of the MC simulation
+void Print_Summary_Try(string output_folder, int i, int charge_try, double total_dist_try,\
+																					double total_time_try);
 
 #endif // printsummary.h
