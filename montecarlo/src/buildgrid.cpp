@@ -80,12 +80,12 @@ void Find_Layer(bool print_results) {
 // Build the grid of molecules, and define the PBC for the whole system
 void Build_Grid(bool print_results) {
 	
-	int n_grid = n_mini_grid_a*n_mini_grid_b*n_mini_grid_c;
+	int n_grid = n_box_a*n_box_b*n_box_c;
 	
 	// Set up the "coordinates" of each box
-	for (int a=0; a<n_mini_grid_a; a++){
-		for (int b=0; b<n_mini_grid_b; b++){
-			for (int c=0; c<n_mini_grid_c; c++){
+	for (int a=0; a<n_box_a; a++){
+		for (int b=0; b<n_box_b; b++){
+			for (int c=0; c<n_box_c; c++){
 				box_a.push_back(a);
 				box_b.push_back(b);
 				box_c.push_back(c);
@@ -113,7 +113,7 @@ void Build_Grid(bool print_results) {
 			}
 
 			// Create an infinite system in the case of an anisotropy calculation
-			if (anisotropy && box_a[x] == 0 && box_a[y] == n_mini_grid_a-1 && abs(box_b[y]-box_b[x]) < 2 &&\
+			if (anisotropy && box_a[x] == 0 && box_a[y] == n_box_a-1 && abs(box_b[y]-box_b[x]) < 2 &&\
 																				abs(box_c[y]-box_c[x]) < 2) {
 						
 				box_neigh_a[x].push_back( -1 );
@@ -122,7 +122,7 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_b[x] == 0 && box_b[y] == n_mini_grid_b-1 && abs(box_a[y]-box_a[x]) < 2 &&\
+			if (anisotropy && box_b[x] == 0 && box_b[y] == n_box_b-1 && abs(box_a[y]-box_a[x]) < 2 &&\
 																				abs(box_c[y]-box_c[x]) < 2) {
 						
 				box_neigh_b[x].push_back( -1 );
@@ -131,7 +131,7 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_c[x] == 0 && box_c[y] == n_mini_grid_c-1 && abs(box_a[y]-box_a[x]) < 2 &&\
+			if (anisotropy && box_c[x] == 0 && box_c[y] == n_box_c-1 && abs(box_a[y]-box_a[x]) < 2 &&\
 																				abs(box_b[y]-box_b[x]) < 2) {
 						
 				box_neigh_c[x].push_back( -1 );
@@ -140,7 +140,7 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_a[x] == n_mini_grid_a-1 && box_a[y] == 0 && abs(box_b[y]-box_b[x]) < 2 &&\
+			if (anisotropy && box_a[x] == n_box_a-1 && box_a[y] == 0 && abs(box_b[y]-box_b[x]) < 2 &&\
 																				abs(box_c[y]-box_c[x]) < 2) {
 				box_neigh_a[x].push_back( 1 );
 				box_neigh_b[x].push_back( box_b[y]-box_b[x] );
@@ -148,7 +148,7 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_b[x] == n_mini_grid_b-1 && box_b[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
+			if (anisotropy && box_b[x] == n_box_b-1 && box_b[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
 																				abs(box_c[y]-box_c[x]) < 2) {
 				box_neigh_b[x].push_back( 1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
@@ -156,7 +156,7 @@ void Build_Grid(bool print_results) {
 				box_neigh_label[x].push_back( y );
 			}
 
-			if (anisotropy && box_c[x] == n_mini_grid_c-1 && box_c[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
+			if (anisotropy && box_c[x] == n_box_c-1 && box_c[y] == 0 && abs(box_a[y]-box_a[x]) < 2 &&\
 																				abs(box_b[y]-box_b[x]) < 2) {
 				box_neigh_c[x].push_back( 1 );
 				box_neigh_a[x].push_back( box_a[y]-box_a[x] );
@@ -242,6 +242,5 @@ void Build_Grid(bool print_results) {
 				}
 			}
 		}
-		
 	}
 }

@@ -38,7 +38,7 @@ EXTERN int n_frame, n_mol; // Number of frame and molecule
 EXTERN double snap_delay;
 EXTERN double LAMBDA_I, LAMBDA_I_H, LAMBDA_I_E, LAMBDA_S, T, H_OMEGA, dist_tot;
 EXTERN unsigned int n_try, n_charges;
-EXTERN int n_mini_grid_a, n_mini_grid_b, n_mini_grid_c;
+EXTERN int n_box_a, n_box_b, n_box_c;
 EXTERN double F_norm; 
 EXTERN string F_dir;
 EXTERN string charge;

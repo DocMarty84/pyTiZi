@@ -57,9 +57,9 @@ void Dispatch_Mol_RND(int frame, vector< vector<bool> > grid_occ, int *pos){
 	//double k_sum;
 	
 	do {
-		pos_a = rand()%n_mini_grid_a;
-		pos_b = rand()%n_mini_grid_b;
-		pos_c = rand()%n_mini_grid_c;
+		pos_a = rand()%n_box_a;
+		pos_b = rand()%n_box_b;
+		pos_c = rand()%n_box_c;
 
 		mol = rand()%n_mol;
 		
@@ -90,9 +90,9 @@ void Dispatch_Mol_RND_layer(int frame, vector< vector<bool> > grid_occ,	int *pos
 	//double k_sum;
 	
 	do {
-		pos_a = rand()%n_mini_grid_a;
-		pos_b = rand()%n_mini_grid_b;
-		pos_c = rand()%n_mini_grid_c;
+		pos_a = rand()%n_box_a;
+		pos_b = rand()%n_box_b;
+		pos_c = rand()%n_box_c;
 
 		//mol = rand()%n_mol;
 		mol = mol_layer[frame][layer][rand()%mol_layer[frame][layer].size()];
@@ -126,19 +126,19 @@ void Dispatch_Mol_begin(int frame, vector< vector<bool> > grid_occ, int *pos){
 	do {
 		if (F_dir.compare("a") == 0) {
 			pos_a = 0;
-			pos_b = rand()%n_mini_grid_b;
-			pos_c = rand()%n_mini_grid_c;
+			pos_b = rand()%n_box_b;
+			pos_c = rand()%n_box_c;
 		}
 		
 		else if (F_dir.compare("b") == 0) {
-			pos_a = rand()%n_mini_grid_a;
+			pos_a = rand()%n_box_a;
 			pos_b = 0;
-			pos_c = rand()%n_mini_grid_c;
+			pos_c = rand()%n_box_c;
 		}
 		
 		else if (F_dir.compare("c") == 0) {
-			pos_a = rand()%n_mini_grid_a;
-			pos_b = rand()%n_mini_grid_b;
+			pos_a = rand()%n_box_a;
+			pos_b = rand()%n_box_b;
 			pos_c = 0;
 		}	
 		
@@ -173,19 +173,19 @@ void Dispatch_Mol_begin_layer(int frame, vector< vector<bool> > grid_occ, int *p
 	do {
 		if (F_dir.compare("a") == 0) {
 			pos_a = 0;
-			pos_b = rand()%n_mini_grid_b;
-			pos_c = rand()%n_mini_grid_c;
+			pos_b = rand()%n_box_b;
+			pos_c = rand()%n_box_c;
 		}
 		
 		else if (F_dir.compare("b") == 0) {
-			pos_a = rand()%n_mini_grid_a;
+			pos_a = rand()%n_box_a;
 			pos_b = 0;
-			pos_c = rand()%n_mini_grid_c;
+			pos_c = rand()%n_box_c;
 		}
 		
 		else if (F_dir.compare("c") == 0) {
-			pos_a = rand()%n_mini_grid_a;
-			pos_b = rand()%n_mini_grid_b;
+			pos_a = rand()%n_box_a;
+			pos_b = rand()%n_box_b;
 			pos_c = 0;
 		}	
 		

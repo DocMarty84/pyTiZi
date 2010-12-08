@@ -27,5 +27,12 @@ void Print_Summary_Beginning(string output_folder);
 // Print some information for each try of the MC simulation
 void Print_Summary_Try(string output_folder, int i, int charge_try, double total_dist_try,\
 																					double total_time_try);
-
+																					
+// Print some information at the end of each frame calculation
+void Print_Summary_Frame(string output_folder, int i, double total_dist_try, double total_time_try,\
+																					vector <double> mu_frame);
+																					
+// Print some information at the end of the simulation
+void Print_Summary_Final(string output_folder, double mu_moy);
+	
 #endif // printsummary.h

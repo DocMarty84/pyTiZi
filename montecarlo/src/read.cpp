@@ -68,8 +68,8 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		input >> snap_delay;
 		input >> LAMBDA_I_H >> LAMBDA_I_E >> LAMBDA_S >> T >> H_OMEGA >>\
 															dist_tot >> n_try;
-		//input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> n_charges;
-		input >> n_mini_grid_a >> n_mini_grid_b >> n_mini_grid_c >> tmp;
+		//input >> n_box_a >> n_box_b >> n_box_c >> n_charges;
+		input >> n_box_a >> n_box_b >> n_box_c >> tmp;
 		input >> F_norm;
 		
 		//Generate vectors
@@ -109,10 +109,9 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		if (print_results){
 		cout << n_frame << " " << n_mol << endl;
 		cout << snap_delay << endl;
-		cout << LAMBDA_I << " " << LAMBDA_S << " " << T << " " << H_OMEGA <<\
-								" " << dist_tot << " " << n_try << " " << endl;
-		cout << n_mini_grid_a << " " << n_mini_grid_b << " " <<\
-									n_mini_grid_c << " " << n_charges << endl;
+		cout << LAMBDA_I << " " << LAMBDA_S << " " << T << " " << H_OMEGA << " " << dist_tot << " "\
+																					<< n_try << " " << endl;
+		cout << n_box_a << " " << n_box_b << " " << n_box_c << " " << n_charges << endl;
 		cout << F_norm << endl;		
 
 			for (int i=0; i<n_frame; i++){

@@ -79,8 +79,6 @@ void MC_BKL(string output_folder){
 		OUT_SIMU_FRAME << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
 		OUT_ERROR << output_folder << "/error_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
 		
-		FILE * pFile;
-		
 		// ---------------------------------------------------------------------
 		
 		// Generate the grid
@@ -294,7 +292,7 @@ void MC_BKL(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
+						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_box_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_box_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_box_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 							// curr_box.erase(curr_box.begin()+event_charge[event]);
@@ -352,31 +350,7 @@ void MC_BKL(string output_folder){
 		mu_frame.push_back(total_dist_try/(total_time_try*F_norm));
 
 		// Writes a summary for the frame
-		pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
-		if (pFile==NULL) {
-			int wait = 0; 
-			while (wait<10 && pFile==NULL){
-				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
-				usleep(10*(wait+1)*(wait+1));
-				pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
-				wait++;
-			}
-			if (wait==10 && pFile==NULL){
-				cerr << "[ERROR] Impossible to write " << OUT_SIMU_FRAME.str().c_str() << "! Exiting..." << endl;
-				exit (1);
-			}
-		}
-		fprintf(pFile,"-------------------------------------------------------------------------------\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Number of tries = %d\n", n_try);
-		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
-		fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*1e-24));
-		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
-		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
-		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame.back());
-		fclose(pFile);
+		Print_Summary_Frame(output_folder, i, total_dist_try, total_time_try, mu_frame);
 	}
 	
 	// Calculates the average on all the frames
@@ -388,34 +362,7 @@ void MC_BKL(string output_folder){
 	mu_moy = mu_moy/dbl_n_frame;
 	
 	// Writes the final mobility
-	stringstream OUT_SIMU_FINAL;
-	
-	OUT_SIMU_FINAL << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
-	  
-	FILE * pFile;
-		
-	pFile=fopen(OUT_SIMU_FINAL.str().c_str(), "a");
-	if (pFile==NULL) {
-		int wait = 0; 
-		while (wait<10 && pFile==NULL){
-			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
-			usleep(10*(wait+1)*(wait+1));
-			pFile=fopen(OUT_SIMU_FINAL.str().c_str(), "a");
-			wait++;
-		}
-		if (wait==10 && pFile==NULL){
-			cerr << "[ERROR] Impossible to write " << OUT_SIMU_FINAL.str().c_str() << "! Exiting..." << endl;
-			exit (1);
-		}
-	}
-	fprintf(pFile,"-------------------------------------------------\n");
-	fprintf(pFile,"Number of tries = %d\n", n_try);
-	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
-	fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-	fprintf(pFile,"Number of Charges = %d\n", n_charges);
-	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*1e-24));
-	fprintf(pFile,"Mobility = %lf\n", mu_moy);
-	fclose(pFile);
+	Print_Summary_Final(output_folder, mu_moy);
 	
 }
 
@@ -455,9 +402,7 @@ void MC_BKL_MT(string output_folder){
 		
 		OUT_SIMU_FRAME << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str()  << "_f_" << i << ".out";
 		OUT_ERROR << output_folder << "/error_" << charge.c_str() << "_" << F_dir.c_str() << "_f_" << i << ".out";
-	  
-		FILE * pFile;
-		
+
 		// ---------------------------------------------------------------------		
 		
 		// Generate the grid
@@ -671,7 +616,7 @@ void MC_BKL_MT(string output_folder){
 						curr_mol[event_charge[event]] = tmp_curr_mol;
 						
 						// Check if the charge reached the end of the grid
-						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_mini_grid_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_mini_grid_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_mini_grid_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
+						if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_box_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_box_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_box_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){							
 							// The charge is removed
 							// curr_mol.erase(curr_mol.begin()+event_charge[event]);
 							// curr_box.erase(curr_box.begin()+event_charge[event]);
@@ -729,31 +674,7 @@ void MC_BKL_MT(string output_folder){
 		mu_frame[i] = total_dist_try/(total_time_try*F_norm);
 
 		// Writes a summary for the frame
-		pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
-		if (pFile==NULL) {
-			int wait = 0; 
-			while (wait<10 && pFile==NULL){
-				cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
-				usleep(10*(wait+1)*(wait+1));
-				pFile=fopen(OUT_SIMU_FRAME.str().c_str(), "a");
-				wait++;
-			}
-			if (wait==10 && pFile==NULL){
-				cerr << "[ERROR] Impossible to write " << OUT_SIMU_FRAME.str().c_str() << "! Exiting..." << endl;
-				exit (1);
-			}
-		}
-		fprintf(pFile,"-------------------------------------------------------------------------------\n");
-		fprintf(pFile,"Frame = %d\n", i);
-		fprintf(pFile,"Number of tries = %d\n", n_try);
-		fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
-		fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-		fprintf(pFile,"Number of Charges = %d\n", n_charges);
-		fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[i]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*1e-24));
-		fprintf(pFile,"Average Time = %e\n", total_time_try/double(n_try));
-		fprintf(pFile,"Average Distance = %e\n", total_dist_try/double(n_try));
-		fprintf(pFile,"Mobility of the Frame %d = %lf\n", i, mu_frame[i]);
-		fclose(pFile);
+		Print_Summary_Frame(output_folder, i, total_dist_try, total_time_try, mu_frame);
 		
 		// ---------------------------------------------------------------------
 		
@@ -782,33 +703,6 @@ void MC_BKL_MT(string output_folder){
 	mu_moy = mu_moy/dbl_n_frame;
 	
 	// Writes the final mobility
-	stringstream OUT_SIMU_FINAL;
-	
-	OUT_SIMU_FINAL << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str() << ".out";
-	  
-	FILE * pFile;
-		
-	pFile=fopen(OUT_SIMU_FINAL.str().c_str(), "a");
-	if (pFile==NULL) {
-		int wait = 0; 
-		while (wait<10 && pFile==NULL){
-			cerr << "[ERROR] Waiting " << 10*(wait+1)*(wait+1) << " seconds to write a file" << endl;
-			usleep(10*(wait+1)*(wait+1));
-			pFile=fopen(OUT_SIMU_FINAL.str().c_str(), "a");
-			wait++;
-		}
-		if (wait==10 && pFile==NULL){
-			cerr << "[ERROR] Impossible to write " << OUT_SIMU_FINAL.str().c_str() << "! Exiting..." << endl;
-			exit (1);
-		}
-	}
-	fprintf(pFile,"-------------------------------------------------\n");
-	fprintf(pFile,"Number of tries = %d\n", n_try);
-	fprintf(pFile,"Electric Field Angle = %d\n", int(F_angle));
-	fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
-	fprintf(pFile,"Number of Charges = %d\n", n_charges);
-	fprintf(pFile,"Density of Charges = %.5e charges/cm3\n", double(n_charges)/(vol_box[0]*n_mini_grid_a*n_mini_grid_b*n_mini_grid_c*1e-24));
-	fprintf(pFile,"Mobility = %lf\n", mu_moy);
-	fclose(pFile);
+	Print_Summary_Final(output_folder, mu_moy);
 	
 }
