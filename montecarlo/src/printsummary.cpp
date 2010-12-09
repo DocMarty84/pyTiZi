@@ -20,12 +20,14 @@
 
 // C++ libraries
 #include <iostream> 
-#include <fstream> 
+#include <fstream>
+#include <numeric> 
 #include <string> 
 #include <sstream> 
 #include <vector>
 
 // C libraries
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -189,6 +191,63 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	fprintf(pFile,"Average Time     = %e seconds\n", total_time_try/double(n_try));
 	fprintf(pFile,"Average Distance = %e centimeters\n", total_dist_try/double(n_try));
 	fprintf(pFile,"Mobility         = %e cm2/Vs\n\n", mu_frame[i]);
+
+	// Print the properties of each charge
+	vector< vector< double> > chrg_E_electrostatic_sq(chrg_E_electrostatic);
+	vector< vector< double> > chrg_E_0_sq(chrg_E_0); 
+	vector< vector< double> > chrg_E_1_sq(chrg_E_1);
+	vector<double>::iterator chrg_E_electrostatic_it, chrg_E_0_it, chrg_E_1_it;
+	
+	vector <double> chrg_E_electrostatic_av, chrg_E_0_av, chrg_E_1_av;
+	vector <double> chrg_E_electrostatic_sq_av, chrg_E_0_sq_av, chrg_E_1_sq_av;
+	vector <double> chrg_E_electrostatic_var, chrg_E_0_var, chrg_E_1_var;
+	
+	for (unsigned int charge_i=0; charge_i<chrg_E_electrostatic.size(); charge_i++){
+		// Calculate square of each value (should work for huge tables, I hope)
+		for (chrg_E_electrostatic_it=chrg_E_electrostatic_sq[charge_i].begin(); chrg_E_electrostatic_it <\
+										chrg_E_electrostatic_sq[charge_i].end(); chrg_E_electrostatic_it++) {
+			*chrg_E_electrostatic_it = pow(*chrg_E_electrostatic_it, 2);
+		}
+		for (chrg_E_0_it=chrg_E_0_sq[charge_i].begin(); chrg_E_0_it < chrg_E_0_sq[charge_i].end();\
+																							chrg_E_0_it++) {
+			*chrg_E_0_it = pow(*chrg_E_0_it, 2);
+		}
+		for (chrg_E_1_it=chrg_E_1_sq[charge_i].begin(); chrg_E_1_it < chrg_E_1_sq[charge_i].end();\
+																							chrg_E_1_it++) {
+			*chrg_E_1_it = pow(*chrg_E_1_it, 2);
+		}
+		
+		// Calculate average
+		chrg_E_electrostatic_av.push_back(accumulate(chrg_E_electrostatic[charge_i].begin(),\
+							chrg_E_electrostatic[charge_i].end(), 0)/chrg_E_electrostatic[charge_i].size());
+		chrg_E_0_av.push_back(accumulate(chrg_E_0[charge_i].begin(),\
+													chrg_E_0[charge_i].end(), 0)/chrg_E_0[charge_i].size());
+		chrg_E_1_av.push_back(accumulate(chrg_E_1[charge_i].begin(),\
+													chrg_E_1[charge_i].end(), 0)/chrg_E_1[charge_i].size());
+
+		// Calculate average of the squared values
+		chrg_E_electrostatic_sq_av.push_back(accumulate(chrg_E_electrostatic_sq[charge_i].begin(),\
+						chrg_E_electrostatic_sq[charge_i].end(), 0)/chrg_E_electrostatic_sq[charge_i].size());
+		chrg_E_0_sq_av.push_back(accumulate(chrg_E_0_sq[charge_i].begin(),\
+												chrg_E_0_sq[charge_i].end(), 0)/chrg_E_0_sq[charge_i].size());
+		chrg_E_1_sq_av.push_back(accumulate(chrg_E_1_sq[charge_i].begin(),\
+												chrg_E_1_sq[charge_i].end(), 0)/chrg_E_1_sq[charge_i].size());
+
+		// Calculate the variance									
+		chrg_E_electrostatic_var.push_back(chrg_E_electrostatic_sq_av.back() -\
+																	pow(chrg_E_electrostatic_av.back(), 2));
+		chrg_E_0_var.push_back(chrg_E_0_sq_av.back() - pow(chrg_E_0_av.back(), 2));
+		chrg_E_1_var.push_back(chrg_E_1_sq_av.back() - pow(chrg_E_1_av.back(), 2));
+	}
+
+	fprintf(pFile,"Charge properties\n");
+	fprintf(pFile,"-----------------\n");
+	fprintf(pFile,"Charge_number V_average V_variance E_0_average E_0_variance E_1_average E_1_variance\n");	
+	for (unsigned int charge_i=0; charge_i<chrg_E_electrostatic.size(); charge_i++){
+		fprintf(pFile,"%d %e %e %e %e %e %e\n", charge_i, chrg_E_electrostatic_av[charge_i],\
+						chrg_E_electrostatic_var[charge_i], chrg_E_0_av[charge_i], chrg_E_0_var[charge_i],\
+						chrg_E_1_av[charge_i], chrg_E_1_var[charge_i]);
+	}
 
 	// Print the properties of each site of the grid
 	fprintf(pFile,"Grid properties\n");

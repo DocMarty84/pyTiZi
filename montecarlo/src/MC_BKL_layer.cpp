@@ -225,21 +225,11 @@ int main(int argc, char **argv){
 		k.clear();
 
 		if(method.compare("bkl") == 0) {
-			if(MT) {
-				MC_BKL_MT(output_folder);
-			}
-			else {
-				MC_BKL(output_folder);
-			}
+			MC_BKL_MT(output_folder);
 		}
 
 		else {
-			if(MT) {
-				MC_FRM_MT(output_folder);
-			}
-			else {
-				MC_FRM(output_folder);
-			}
+			MC_FRM_MT(output_folder);
 		}
 
 		// Clear everything (not necessary) and set to reference values
