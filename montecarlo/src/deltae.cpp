@@ -21,6 +21,8 @@
 // C++ libraries
 #include <iostream>
 #include <vector>
+#include <boost/random.hpp>
+#include <ctime>
 
 // Local libraries
 #include "variables.h"
@@ -66,6 +68,50 @@ void Calcul_DeltaE(bool print_results){
 				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 					cout << neigh_label[i][ii][jj] << " " <<\
 														dE[i][ii][jj] << endl;
+				}
+			}
+		}
+	}
+}
+
+// Generate a random Energy mapping
+void Generate_E_GDM(double mean, double sigma, bool print_results){
+
+	using namespace boost;
+
+	// Create a Mersenne twister random number generator
+	// that is seeded once with #seconds since 1970
+	static mt19937 rng(static_cast<unsigned> (time(0)));
+ 
+	// Select Gaussian probability distribution
+	normal_distribution<double> norm_dist(mean, sigma);
+ 
+	// Bind random number generator to distribution, forming a function
+	variate_generator<mt19937&, normal_distribution<double> > norm_dist_sampler(rng, norm_dist);
+
+	for (int i=0; i<n_frame; i++){
+		E_random.push_back( vector< vector<double> > ());
+		
+		for (int x=0; x<n_box; x++){
+			E_random[i].push_back( vector<double> ());
+		
+			for (int ii=0; ii<n_mol; ii++){
+				E_random[i][x].push_back( norm_dist_sampler() );
+				
+			}
+		}
+	}
+	
+	// Print part
+	if (print_results){
+		
+		for (int i=0; i<n_frame; i++){
+			cout << "frame " << i << endl;
+			for (int x=0; x<n_box; x++){
+				cout << "box " << x << endl;
+				for (int ii=0; ii<n_mol; ii++){
+					cout << "molecule " << mol_label[ii] << " " << E_random[i][x][ii] << endl;
+
 				}
 			}
 		}
