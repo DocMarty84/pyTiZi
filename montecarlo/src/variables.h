@@ -43,6 +43,8 @@ EXTERN double F_norm;
 EXTERN string F_dir;
 EXTERN string charge;
 
+EXTERN int n_box;
+
 // Variables for the unit cell parameters
 EXTERN bool pbc[3];																// Periodic boundary cond.
 EXTERN vector<double> a, b, c, alpha_deg, beta_deg, gamma_deg, vol_box; 		// Cell parameters

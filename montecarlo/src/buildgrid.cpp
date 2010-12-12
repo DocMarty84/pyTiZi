@@ -80,8 +80,6 @@ void Find_Layer(bool print_results) {
 // Build the grid of molecules, and define the PBC for the whole system
 void Build_Grid(bool print_results) {
 	
-	int n_grid = n_box_a*n_box_b*n_box_c;
-	
 	// Set up the "coordinates" of each box
 	for (int a=0; a<n_box_a; a++){
 		for (int b=0; b<n_box_b; b++){
@@ -95,13 +93,13 @@ void Build_Grid(bool print_results) {
 	}
 	
 	// Set up the neighbors of each box
-	for (int x=0; x<n_grid; x++){
+	for (int x=0; x<n_box; x++){
 		box_neigh_label.push_back( vector< int > () );
 		box_neigh_a.push_back( vector< int > () );
 		box_neigh_b.push_back( vector< int > () );
 		box_neigh_c.push_back( vector< int > () );
 		
-		for (int y=0; y<n_grid; y++){
+		for (int y=0; y<n_box; y++){
 			// Finite size system
 			if ((abs(box_a[y]-box_a[x]) < 2 && abs(box_b[y]-box_b[x]) < 2 && abs(box_c[y]-box_c[x]) < 2) &&\
 				(abs(box_a[y]-box_a[x]) != 0 || abs(box_b[y]-box_b[x]) != 0 || abs(box_c[y]-box_c[x]) != 0)){
@@ -179,7 +177,7 @@ void Build_Grid(bool print_results) {
 		grid_E_0.push_back( vector< vector<double> > () );
 		grid_E_1.push_back( vector< vector<double> > () );
 		
-		for (int x=0; x<n_grid; x++){
+		for (int x=0; x<n_box; x++){
 			
 			grid_probability[i].push_back( vector< vector<double> > () );
 			grid_x[i].push_back( vector<double> () );
@@ -234,7 +232,7 @@ void Build_Grid(bool print_results) {
 			cout << endl << "Frame " << i << endl;
 			cout << "Box Mol X Y Z E_0 E_1" << endl;
 			
-			for (int x=0; x<n_grid; x++){
+			for (int x=0; x<n_box; x++){
 				
 				for (int ii=0; ii<n_mol; ii++){
 					cout << x << " " << ii << " " << grid_x[i][x][ii] << " " <<	grid_y[i][x][ii] << " " <<\

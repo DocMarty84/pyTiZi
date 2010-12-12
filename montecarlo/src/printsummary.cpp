@@ -128,7 +128,6 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 																				vector <double> mu_frame) {
 	stringstream OUT_SIMU_FRAME;
 	double uF_x, uF_y, uF_z;
-	int n_grid;
 
 	OUT_SIMU_FRAME << output_folder << "/simu_" << charge.c_str() << "_" << F_dir.c_str()  << "_f_" << i <<\
 																									".out";
@@ -136,7 +135,6 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
 	uF_z = F_z/F_norm;
-	n_grid = n_box_a*n_box_b*n_box_c;
 
 	FILE * pFile;
 	
@@ -176,15 +174,15 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	fprintf(pFile,"Number of boxes along a     = %d\n", n_box_a);
 	fprintf(pFile,"Number of boxes along b     = %d\n", n_box_b);
 	fprintf(pFile,"Number of boxes along c     = %d\n", n_box_c);
-	fprintf(pFile,"Volume of grid              = %e Angstrom3\n", vol_box[i]*n_grid);
+	fprintf(pFile,"Volume of grid              = %e Angstrom3\n", vol_box[i]*n_box);
 	fprintf(pFile,"Electric Field Norm         = %e V/cm\n", F_norm);
 	fprintf(pFile,"Electric Field Direction    = %s \n", F_dir.c_str());
 	fprintf(pFile,"Electric Field Angle        = %d degrees\n", int(F_angle));
 	fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 	fprintf(pFile,"Type of Charges             = %s\n", charge.c_str());
 	fprintf(pFile,"Number of Charges           = %d\n", n_charges);
-	fprintf(pFile,"Number of Charges per Site  = %e charges/site\n", double(n_charges)/(n_mol*n_grid));
-	fprintf(pFile,"Density of Charges          = %e charges/cm3\n\n", double(n_charges)/(vol_box[i]*n_grid*\
+	fprintf(pFile,"Number of Charges per Site  = %e charges/site\n", double(n_charges)/(n_mol*n_box));
+	fprintf(pFile,"Density of Charges          = %e charges/cm3\n\n", double(n_charges)/(vol_box[i]*n_box*\
 																									1e-24));
 	fprintf(pFile,"Monte-Carlo Results\n");
 	fprintf(pFile,"-------------------\n");																						
@@ -257,7 +255,7 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	fprintf(pFile," x      x    Angstrom     eV         x \n");
 
 	double grid_probability_norm = 0.0;
-	for (int x=0; x<n_grid; x++){
+	for (int x=0; x<n_box; x++){
 		for (int ii=0; ii<n_mol; ii++){
 			for (unsigned int charge_i=0; charge_i < grid_probability[i][x][ii].size(); charge_i++) {
 				grid_probability_norm += grid_probability[i][x][ii][charge_i];
@@ -265,7 +263,7 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 		}
 	}
 	
-	for (int x=0; x<n_grid; x++){
+	for (int x=0; x<n_box; x++){
 		for (int ii=0; ii<n_mol; ii++){
 			
 			double grid_probability_av = 0.0;
@@ -321,10 +319,9 @@ void Print_Summary_Final(string output_folder, double mu_moy) {
 	fprintf(pFile,"Electric Field Angle        = %d\n", int(F_angle));
 	fprintf(pFile,"Electric Field Unit Vectors = (%f, %f, %f)\n", uF_x, uF_y, uF_z);
 	fprintf(pFile,"Number of Charges           = %d\n", n_charges);
-	fprintf(pFile,"Number of Charges per Site  = %e charges/site\n", double(n_charges)/(n_mol*n_box_a*\
-																							n_box_b*n_box_c));
+	fprintf(pFile,"Number of Charges per Site  = %e charges/site\n", double(n_charges)/(n_mol*n_box));
 	fprintf(pFile,"Density of Charges          = %e charges/cm3\n", double(n_charges)/(vol_box[0]*\
-																			n_box_a*n_box_b*n_box_c*1e-24));
+																								n_box*1e-24));
 	fprintf(pFile,"Average Mobility            = %e cm2/Vs\n", mu_moy);
 	fclose(pFile);
 	
