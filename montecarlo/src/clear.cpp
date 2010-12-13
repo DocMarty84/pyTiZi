@@ -56,7 +56,9 @@ void Clear_All(){
 
 	neigh_label.clear();
 	d_x.clear(); d_y.clear(); d_z.clear();
-	dE.clear(); dE_random.clear();
+	dE.clear(); 
+	dE_random.clear();
+	dE_random_box.clear();
 	J_H.clear(); J_L.clear();
 	neigh_jump_vec_a.clear(); 
 	neigh_jump_vec_b.clear(); 

@@ -72,6 +72,8 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		input >> n_box_a >> n_box_b >> n_box_c >> tmp;
 		input >> F_norm;
 		
+		n_box = n_box_a * n_box_b * n_box_c;
+		
 		//Generate vectors
 		for (int i=0; i<n_frame; i++){
 			neigh_label.push_back( vector< vector<int> > ());

@@ -185,19 +185,28 @@ int main(int argc, char **argv){
 	// Calculates Electric field vectors
 	Calcul_F_vector(false);
 	
-	// Calculates distances and DeltaE
+	// Calculates distances
 	Calcul_Dist(false);
-	Calcul_DeltaE(false);
-
-	// Build the grid
-	Build_Grid(false);
+	
+	// Calculate deltaE and build the grid
+	if (grid_E_random) {
+		Generate_E_GDM(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);		// Generate random Energy mapping
+		Build_Grid(false);
+		Calcul_DeltaE_GDM(false);
+		DeltaE_GDM_to_DeltaE(false);									// Create the dE table for convenience
+	}
+	else {
+		Calcul_DeltaE(false);
+		Build_Grid(false);
+	}
 	
 	// Save the triangular matrix
 	vector< vector< vector<int> > > neigh_label_ref = neigh_label;
 	vector< vector< vector<int> > > neigh_jump_vec_a_ref = neigh_jump_vec_a, neigh_jump_vec_b_ref = neigh_jump_vec_b, neigh_jump_vec_c_ref = neigh_jump_vec_c;
 	vector< vector< vector<double> > > J_H_ref = J_H, J_L_ref = J_L;
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
-	vector< vector< vector<double> > > dE_ref = dE;				
+	vector< vector< vector<double> > > dE_ref = dE;
+	vector< vector< vector< vector<double> > > > dE_random_ref = dE_random;		
 	
 	//#pragma omp parallel for private(F_x, F_y, F_z, F_angle, F_x_list, F_y_list, F_z_list, F_angle_list, k, k_inv, grid_occ) //if (n_frame < int(omp_get_max_threads()) && anisotropy == true)
 	for (unsigned int m=0; m<F_angle_list.size(); m++) {
@@ -238,6 +247,7 @@ int main(int argc, char **argv){
 		d_y.clear(); d_y = d_y_ref;
 		d_z.clear(); d_z = d_z_ref;
 		dE.clear();	dE = dE_ref;
+		dE_random.clear();	dE_random = dE_random_ref;
 		k.clear();
 		k_inv.clear();
 	}

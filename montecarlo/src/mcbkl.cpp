@@ -136,8 +136,15 @@ void MC_BKL_MT(string output_folder){
 			chrg_E_0.push_back( vector < double > () );
 			chrg_E_1.push_back( vector < double > () );
 			chrg_E_electrostatic[charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box)); 
-			chrg_E_0[charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
-			chrg_E_1[charge_i].push_back(E_1[i][curr_mol[charge_i]]);
+			
+			if (grid_E_random) {
+				chrg_E_0[charge_i].push_back(E_random[i][curr_box[charge_i]][curr_mol[charge_i]]); 
+				chrg_E_1[charge_i].push_back(0.0);
+			}
+			else {
+				chrg_E_0[charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
+				chrg_E_1[charge_i].push_back(E_1[i][curr_mol[charge_i]]);
+			}
 		}
 
 		bool previous_jump_ok = true;
@@ -162,6 +169,7 @@ void MC_BKL_MT(string output_folder){
 				for (unsigned int charge_i=0; charge_i<curr_mol.size(); charge_i++){
 					
 					int tmp_mol_index = curr_mol[charge_i];
+					int tmp_mol_box = curr_box[charge_i];
 											
 					for (unsigned int jj=0; jj<neigh_label[i][tmp_mol_index].size(); jj++){
 						
@@ -175,9 +183,21 @@ void MC_BKL_MT(string output_folder){
 							}
 						}
 						
-						double k_tmp = numeric_limits<double>::min();
+						double k_tmp = numeric_limits<double>::max();
+						double dE_tmp = 0.0;
+						
+						// Choose deltaE depending on the type of disorder
+						if (grid_E_random) {
+							dE_tmp = dE_random[i][tmp_mol_box][tmp_mol_index][jj];
+						}
+						
+						else {
+							dE_tmp = dE[i][tmp_mol_index][jj];
+						}
+						
+						// Calculate transfer rate
 						if (tmp_neigh_index != tmp_mol_index){
-							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE[i][tmp_mol_index][jj], J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
+							k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE_tmp, J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
 						}
 
 						event_k.push_back(k_tmp);
@@ -352,8 +372,14 @@ void MC_BKL_MT(string output_folder){
 						else{
 							grid_occ[tmp_curr_box][tmp_curr_mol] = true;
 							chrg_E_electrostatic[event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
-							chrg_E_0[event_charge[event]].push_back(E_0[i][event_neigh_index[event]]); 
-							chrg_E_1[event_charge[event]].push_back(E_1[i][event_neigh_index[event]]);
+							if (grid_E_random) {
+								chrg_E_0[event_charge[event]].push_back(E_random[i][tmp_curr_box][tmp_curr_mol]); 
+								chrg_E_1[event_charge[event]].push_back(0.0);
+							}
+							else {
+								chrg_E_0[event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
+								chrg_E_1[event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
+							}
 						}
 						
 						previous_jump_ok = true;

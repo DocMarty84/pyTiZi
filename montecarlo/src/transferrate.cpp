@@ -148,9 +148,8 @@ void Calcul_k(bool print_results){
 			
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				
-				double k_tmp = Marcus_Levich_Jortner_rate(\
-								d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
-								dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+				double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
+															dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
 				
 				k[i][ii].push_back(k_tmp);
 				
@@ -166,8 +165,7 @@ void Calcul_k(bool print_results){
 			for (int ii=0; ii<n_mol; ii++){
 				cout << "molecule " << mol_label[ii] << endl;
 				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-					cout << neigh_label[i][ii][jj] << " " << k[i][ii][jj] <<\
-																		endl;
+					cout << neigh_label[i][ii][jj] << " " << k[i][ii][jj] << endl;
 				}
 			}
 		}
@@ -186,32 +184,26 @@ void Full_Matrix(){
 					
 					if (neigh_label[i][ll][jj]==mol_label[ii]){
 						
-						neigh_label[i][ii].insert(neigh_label[i][ii].begin(),\
-																mol_label[ll]);
+						neigh_label[i][ii].insert(neigh_label[i][ii].begin(), mol_label[ll]);
 						
 						d_x[i][ii].insert(d_x[i][ii].begin(), -d_x[i][ll][jj]);
 						d_y[i][ii].insert(d_y[i][ii].begin(), -d_y[i][ll][jj]);
 						d_z[i][ii].insert(d_z[i][ii].begin(), -d_z[i][ll][jj]);
 						
-						neigh_jump_vec_a[i][ii].insert(\
-											neigh_jump_vec_a[i][ii].begin(),\
-											-neigh_jump_vec_a[i][ll][jj]);
-						neigh_jump_vec_b[i][ii].insert(\
-											neigh_jump_vec_b[i][ii].begin(),\
-											-neigh_jump_vec_b[i][ll][jj]);
-						neigh_jump_vec_c[i][ii].insert(\
-											neigh_jump_vec_c[i][ii].begin(),\
-											-neigh_jump_vec_c[i][ll][jj]);
+						neigh_jump_vec_a[i][ii].insert(neigh_jump_vec_a[i][ii].begin(),\
+																				-neigh_jump_vec_a[i][ll][jj]);
+						neigh_jump_vec_b[i][ii].insert(neigh_jump_vec_b[i][ii].begin(),\
+																				-neigh_jump_vec_b[i][ll][jj]);
+						neigh_jump_vec_c[i][ii].insert(neigh_jump_vec_c[i][ii].begin(),\
+																				-neigh_jump_vec_c[i][ll][jj]);
 
 						dE[i][ii].insert(dE[i][ii].begin(), -dE[i][ll][jj]);
 						
 						J_H[i][ii].insert(J_H[i][ii].begin(), J_H[i][ll][jj]);
 						J_L[i][ii].insert(J_L[i][ii].begin(), J_L[i][ll][jj]);
 							
-						double k_tmp = Marcus_Levich_Jortner_rate(\
-										d_x[i][ii].front(), d_y[i][ii].front(),\
-										d_z[i][ii].front(), dE[i][ii].front(),\
-										J_H[i][ii].front(), J_L[i][ii].front());
+						double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii].front(), d_y[i][ii].front(),\
+							d_z[i][ii].front(), dE[i][ii].front(), J_H[i][ii].front(), J_L[i][ii].front());
 						
 						k[i][ii].insert(k[i][ii].begin(), k_tmp);
 
@@ -252,8 +244,7 @@ void Inverse_Clear_k(bool print_results){
 			for (int ii=0; ii<n_mol; ii++){
 				cout << "molecule " << mol_label[ii] << endl;
 				for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-					cout << neigh_label[i][ii][jj] << " " <<\
-													k_inv[i][ii][jj] << endl;
+					cout << neigh_label[i][ii][jj] << " " << k_inv[i][ii][jj] << endl;
 				}
 			}
 		}

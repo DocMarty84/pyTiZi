@@ -202,8 +202,16 @@ void Build_Grid(bool print_results) {
 				grid_x[i][x].push_back( CM_Cart[0] );
 				grid_y[i][x].push_back( CM_Cart[1] ); 
 				grid_z[i][x].push_back( CM_Cart[2] );
-				grid_E_0[i][x].push_back( E_0[0][ii] );
-				grid_E_1[i][x].push_back( E_1[0][ii] );
+				
+				if (grid_E_random) {
+					grid_E_0[i][x].push_back( E_random[i][x][ii] );
+					grid_E_1[i][x].push_back( 0.0 );
+				}
+				
+				else {
+					grid_E_0[i][x].push_back( E_0[0][ii] );
+					grid_E_1[i][x].push_back( E_1[0][ii] );
+				}
 				
 				// Set up a probability for each charge
 				for (unsigned int charge_i = 0; charge_i < n_charges; charge_i++){

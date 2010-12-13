@@ -217,19 +217,19 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 		
 		// Calculate average
 		chrg_E_electrostatic_av.push_back(accumulate(chrg_E_electrostatic[charge_i].begin(),\
-							chrg_E_electrostatic[charge_i].end(), 0)/chrg_E_electrostatic[charge_i].size());
+							chrg_E_electrostatic[charge_i].end(), 0.0)/chrg_E_electrostatic[charge_i].size());
 		chrg_E_0_av.push_back(accumulate(chrg_E_0[charge_i].begin(),\
-													chrg_E_0[charge_i].end(), 0)/chrg_E_0[charge_i].size());
+													chrg_E_0[charge_i].end(), 0.0)/chrg_E_0[charge_i].size());
 		chrg_E_1_av.push_back(accumulate(chrg_E_1[charge_i].begin(),\
-													chrg_E_1[charge_i].end(), 0)/chrg_E_1[charge_i].size());
-
+													chrg_E_1[charge_i].end(), 0.0)/chrg_E_1[charge_i].size());
+													
 		// Calculate average of the squared values
 		chrg_E_electrostatic_sq_av.push_back(accumulate(chrg_E_electrostatic_sq[charge_i].begin(),\
-						chrg_E_electrostatic_sq[charge_i].end(), 0)/chrg_E_electrostatic_sq[charge_i].size());
+					chrg_E_electrostatic_sq[charge_i].end(), 0.0)/chrg_E_electrostatic_sq[charge_i].size());
 		chrg_E_0_sq_av.push_back(accumulate(chrg_E_0_sq[charge_i].begin(),\
-												chrg_E_0_sq[charge_i].end(), 0)/chrg_E_0_sq[charge_i].size());
+											chrg_E_0_sq[charge_i].end(), 0.0)/chrg_E_0_sq[charge_i].size());
 		chrg_E_1_sq_av.push_back(accumulate(chrg_E_1_sq[charge_i].begin(),\
-												chrg_E_1_sq[charge_i].end(), 0)/chrg_E_1_sq[charge_i].size());
+											chrg_E_1_sq[charge_i].end(), 0.0)/chrg_E_1_sq[charge_i].size());
 
 		// Calculate the variance									
 		chrg_E_electrostatic_var.push_back(chrg_E_electrostatic_sq_av.back() -\
@@ -248,7 +248,7 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	}
 
 	// Print the properties of each site of the grid
-	fprintf(pFile,"Grid properties\n");
+	fprintf(pFile,"\nGrid properties\n");
 	fprintf(pFile,"---------------\n");	
 
 	fprintf(pFile,"Box Molecule   X Y Z   E_0 E_1 Probability\n");

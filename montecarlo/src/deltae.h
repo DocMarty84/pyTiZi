@@ -30,4 +30,7 @@ void Generate_E_GDM(double mean, double sigma, bool print_results);
 // Calculates deltaE between molecules for random energy
 void Calcul_DeltaE_GDM(bool print_results);
 
+// Copy dE_random[i][0][ii][jj] to dE[i][ii][jj]
+void DeltaE_GDM_to_DeltaE(bool print_results);
+
 #endif // deltae.h

@@ -81,6 +81,7 @@ EXTERN vector< vector< vector<int> > > neigh_label;								// Label of neighbors
 EXTERN vector< vector< vector<double> > > d_x, d_y, d_z;						// Distance
 EXTERN vector< vector< vector<double> > > dE;									// Delta E if read
 EXTERN vector< vector< vector< vector<double> > > > dE_random;					// Delta E if random
+EXTERN vector< vector< vector< vector<int> > > > dE_random_box;
 EXTERN vector< vector< vector<double> > > J_H, J_L;								// Transfer integrals
 EXTERN vector< vector< vector<int> > > neigh_jump_vec_a, neigh_jump_vec_b, neigh_jump_vec_c;
 																				// Vect. for mini-grid change
