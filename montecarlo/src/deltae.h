@@ -27,5 +27,7 @@ void Calcul_DeltaE(bool print_results);
 // Generate a random Energy mapping
 void Generate_E_GDM(double mean, double sigma, bool print_results);
 
+// Calculates deltaE between molecules for random energy
+void Calcul_DeltaE_GDM(bool print_results);
 
 #endif // deltae.h

@@ -94,7 +94,7 @@ int main(int argc, char **argv){
 	string output_folder = ".";
 	string method;
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:l:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:l:s:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -134,6 +134,11 @@ int main(int argc, char **argv){
 	  		case 'm':
 				method = optarg;
 	  			break;
+	  			
+	  		case 's':	
+	  			grid_E_random = true;
+	  			grid_sigma_over_kT = atof(optarg);
+	  			break;
 	  		
 			case 'l':
 				layer = atoi(optarg);
@@ -171,12 +176,18 @@ int main(int argc, char **argv){
 		Clear_All();
 		exit(1);
 	}
+	
+	if (grid_E_random) {
+		cout << "[INFO] Using a Gaussian Distribution Model for energy, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
+	}
 
 	// Read the required files
 	Read_MC(input_file, input_folder, false);
 	Read_CELL(input_file, input_folder, false);
 	Read_CM(input_file, input_folder, false);
-	Read_E_av(input_file, input_folder, false);
+	if (grid_E_random == false) {
+		Read_E_av(input_file, input_folder, false);
+	}
 
 	// Set up lambda_i
 	if (charge.compare("e") == 0) {
