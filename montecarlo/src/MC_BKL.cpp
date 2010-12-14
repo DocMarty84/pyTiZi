@@ -45,7 +45,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <omp.h>
 
 // Local libraries

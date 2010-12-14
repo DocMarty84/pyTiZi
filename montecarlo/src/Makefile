@@ -39,7 +39,7 @@ BINDIR = $(MCDIR)/../bin
 ##
 
 CPP = /usr/bin/g++
-LIBS = -lm -lboost_filesystem-mt
+LIBS = -lm -lboost_filesystem
 OMPLIBS = -fopenmp
 CPPFLAGS = -Wall -c
 OPTFLAGS = -O3
@@ -52,6 +52,8 @@ LINKFLAGS =
 ##  Oper Sys: CentOS 5.5
 ##  Compiler: Portland Group (PGI) Fortran
 ##  Notice:   Load the appropriate module if needed
+##            You probably need a recent version of boost libraries
+##            with PGI support
 ##
 
 #CPP = pgcpp

@@ -28,7 +28,7 @@
 // C libraries
 #include <stdlib.h>
 
-#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
 
 // Local libraries
 #include "clear.h"
