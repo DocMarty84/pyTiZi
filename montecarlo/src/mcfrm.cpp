@@ -53,10 +53,26 @@ void MC_FRM_MT(string output_folder){
 	// Average mobility for each frame
 	vector<double> mu_frame (n_frame, 0.0);
 	
+	// Electric Field
 	double uF_x, uF_y, uF_z;
 	uF_x = F_x/F_norm;
 	uF_y = F_y/F_norm;
 	uF_z = F_z/F_norm;
+	
+	// Charge properties
+	chrg_E_electrostatic.clear();
+	chrg_E_0.clear();
+	chrg_E_1.clear();
+	chrg_total_time.clear();
+	chrg_total_dist.clear();
+	
+	for (int i=0; i<n_frame; i++){
+		chrg_E_electrostatic.push_back( vector< vector< double > > () ); 
+		chrg_E_0.push_back( vector< vector< double > > () );
+		chrg_E_1.push_back( vector< vector< double > > () );
+		chrg_total_time.push_back( vector< double > () ); 
+		chrg_total_dist.push_back( vector< double > () ); 
+	}
 
 	#pragma omp parallel for private(grid_occ) //if (n_frame >= int(omp_get_max_threads()))
 	
@@ -65,7 +81,7 @@ void MC_FRM_MT(string output_folder){
 		
 		// Variables for each charge
 		vector<int> curr_mol, curr_box; // Number of the molecule in the mini-grid, and number of this mini-grid
-		vector<double> dist, jump; // Distance and number of jumps for each charge
+		vector<double> chrg_tmp_dist, chrg_tmp_jump; // Distance and number of jumps for each charge
 		
 		// Variables for a chosen event
 		vector<double> event_k; // Transfer rate
@@ -124,28 +140,27 @@ void MC_FRM_MT(string output_folder){
 		// Set charge variables to original value
 		total_time_try = 0.0;
 		total_dist_try = 0.0;
-
-		dist.clear();
-		jump.clear(); 
-		chrg_E_electrostatic.clear();
-		chrg_E_0.clear();
-		chrg_E_1.clear();
+		chrg_tmp_dist.clear(); 
+		chrg_tmp_jump.clear();
 		
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
-			dist.push_back(0.0);
-			jump.push_back(0.0);
-			chrg_E_electrostatic.push_back( vector < double > () ); 
-			chrg_E_0.push_back( vector < double > () );
-			chrg_E_1.push_back( vector < double > () );
-			chrg_E_electrostatic[charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box));
+			chrg_tmp_dist.push_back(0.0);
+			chrg_tmp_jump.push_back(0.0);
+		
+			chrg_E_electrostatic[i].push_back( vector < double > () ); 
+			chrg_E_0[i].push_back( vector < double > () );
+			chrg_E_1[i].push_back( vector < double > () );
+			chrg_E_electrostatic[i][charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box));
+			chrg_total_time[i].push_back(0.0);
+			chrg_total_dist[i].push_back(0.0);
 			
 			if (grid_E_random) {
-				chrg_E_0[charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
-				chrg_E_1[charge_i].push_back(0.0);
+				chrg_E_0[i][charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
+				chrg_E_1[i][charge_i].push_back(0.0);
 			}
 			else {
-				chrg_E_0[charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
-				chrg_E_1[charge_i].push_back(E_1[i][curr_mol[charge_i]]);
+				chrg_E_0[i][charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
+				chrg_E_1[i][charge_i].push_back(E_1[i][curr_mol[charge_i]]);
 			}
 		}
 
@@ -386,7 +401,8 @@ void MC_FRM_MT(string output_folder){
 			
 			else{
 
-				// Calculate the total time
+				// Calculate the time for each charge and the total time
+				chrg_total_time[i][event_charge[event]] += event_k[event];
 				total_time_try += event_k[event];
 	
 				// Substract the waiting time
@@ -397,7 +413,8 @@ void MC_FRM_MT(string output_folder){
 
 				// Calculate the distance traveled by the charge and the total distance
 				double event_dist = (d_x[i][event_mol_index[event]][event_neigh_num[event]] * uF_x + d_y[i][event_mol_index[event]][event_neigh_num[event]] * uF_y + d_z[i][event_mol_index[event]][event_neigh_num[event]] * uF_z)*1E-8;
-				dist[event_charge[event]] += event_dist;
+				chrg_total_dist[i][event_charge[event]] += event_dist/double(curr_mol.size());
+				chrg_tmp_dist[event_charge[event]] += event_dist/double(curr_mol.size());
 				//total_dist_try += event_dist;
 				total_dist_try += event_dist/double(curr_mol.size());
 				// Note:
@@ -407,7 +424,7 @@ void MC_FRM_MT(string output_folder){
 				// <x> = (1/n) * sum_i x_i = sum_i (x_i/n)
 							
 				// Calculate the number of jumps for each charge
-				jump[event_charge[event]] += 1.0;
+				chrg_tmp_jump[event_charge[event]] += 1.0;
 				
 				// Set the occupancy of the grid
 				grid_occ[curr_box[event_charge[event]]][event_mol_index[event]] = false;
@@ -418,7 +435,7 @@ void MC_FRM_MT(string output_folder){
 				curr_mol[event_charge[event]] = tmp_curr_mol;
 
 				// Check if the charge reached the end of the grid
-				if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_box_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_box_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_box_c-1) || (F_dir.compare("ab") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(dist[event_charge[event]]) > dist_tot)){
+				if ((F_dir.compare("a") == 0 && tmp_curr_box_a >= n_box_a-1) || (F_dir.compare("b") == 0 && tmp_curr_box_b >= n_box_b-1) || (F_dir.compare("c") == 0 && tmp_curr_box_c >= n_box_c-1) || (F_dir.compare("ab") == 0 && fabs(chrg_tmp_dist[event_charge[event]]) > dist_tot) || (F_dir.compare("ac") == 0 && fabs(chrg_tmp_dist[event_charge[event]]) > dist_tot) || (F_dir.compare("bc") == 0 && fabs(chrg_tmp_dist[event_charge[event]]) > dist_tot)){
 				
 					// The charge is removed
 					// curr_mol.erase(curr_mol.begin()+event_charge[event]);
@@ -444,9 +461,11 @@ void MC_FRM_MT(string output_folder){
 					curr_box[event_charge[event]] = pos[1];
 					curr_mol[event_charge[event]] = pos[0];
 					grid_occ[pos[1]][pos[0]] = true;
-					dist[event_charge[event]] = 0.0;
-					
 					delete [] pos;
+					
+					// Set distance and jumps to zero
+					chrg_tmp_dist[event_charge[event]] = 0.0;
+					chrg_tmp_jump[event_charge[event]] = 0.0;
 					
 					// Print summary for the current try in the file
 					if ((charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
@@ -465,15 +484,15 @@ void MC_FRM_MT(string output_folder){
 				// Set grid and charge properties if the limit is not reached
 				else{	
 					grid_occ[tmp_curr_box][tmp_curr_mol] = true;
-					chrg_E_electrostatic[event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
+					chrg_E_electrostatic[i][event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
 					
 					if (grid_E_random) {
-						chrg_E_0[event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
-						chrg_E_1[event_charge[event]].push_back(0.0);
+						chrg_E_0[i][event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
+						chrg_E_1[i][event_charge[event]].push_back(0.0);
 					}
 					else {
-						chrg_E_0[event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
-						chrg_E_1[event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
+						chrg_E_0[i][event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
+						chrg_E_1[i][event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
 					}
 				}
 				
@@ -495,8 +514,8 @@ void MC_FRM_MT(string output_folder){
 		
 		curr_mol.clear();
 		curr_box.clear();
-		dist.clear(); 
-		jump.clear();
+		chrg_tmp_dist.clear(); 
+		chrg_tmp_jump.clear();
 		
 		event_k.clear();
 		event_charge.clear();

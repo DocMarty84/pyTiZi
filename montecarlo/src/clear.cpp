@@ -45,6 +45,7 @@ void Clear_All(){
 	E_grid.clear();
 	
 	chrg_E_electrostatic.clear(); chrg_E_0.clear(); chrg_E_1.clear();
+	chrg_total_time.clear(); chrg_total_dist.clear();
 
 	box_a.clear(); box_b.clear(); box_c.clear(); 
 	box_neigh_a.clear(); box_neigh_b.clear(); box_neigh_c.clear();

@@ -54,13 +54,15 @@ EXTERN vector<double> temp_alpha_cos, temp_beta_sin, temp_beta_cos,\
 // Variables for each molecule
 EXTERN vector<int> mol_label;
 EXTERN vector< vector<double> > CM_x, CM_y, CM_z;								// Center of masses
-EXTERN vector< vector<double> > E_0, E_1;										// Site energies if read
+EXTERN vector< vector<double> > E_0, E_1;										// Site energies if box
 																				// [frame][molecule]
-EXTERN vector< vector< vector<double> > > E_grid;								// Random site energies
+EXTERN vector< vector< vector<double> > > E_grid;								// Site energies if grid
 																				// [frame][box][molecule]
 
 // Variables for each charge
-EXTERN vector< vector<double> > chrg_E_electrostatic, chrg_E_0, chrg_E_1;
+EXTERN vector< vector< vector<double> > > chrg_E_electrostatic, chrg_E_0, chrg_E_1;
+																				// [frame][charge][jump]
+EXTERN vector< vector<double> > chrg_total_time, chrg_total_dist;				// [frame][charge]
 
 // Variables for the grid
 // grid_ is used for a detailed table (frame/box/molecule)
