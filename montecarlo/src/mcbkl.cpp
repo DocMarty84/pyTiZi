@@ -138,7 +138,7 @@ void MC_BKL_MT(string output_folder){
 			chrg_E_electrostatic[charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box)); 
 			
 			if (grid_E_random) {
-				chrg_E_0[charge_i].push_back(E_random[i][curr_box[charge_i]][curr_mol[charge_i]]); 
+				chrg_E_0[charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
 				chrg_E_1[charge_i].push_back(0.0);
 			}
 			else {
@@ -188,11 +188,11 @@ void MC_BKL_MT(string output_folder){
 						
 						// Choose deltaE depending on the type of disorder
 						if (grid_E_random) {
-							dE_tmp = dE_random[i][tmp_mol_box][tmp_mol_index][jj];
+							dE_tmp = dE_grid[i][tmp_mol_box][tmp_mol_index][jj];
 						}
 						
 						else {
-							dE_tmp = dE[i][tmp_mol_index][jj];
+							dE_tmp = dE_box[i][tmp_mol_index][jj];
 						}
 						
 						// Calculate transfer rate
@@ -373,7 +373,7 @@ void MC_BKL_MT(string output_folder){
 							grid_occ[tmp_curr_box][tmp_curr_mol] = true;
 							chrg_E_electrostatic[event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
 							if (grid_E_random) {
-								chrg_E_0[event_charge[event]].push_back(E_random[i][tmp_curr_box][tmp_curr_mol]); 
+								chrg_E_0[event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
 								chrg_E_1[event_charge[event]].push_back(0.0);
 							}
 							else {

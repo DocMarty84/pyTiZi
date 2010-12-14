@@ -21,16 +21,16 @@
 #ifndef _DELTAE_H
 #define _DELTAE_H 1
 
-// Calculates deltaE between molecules
-void Calcul_DeltaE(bool print_results);
-
 // Generate a random Energy mapping
 void Generate_E_GDM(double mean, double sigma, bool print_results);
 
-// Calculates deltaE between molecules for random energy
-void Calcul_DeltaE_GDM(bool print_results);
+// Set the variable dE to zero
+void DeltaE_ZERO(bool print_results);
 
-// Copy dE_random[i][0][ii][jj] to dE[i][ii][jj]
-void DeltaE_GDM_to_DeltaE(bool print_results);
+// Calculates deltaE between molecules for a distribution in the box
+void Calcul_DeltaE(bool print_results);
+
+// Calculates deltaE between molecules for a distribution in the grid
+void Calcul_DeltaE_GRID(bool print_results);
 
 #endif // deltae.h

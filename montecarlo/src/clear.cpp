@@ -42,7 +42,7 @@ void Clear_All(){
 	mol_label.clear();
 	CM_x.clear(); CM_y.clear(); CM_z.clear(); 
 	E_0.clear(); E_1.clear();
-	E_random.clear();
+	E_grid.clear();
 	
 	chrg_E_electrostatic.clear(); chrg_E_0.clear(); chrg_E_1.clear();
 
@@ -56,9 +56,8 @@ void Clear_All(){
 
 	neigh_label.clear();
 	d_x.clear(); d_y.clear(); d_z.clear();
-	dE.clear(); 
-	dE_random.clear();
-	dE_random_box.clear();
+	dE_box.clear(); 
+	dE_grid.clear();
 	J_H.clear(); J_L.clear();
 	neigh_jump_vec_a.clear(); 
 	neigh_jump_vec_b.clear(); 

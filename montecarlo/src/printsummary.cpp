@@ -78,7 +78,7 @@ void Print_Summary_Beginning(string output_folder) {
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				fprintf(pFile,"%6d %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %14.5e\n", neigh_label[i][ii][jj],\
 												d_x[i][ii][jj], d_y[i][ii][jj], d_z[i][ii][jj],\
-												dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj], k[i][ii][jj]);
+											dE_box[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj], k[i][ii][jj]);
 			}
 		}
 	}

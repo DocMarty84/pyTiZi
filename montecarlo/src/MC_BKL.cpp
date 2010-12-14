@@ -26,6 +26,7 @@
 #define _INSIDE_MC_BKL
 
 // C++ libraries
+#include <ctime>
 #include <iostream> //Entrées-sorties standard
 #include <fstream> //Entrées-sorties sur fichiers
 #include <string> //Chaines de caracteres
@@ -39,12 +40,12 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 #include <math.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <boost/filesystem.hpp>
 #include <omp.h>
 
 // Local libraries
@@ -66,6 +67,7 @@
 #include "mcfrm.h"
 
 using namespace std;
+namespace bfs = boost::filesystem;
 
 // =============================================================================
 // ----------------------- Monte-Carlo related functions -----------------------
@@ -110,11 +112,18 @@ int main(int argc, char **argv){
 	  			
 			case 'o':
 				output_folder = optarg;
-				struct stat st_out;
-				if(stat(output_folder.c_str(), &st_out) != 0){
-					mkdir(output_folder.c_str(), 0750);
-					cout << "[INFO] Output folder " << output_folder << " created." << endl;
+				if (bfs::exists(output_folder)) {
+					cout << "[WARNING] Output folder " << output_folder << " exists and will be deleted."\
+																									<< endl;
+					bfs::remove_all(output_folder);
 				}
+				bfs::create_directory(output_folder);
+				cout << "[INFO] Output folder " << output_folder << " created." << endl;
+				//struct stat st_out;
+				//if(stat(output_folder.c_str(), &st_out) != 0){
+				//	mkdir(output_folder.c_str(), 0750);
+				//	cout << "[INFO] Output folder " << output_folder << " created." << endl;
+				//}
 	  			break;
 	  			
 			case 'c':
@@ -161,18 +170,12 @@ int main(int argc, char **argv){
 		Clear_All();
 		exit(1);
 	}
-	
-	if (grid_E_random) {
-		cout << "[INFO] Using a Gaussian Distribution Model for energy, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
-	}
 
 	// Read the required files
 	Read_MC(input_file, input_folder, false);
 	Read_CELL(input_file, input_folder, false);
 	Read_CM(input_file, input_folder, false);
-	if (grid_E_random == false) {
-		Read_E_av(input_file, input_folder, false);
-	}
+	Read_E_av(input_file, input_folder, false);
 
 	// Set up lambda_i
 	if (charge.compare("e") == 0) {
@@ -188,15 +191,17 @@ int main(int argc, char **argv){
 	// Calculates distances
 	Calcul_Dist(false);
 	
-	// Calculate deltaE and build the grid
+	// Calculate deltaE (if applicable) and build the grid
 	if (grid_E_random) {
+		
+		// In this case, we need to have the full matrix before calculating dE_grid, so we do it later
+		
 		Generate_E_GDM(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);		// Generate random Energy mapping
+		DeltaE_ZERO(false);												// Set dE to zero because unused
 		Build_Grid(false);
-		Calcul_DeltaE_GDM(false);
-		DeltaE_GDM_to_DeltaE(false);									// Create the dE table for convenience
 	}
 	else {
-		Calcul_DeltaE(false);
+		Calcul_DeltaE(false);											// Calculate dE
 		Build_Grid(false);
 	}
 	
@@ -205,8 +210,7 @@ int main(int argc, char **argv){
 	vector< vector< vector<int> > > neigh_jump_vec_a_ref = neigh_jump_vec_a, neigh_jump_vec_b_ref = neigh_jump_vec_b, neigh_jump_vec_c_ref = neigh_jump_vec_c;
 	vector< vector< vector<double> > > J_H_ref = J_H, J_L_ref = J_L;
 	vector< vector< vector<double> > > d_x_ref = d_x, d_y_ref = d_y, d_z_ref = d_z;
-	vector< vector< vector<double> > > dE_ref = dE;
-	vector< vector< vector< vector<double> > > > dE_random_ref = dE_random;		
+	vector< vector< vector<double> > > dE_box_ref = dE_box;
 	
 	//#pragma omp parallel for private(F_x, F_y, F_z, F_angle, F_x_list, F_y_list, F_z_list, F_angle_list, k, k_inv, grid_occ) //if (n_frame < int(omp_get_max_threads()) && anisotropy == true)
 	for (unsigned int m=0; m<F_angle_list.size(); m++) {
@@ -220,6 +224,11 @@ int main(int argc, char **argv){
 		Marcus_Levich_Jortner_CST(); // Calculates constants
 		Calcul_k(false);
 		Full_Matrix();
+		
+		// If the energetic landscape is at the grid level, calculate it here
+		if (grid_E_random) {
+			Calcul_DeltaE_GRID(false);
+		}
 
 		// Print a summary
 		Print_Summary_Beginning(output_folder);
@@ -246,8 +255,7 @@ int main(int argc, char **argv){
 		d_x.clear(); d_x = d_x_ref;
 		d_y.clear(); d_y = d_y_ref;
 		d_z.clear(); d_z = d_z_ref;
-		dE.clear();	dE = dE_ref;
-		dE_random.clear();	dE_random = dE_random_ref;
+		dE_box.clear();	dE_box = dE_box_ref;
 		k.clear();
 		k_inv.clear();
 	}

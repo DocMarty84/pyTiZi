@@ -149,7 +149,7 @@ void Calcul_k(bool print_results){
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				
 				double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
-															dE[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+															dE_box[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
 				
 				k[i][ii].push_back(k_tmp);
 				
@@ -197,13 +197,13 @@ void Full_Matrix(){
 						neigh_jump_vec_c[i][ii].insert(neigh_jump_vec_c[i][ii].begin(),\
 																				-neigh_jump_vec_c[i][ll][jj]);
 
-						dE[i][ii].insert(dE[i][ii].begin(), -dE[i][ll][jj]);
+						dE_box[i][ii].insert(dE_box[i][ii].begin(), -dE_box[i][ll][jj]);
 						
 						J_H[i][ii].insert(J_H[i][ii].begin(), J_H[i][ll][jj]);
 						J_L[i][ii].insert(J_L[i][ii].begin(), J_L[i][ll][jj]);
 							
 						double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii].front(), d_y[i][ii].front(),\
-							d_z[i][ii].front(), dE[i][ii].front(), J_H[i][ii].front(), J_L[i][ii].front());
+							d_z[i][ii].front(), dE_box[i][ii].front(), J_H[i][ii].front(), J_L[i][ii].front());
 						
 						k[i][ii].insert(k[i][ii].begin(), k_tmp);
 
@@ -212,7 +212,7 @@ void Full_Matrix(){
 				}
 			}
 		}
-	}	
+	}
 }
 
 // Calculates 1/k, and set small k to zero

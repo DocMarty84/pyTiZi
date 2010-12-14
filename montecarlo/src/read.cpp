@@ -28,11 +28,14 @@
 // C libraries
 #include <stdlib.h>
 
+#include <boost/filesystem.hpp>
+
 // Local libraries
 #include "clear.h"
 #include "variables.h"
 
 using namespace std;
+namespace bfs = boost::filesystem;
 
 // =============================================================================
 // --------------------------------- Read part ---------------------------------
@@ -232,8 +235,7 @@ void Read_CM(string input_file, string input_folder, bool print_results){
 		for(int i=0; i<n_frame; i++){
 			input >> tmp >> tmp;
 			for(int ii=0; ii<n_mol; ii++){
-				input >> tmp >> tmp >> tmp >>\
-										CM_x_tmp >> CM_y_tmp >> CM_z_tmp >> tmp;
+				input >> tmp >> tmp >> tmp >> CM_x_tmp >> CM_y_tmp >> CM_z_tmp >> tmp;
 
 				CM_x[i].push_back(CM_x_tmp);
 				CM_y[i].push_back(CM_y_tmp);
@@ -248,9 +250,8 @@ void Read_CM(string input_file, string input_folder, bool print_results){
 			for(int i=0; i<n_frame; i++){
 				cout << "frame " << i << endl;
 				for(int ii=0; ii<n_mol; ii++){
-					cout << "molecule " << mol_label[ii] << " " <<\
-									CM_x[i][ii] << " " << CM_y[i][ii] << " " <<\
-									CM_z[i][ii] << endl;
+					cout << "molecule " << mol_label[ii] << " " << CM_x[i][ii] << " " << CM_y[i][ii] <<\
+																				" " << CM_z[i][ii] << endl;
 				}
 			}
 		}
@@ -264,48 +265,57 @@ void Read_CM(string input_file, string input_folder, bool print_results){
 
 // Read e_av part (average energies)
 void Read_E_av(string input_file, string input_folder, bool print_results){
-	double E_0_tmp, E_1_tmp;
 	
-	string tmp;
 	stringstream file_e_av;
 	file_e_av << input_folder << "/" << input_file << ".e_av";
-	
-	ifstream input(file_e_av.str().c_str(), ios::in);
-	if (input){
-		
-		// Generate vectors
-		for (int i=0; i<n_frame; i++) {
-			E_0.push_back( vector<double> ());
-			E_1.push_back( vector<double> ());
+
+	if (grid_E_random) {
+		if (bfs::exists(file_e_av.str())) {
+			cout << "[WARNING] Random energy landscape specified but I've found an average energy file " <<\
+									file_e_av.str().c_str() << ". I will NOT read this energy file!" << endl;
 		}
+	}
+	
+	else {
+		double E_0_tmp, E_1_tmp;
+		string tmp;
 		
-		// Read E (same for all the frames)
-		for(int ii=0; ii<n_mol; ii++){
-			input >> tmp >> E_0_tmp >> E_1_tmp;
+		ifstream input(file_e_av.str().c_str(), ios::in);
+		if (input){
+			
+			// Generate vectors
+			for (int i=0; i<n_frame; i++) {
+				E_0.push_back( vector<double> ());
+				E_1.push_back( vector<double> ());
+			}
+			
+			// Read E (same for all the frames)
+			for(int ii=0; ii<n_mol; ii++){
+				input >> tmp >> E_0_tmp >> E_1_tmp;
+				
+				for (int i=0; i<n_frame; i++) {
+					E_0[i].push_back(E_0_tmp);
+					E_1[i].push_back(E_1_tmp);
+				}
+			}
+			
+			input.close();
+		}
+		else{
+			cout << "[WARNING] Average energy file " << file_e_av.str().c_str() <<\
+																" not found!\n[WARNING] E set to zero." << endl;
 			
 			for (int i=0; i<n_frame; i++) {
-				E_0[i].push_back(E_0_tmp);
-				E_1[i].push_back(E_1_tmp);
+				E_0.push_back( vector<double> (n_mol, 0));
+				E_1.push_back( vector<double> (n_mol, 0));
 			}
 		}
 		
-		input.close();
-	}
-	else{
-		cout << "[WARNING] Average energy file " << file_e_av.str().c_str() <<\
-								" not found!\n[WARNING] E set to zero." << endl;
-		
-		for (int i=0; i<n_frame; i++) {
-			E_0.push_back( vector<double> (n_mol, 0));
-			E_1.push_back( vector<double> (n_mol, 0));
-		}
-	}
-	
-	// Print part
-	if(print_results){
-		for(int ii=0; ii<n_mol; ii++){
-			cout << "molecule " << mol_label[ii] << " " <<\
-										E_0[0][ii] << " " << E_1[0][ii] << endl;
+		// Print part
+		if(print_results){
+			for(int ii=0; ii<n_mol; ii++){
+				cout << "molecule " << mol_label[ii] << " " << E_0[0][ii] << " " << E_1[0][ii] << endl;
+			}
 		}
 	}
 }

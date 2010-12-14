@@ -204,7 +204,7 @@ void Build_Grid(bool print_results) {
 				grid_z[i][x].push_back( CM_Cart[2] );
 				
 				if (grid_E_random) {
-					grid_E_0[i][x].push_back( E_random[i][x][ii] );
+					grid_E_0[i][x].push_back( E_grid[i][x][ii] );
 					grid_E_1[i][x].push_back( 0.0 );
 				}
 				
