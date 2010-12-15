@@ -137,13 +137,16 @@ double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_nu
 }
 
 // Calculates V (electrostatic interactions) for a charge
-double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_box_tmp){
-		
+double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp,\
+																					vector<int> curr_box_tmp){
+	
+	int max_thr = min(int(n_charges), int(omp_get_max_threads()));
+	
 	const double CST1 = 1.0/(4.0*PI*EPSILON_0*EPSILON_R);
 	const double CUTOFF_2 = pow(CUTOFF_ELECTRO,2); //Cutoff electro square
 	
-	double dist, dist_2;
-	double V_mol = 0.0;
+	double V_mol;
+	vector<double> V_mol_thr(max_thr, 0.0);
 	
 	vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0), CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0), Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
 
@@ -156,7 +159,16 @@ double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int>
 	CM_1_Frac[1] += double(box_b[curr_box_tmp[charge_i_tmp]]);
 	CM_1_Frac[2] += double(box_c[curr_box_tmp[charge_i_tmp]]);
 	
+	#pragma omp parallel for num_threads(max_thr)
+	
 	for (unsigned int charge_i = 0; charge_i < curr_mol_tmp.size(); charge_i++){
+		
+		// Variable definition
+		double dist, dist_2;
+		
+		vector<double> CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0);
+		vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
+		
 		if (charge_i != charge_i_tmp){
 			CM_2_Cart[0] = CM_x[i][curr_mol_tmp[charge_i]];
 			CM_2_Cart[1] = CM_y[i][curr_mol_tmp[charge_i]];
@@ -177,18 +189,23 @@ double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int>
 			
 			if (dist_2 > CUTOFF_2){
 				
-				V_mol += CST1/dist;
+				V_mol_thr[int(omp_get_thread_num())] += CST1/dist;
 			
 			}
 		}
+		
+		CM_2_Cart.clear();
+		CM_2_Frac.clear();
+		Dist_Cart.clear();
+		Dist_Frac.clear();
 	}
+	
+	#pragma omp barrier
+	
+	V_mol = accumulate(V_mol_thr.begin(), V_mol_thr.end(), 0.0);
 	
 	CM_1_Cart.clear();
 	CM_1_Frac.clear();
-	CM_2_Cart.clear();
-	CM_2_Frac.clear();
-	Dist_Cart.clear();
-	Dist_Frac.clear();
 	
 	return V_mol;
 }
