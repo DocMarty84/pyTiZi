@@ -18,6 +18,9 @@
  *******************************************************************************
  */
 
+// C++ libraries
+#include <vector>
+
 // Local libraries
 #include "variables.h"
 
@@ -27,7 +30,7 @@ using namespace std;
 // ------------------------ Coordinates transformations ------------------------
 // =============================================================================
 
-void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i){
+void Cartesian_To_Fractional(vector<double> &Dist_Cart, vector<double> &Dist_Frac, int i){
 	double x = Dist_Cart[0];
 	double y = Dist_Cart[1];
 	double z = Dist_Cart[2];
@@ -35,10 +38,12 @@ void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i){
 	z = (z/temp_gamma_term[i]) / c[i];
 	y = ((y-z*c[i]*temp_beta_term[i])/temp_gamma_sin[i]) / b[i];
 	x = (x-y*b[i]*temp_gamma_cos[i]-z*c[i]*temp_beta_cos[i]) / a[i];
-	Dist_Frac[0] = x; Dist_Frac[1] = y; Dist_Frac[2] = z;	
+	Dist_Frac[0] = x; Dist_Frac[1] = y; Dist_Frac[2] = z;
+	
+	return;
 }
 
-void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i){
+void Fractional_To_Cartesian(vector<double> &Dist_Frac, vector<double> &Dist_Cart, int i){
 	double x = Dist_Frac[0];
 	double y = Dist_Frac[1];
 	double z = Dist_Frac[2];
@@ -47,4 +52,6 @@ void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i){
 	y = y*b[i]*temp_gamma_sin[i] + z*c[i]*temp_beta_term[i];
 	z = z*c[i]*temp_gamma_term[i];
 	Dist_Cart[0] = x; Dist_Cart[1] = y; Dist_Cart[2] = z;
+	
+	return;
 }

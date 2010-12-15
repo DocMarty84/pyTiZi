@@ -38,9 +38,7 @@ void Calcul_F_vector(bool print_results) {
 	
 	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0) {
 		anisotropy = false;
-		double *F_tmp_frac, *F_tmp_cart;
-		F_tmp_frac = new double[3];
-		F_tmp_cart = new double[3];
+		vector<double> F_tmp_frac(3, 0.0), F_tmp_cart(3, 0.0);
 
 		if (F_dir.compare("a") == 0) {
 			if (charge.compare("e") == 0) {
@@ -83,18 +81,13 @@ void Calcul_F_vector(bool print_results) {
 		F_z_list.push_back(F_tmp_cart[2]/F_norm_tmp);
 		F_angle_list.push_back(0.0);
 		
-		delete [] F_tmp_frac; delete [] F_tmp_cart;
+		F_tmp_frac.clear(); F_tmp_cart.clear();
 		
 	}
 	
 	else {
 		anisotropy = true;
-		double *v1, *v2, *v3, *v_tmp_frac, *v_tmp_cart;
-		v1 = new double[3];
-		v2 = new double[3];
-		v3 = new double[3];
-		v_tmp_frac = new double[3];
-		v_tmp_cart = new double[3];
+		vector<double> v1(3, 0.0), v2(3, 0.0), v3(3, 0.0), v_tmp_frac(3, 0.0), v_tmp_cart(3, 0.0);
 	
 		vector< vector<double> > Rot_Matrix (4, vector<double> (4, 0.0));
 		vector< vector<double> > F_0_tmp_cart (4, vector<double> (1, 0.0));
@@ -189,8 +182,8 @@ void Calcul_F_vector(bool print_results) {
 			F_z_list.push_back(F_tmp_cart[2][0]/F_norm_tmp);
 		}	
 		
-		delete [] v1; delete [] v2; delete [] v3;
-		delete [] v_tmp_frac; delete [] v_tmp_cart;
+		v1.clear(); v2.clear(); v3.clear();
+		v_tmp_frac.clear(); v_tmp_cart.clear();
 	}
 	
 	for (unsigned int m=0; m<F_angle_list.size(); m++){

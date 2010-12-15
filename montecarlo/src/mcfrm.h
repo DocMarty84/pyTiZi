@@ -21,9 +21,6 @@
 #ifndef _MCFRM_H
 #define _MCFRM_H 1
 
-// BKL algorithm
-void MC_FRM(string output_folder);
-
 // BKL algorithm with multithread support
 void MC_FRM_MT(string output_folder);
 

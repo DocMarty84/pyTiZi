@@ -33,10 +33,7 @@ using namespace std;
 
 // Calculates distance between molecules
 void Calcul_Dist(bool print_results){
-	double *Dist_Cart, *Dist_Frac, *vec;
-	Dist_Cart = new double[3];
-	Dist_Frac = new double[3];
-	vec = new double[3];
+	vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0), vec(3, 0.0);
 	
 	d_x.clear(); d_y.clear(); d_z.clear();
 	neigh_jump_vec_a.clear(); neigh_jump_vec_b.clear(); neigh_jump_vec_c.clear();
@@ -101,9 +98,9 @@ void Calcul_Dist(bool print_results){
 		}
 	}
 	
-	delete [] Dist_Cart;
-	delete [] Dist_Frac;
-	delete [] vec;
+	Dist_Cart.clear();
+	Dist_Frac.clear();
+	vec.clear();
 	
 	// Print part
 	if (print_results){

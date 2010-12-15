@@ -165,9 +165,7 @@ void Build_Grid(bool print_results) {
 	}
 	
 	// Set up the grid properties: coordinates, probability and energy of each site
-	double *CM_Cart, *CM_Frac;
-	CM_Cart = new double[3];
-	CM_Frac = new double[3];
+	vector<double> CM_Cart(3, 0.0), CM_Frac(3, 0.0);
 	
 	for (int i=0; i<n_frame; i++){
 		grid_probability.push_back( vector< vector< vector<double> > > () );
@@ -221,8 +219,8 @@ void Build_Grid(bool print_results) {
 		}
 	}
 	
-	delete [] CM_Cart;
-	delete [] CM_Frac;
+	CM_Cart.clear();
+	CM_Frac.clear();
 	
 	if (print_results){
 		

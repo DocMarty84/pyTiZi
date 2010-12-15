@@ -74,7 +74,7 @@ void MC_FRM_MT(string output_folder){
 		chrg_total_dist.push_back( vector< double > () ); 
 	}
 
-	#pragma omp parallel for private(grid_occ) //if (n_frame >= int(omp_get_max_threads()))
+	//#pragma omp parallel for private(grid_occ)
 	
 	// Start the FRM algorithm
 	for (int i=0; i<n_frame; i++){
@@ -525,7 +525,7 @@ void MC_FRM_MT(string output_folder){
 		
 	}
 	
-	#pragma omp barrier
+	//#pragma omp barrier
 	
 	// Calculates the average on all the frames
 	double mu_moy = 0.0; 

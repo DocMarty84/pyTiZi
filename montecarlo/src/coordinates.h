@@ -21,8 +21,11 @@
 #ifndef _COORDINATES_H
 #define _COORDINATES_H 1
 
-void Cartesian_To_Fractional(double* Dist_Cart, double* Dist_Frac, int i);
+// C++ libraries
+#include <vector>
 
-void Fractional_To_Cartesian(double* Dist_Frac, double* Dist_Cart, int i);
+void Cartesian_To_Fractional(std::vector<double> &Dist_Cart, std::vector<double> &Dist_Frac, int i);
+
+void Fractional_To_Cartesian(std::vector<double> &Dist_Frac, std::vector<double> &Dist_Cart, int i);
 
 #endif // coordinates.h

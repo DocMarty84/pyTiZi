@@ -22,9 +22,11 @@
 #define _DELTAV_H 1
 
 // Calculates deltaV (electrostatic interactions) between molecules
-double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_box_tmp);
+double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp,\
+							unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_box_tmp);
 
 // Calculates V (electrostatic interactions) for a charge
-double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp, vector<int> curr_box_tmp);
+double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int> curr_mol_tmp,\
+																					vector<int> curr_box_tmp);
 	
 #endif // deltav.h
