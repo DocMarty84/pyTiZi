@@ -164,7 +164,21 @@ void Build_Grid(bool print_results) {
 		}
 	}
 	
-	// Set up the grid properties: coordinates, probability and energy of each site
+	if (print_results){
+		
+		for (unsigned int x=0; x<box_neigh_label.size(); x++){
+			cout << "mini-grid " << x << endl;			
+			for (unsigned int xx=0; xx<box_neigh_label[x].size(); xx++){
+				cout << box_neigh_label[x][xx] << " " << box_neigh_a[x][xx] << " " << box_neigh_b[x][xx] <<\
+																			" " << box_neigh_c[x][xx] << endl;
+			}
+		}
+	}
+}
+
+// Build the grid properties: coordinates, probability and energy of each site
+void Build_Grid_Properties(bool print_results) {
+	
 	vector<double> CM_Cart(3, 0.0), CM_Frac(3, 0.0);
 	
 	for (int i=0; i<n_frame; i++){
@@ -201,14 +215,14 @@ void Build_Grid(bool print_results) {
 				grid_y[i][x].push_back( CM_Cart[1] ); 
 				grid_z[i][x].push_back( CM_Cart[2] );
 				
-				if (grid_E_random) {
-					grid_E_0[i][x].push_back( E_grid[i][x][ii] );
-					grid_E_1[i][x].push_back( 0.0 );
+				if (grid_E_type.compare(0,5,"INPUT") == 0) {
+					grid_E_0[i][x].push_back( E_0[0][ii] );
+					grid_E_1[i][x].push_back( E_1[0][ii] );
 				}
 				
 				else {
-					grid_E_0[i][x].push_back( E_0[0][ii] );
-					grid_E_1[i][x].push_back( E_1[0][ii] );
+					grid_E_0[i][x].push_back( E_grid[i][x][ii] );
+					grid_E_1[i][x].push_back( 0.0 );
 				}
 				
 				// Set up a probability for each charge
@@ -223,16 +237,6 @@ void Build_Grid(bool print_results) {
 	CM_Frac.clear();
 	
 	if (print_results){
-		
-		for (unsigned int x=0; x<box_neigh_label.size(); x++){
-			cout << "mini-grid " << x << endl;			
-			for (unsigned int xx=0; xx<box_neigh_label[x].size(); xx++){
-				cout << box_neigh_label[x][xx] << " " << box_neigh_a[x][xx] << " " << box_neigh_b[x][xx] <<\
-																			" " << box_neigh_c[x][xx] << endl;
-			}
-		}
-		
-		cout << "-----------------------------------------------------" << endl;
 		
 		for (int i=0; i<n_frame; i++){
 			cout << endl << "Frame " << i << endl;

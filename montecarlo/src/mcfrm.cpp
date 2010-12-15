@@ -19,6 +19,7 @@
  */
 
 // C++ libraries
+#include <ctime>
 #include <iostream>
 #include <fstream> 
 #include <string> 
@@ -48,8 +49,9 @@ using namespace std;
 
 // FRM algorithm with multithread support
 void MC_FRM_MT(string output_folder){
-	
-	cout << "[INFO] Using the FRM algorithm with multithread." << endl;
+
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using the FRM algorithm with multithread." << endl;
 	
 	// Create a Mersenne twister random number generator
 	// that is seeded once with #seconds since 1970
@@ -159,13 +161,13 @@ void MC_FRM_MT(string output_folder){
 			chrg_total_time[i].push_back(0.0);
 			chrg_total_dist[i].push_back(0.0);
 			
-			if (grid_E_random) {
-				chrg_E_0[i][charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
-				chrg_E_1[i][charge_i].push_back(0.0);
-			}
-			else {
+			if (grid_E_type.compare(0,5,"INPUT") == 0) {
 				chrg_E_0[i][charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
 				chrg_E_1[i][charge_i].push_back(E_1[i][curr_mol[charge_i]]);
+			}
+			else {
+				chrg_E_0[i][charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
+				chrg_E_1[i][charge_i].push_back(0.0);
 			}
 		}
 
@@ -212,12 +214,12 @@ void MC_FRM_MT(string output_folder){
 				if (tmp_neigh_index != tmp_mol_index){
 
 					// Choose deltaE depending on the type of disorder
-					if (grid_E_random) {
-						dE_tmp = dE_grid[i][tmp_mol_box][tmp_mol_index][jj];
+					if (grid_E_type.compare(0,5,"INPUT") == 0) {
+						dE_tmp = dE_box[i][tmp_mol_index][jj];
 					}
 					
 					else {
-						dE_tmp = dE_box[i][tmp_mol_index][jj];
+						dE_tmp = dE_grid[i][tmp_mol_box][tmp_mol_index][jj];
 					}
 					
 					// Calculate transfer rate
@@ -290,12 +292,12 @@ void MC_FRM_MT(string output_folder){
 					if (tmp_neigh_index != tmp_mol_index){
 						
 						// Choose deltaE depending on the type of disorder
-						if (grid_E_random) {
-							dE_tmp = dE_grid[i][tmp_mol_box][tmp_mol_index][jj];
+						if (grid_E_type.compare(0,5,"INPUT") == 0) {
+							dE_tmp = dE_box[i][tmp_mol_index][jj];
 						}
 						
 						else {
-							dE_tmp = dE_box[i][tmp_mol_index][jj];
+							dE_tmp = dE_grid[i][tmp_mol_box][tmp_mol_index][jj];
 						}
 						
 						// Calculate transfer rate
@@ -481,7 +483,8 @@ void MC_FRM_MT(string output_folder){
 					
 					// Print info on standard output
 					if ((charge_try/n_charges) % 10 == 0 && (charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
-						cout << "[INFO] Running Frame " << i+1 << "/" << n_frame << ", Try " << (charge_try/n_charges) << "/" << n_try << endl;
+						t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+						cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Running Frame " << i+1 << "/" << n_frame << ", Try " << (charge_try/n_charges) << "/" << n_try << endl;
 					}
 					
 					charge_try++;
@@ -493,13 +496,13 @@ void MC_FRM_MT(string output_folder){
 					grid_occ[tmp_curr_box][tmp_curr_mol] = true;
 					chrg_E_electrostatic[i][event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
 					
-					if (grid_E_random) {
-						chrg_E_0[i][event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
-						chrg_E_1[i][event_charge[event]].push_back(0.0);
-					}
-					else {
+					if (grid_E_type.compare(0,5,"INPUT") == 0) {
 						chrg_E_0[i][event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
 						chrg_E_1[i][event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
+					}
+					else {
+						chrg_E_0[i][event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
+						chrg_E_1[i][event_charge[event]].push_back(0.0);
 					}
 				}
 				

@@ -19,6 +19,7 @@
  */
  
 // C++ libraries
+#include <ctime>
 #include <iostream>
 #include <vector>
 #include <limits>
@@ -38,7 +39,8 @@ using namespace std;
 // Generate a Gaussian DOS
 void Generate_Gaussian_DOS(double mean, double sigma, bool print_results){
 	
-	cout << "[INFO] Using a Gaussian DOS, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using a Gaussian DOS, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
 
 	using namespace boost;
 	
@@ -87,7 +89,8 @@ void Generate_Gaussian_DOS(double mean, double sigma, bool print_results){
 // Generate a Correlated DOS
 void Generate_Correlated_DOS(double sigma, bool print_results){
 	
-	cout << "[INFO] Using a Correlated DOS, with a value of sigma_p/kT = " << grid_sigma_over_kT << endl;
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using a Correlated DOS, with a value of sigma_p/kT = " << grid_sigma_over_kT << endl;
 
 	using namespace boost;
 
@@ -110,9 +113,7 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 	double d_num = 0.0;
 		
 	for (int i=0; i<n_frame; i++){
-		cout << "frame " << i << endl;
 		for (int ii=0; ii<n_mol; ii++){
-			cout << "molecule " << mol_label[ii] << endl;
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
 				d_av += sqrt(pow(d_x[i][ii][jj],2) + pow(d_y[i][ii][jj],2) + pow(d_z[i][ii][jj],2));
 				d_num += 1.0;
@@ -156,13 +157,9 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 			}
 		}
 	}
-	
+		
 	// Fill the energy grid
-	
-	vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0), CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0);
-	vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
-	double dist, dist_2;
-	
+
 	for (int i=0; i<n_frame; i++){
 		E_grid.push_back( vector< vector<double> > ());
 		
@@ -171,6 +168,21 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 		
 			for (int ii=0; ii<n_mol; ii++){
 				E_grid[i][x].push_back(0.0);
+			}
+		}
+	}
+	
+	for (int i=0; i<n_frame; i++){
+		
+		#pragma omp parallel for
+
+		for (int x=0; x<n_box; x++){
+			
+			vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0), CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0);
+			vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
+			double dist, dist_2;
+		
+			for (int ii=0; ii<n_mol; ii++){
 				
 				CM_1_Cart[0] = CM_x[i][ii];
 				CM_1_Cart[1] = CM_y[i][ii];
@@ -213,12 +225,16 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 					}
 				}
 			}
+			
+			CM_1_Cart.clear(); CM_1_Frac.clear();
+			CM_2_Cart.clear(); CM_2_Frac.clear();
+			Dist_Cart.clear(); Dist_Frac.clear();
 		}
+
+		#pragma omp barrier
 	}
-	
+		
 	p_grid_x.clear(); p_grid_y.clear(); p_grid_z.clear();
-	CM_1_Cart.clear(); CM_1_Frac.clear();
-	CM_2_Cart.clear(); CM_2_Frac.clear();
 	
 	// Print part
 	if (print_results){

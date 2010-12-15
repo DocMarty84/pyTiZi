@@ -28,6 +28,7 @@
 #endif
 
 // C++ libraries
+#include <ctime>
 #include <string>
 #include <vector>
 
@@ -75,7 +76,7 @@ EXTERN vector< vector< vector< vector <double> > > > grid_probability; 			// Occ
 																				// of each site
 EXTERN vector< vector< vector <double> > > grid_x, grid_y, grid_z;				// Coordinates of each site
 EXTERN vector< vector< vector <double> > > grid_E_0, grid_E_1;					// Energy of each site
-EXTERN bool grid_E_random;
+EXTERN string grid_E_type;
 EXTERN double grid_sigma_over_kT;
 
 // Variables for neighbors
@@ -105,5 +106,8 @@ EXTERN vector<double> min_layer;
 EXTERN vector<double> max_layer;
 EXTERN vector< vector< vector<int> > > mol_layer;
 EXTERN vector< vector<int> > list_layer;
+
+EXTERN time_t t_info;
+EXTERN string t_info_str;
 
 #endif // variables.h

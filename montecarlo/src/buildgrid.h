@@ -27,4 +27,7 @@ void Find_Layer(bool print_results);
 // Build the grid of molecules, and define the PBC for the whole system
 void Build_Grid(bool print_results);
 
+// Build the grid properties: coordinates, probability and energy of each site
+void Build_Grid_Properties(bool print_results);
+
 #endif // buildgrid.h

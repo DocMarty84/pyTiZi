@@ -19,6 +19,7 @@
  */
  
 // C++ libraries
+#include <ctime>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -268,21 +269,21 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 	
 	stringstream file_e_av;
 	file_e_av << input_folder << "/" << input_file << ".e_av";
-
-	if (grid_E_random) {
-		if (bfs::exists(file_e_av.str())) {
-			cout << "[WARNING] Random energy landscape specified but I've found an average energy file " <<\
-									file_e_av.str().c_str() << ". I will NOT read this energy file!" << endl;
-		}
-	}
 	
-	else {
-		double E_0_tmp, E_1_tmp;
+	ifstream input(file_e_av.str().c_str(), ios::in);
+	if (input){
 		string tmp;
 		
-		ifstream input(file_e_av.str().c_str(), ios::in);
-		if (input){
+		input >> tmp;
+		
+		if (tmp.compare("INPUT_AVERAGE") == 0) {
 			
+			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Average energy read from file " << file_e_av.str().c_str() << " !" << endl;
+			
+			grid_E_type = tmp;
+			double E_0_tmp, E_1_tmp;
+
 			// Generate vectors
 			for (int i=0; i<n_frame; i++) {
 				E_0.push_back( vector<double> ());
@@ -300,22 +301,65 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 			}
 			
 			input.close();
+			
+			// Print part
+			if(print_results){
+				for(int ii=0; ii<n_mol; ii++){
+					cout << "molecule " << mol_label[ii] << " " << E_0[0][ii] << " " << E_1[0][ii] << endl;
+				}
+			}
+			
 		}
-		else{
-			cout << "[WARNING] Average energy file " << file_e_av.str().c_str() <<\
-																" not found!\n[WARNING] E set to zero." << endl;
+		
+		else if (tmp.compare("GAUSSIAN") == 0) {
+			
+			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Gaussian DOS for the grid will be calculated!" << endl;
+			
+			grid_E_type = tmp;
+			input >> tmp;
+			grid_sigma_over_kT = atof(tmp.c_str());
+			
+			input.close();
+		}
+		
+		else if (tmp.compare("CORRELATED") == 0) {
+			
+			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Correlated DOS for the grid will be calculated!" << endl;
+			
+			grid_E_type = tmp;
+			input >> tmp;
+			grid_sigma_over_kT = atof(tmp.c_str());
+			
+			input.close();
+		}
+		
+		else {
+			
+			cout << "[WARNING] Bad keyword specified in average energy file " << file_e_av.str().c_str() <<\
+																	" !\n[WARNING] E set to zero." << endl;
+			
+			grid_E_type = "INPUT_ZEROS";
 			
 			for (int i=0; i<n_frame; i++) {
 				E_0.push_back( vector<double> (n_mol, 0));
 				E_1.push_back( vector<double> (n_mol, 0));
 			}
+			
+			input.close();
 		}
+	}
+
+	
+
+	else {
+		cout << "[WARNING] Average energy file " << file_e_av.str().c_str() <<\
+															" not found!\n[WARNING] E set to zero." << endl;
 		
-		// Print part
-		if(print_results){
-			for(int ii=0; ii<n_mol; ii++){
-				cout << "molecule " << mol_label[ii] << " " << E_0[0][ii] << " " << E_1[0][ii] << endl;
-			}
+		for (int i=0; i<n_frame; i++) {
+			E_0.push_back( vector<double> (n_mol, 0));
+			E_1.push_back( vector<double> (n_mol, 0));
 		}
 	}
 }

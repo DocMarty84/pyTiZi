@@ -94,7 +94,7 @@ int main(int argc, char **argv){
 	string output_folder = ".";
 	string method;
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:s:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -118,11 +118,13 @@ int main(int argc, char **argv){
 					bfs::remove_all(output_folder);
 				}
 				bfs::create_directory(output_folder);
-				cout << "[INFO] Output folder " << output_folder << " created." << endl;
+				t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+				cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Output folder " << output_folder << " created." << endl;
 				//struct stat st_out;
 				//if(stat(output_folder.c_str(), &st_out) != 0){
 				//	mkdir(output_folder.c_str(), 0750);
-				//	cout << "[INFO] Output folder " << output_folder << " created." << endl;
+				//  t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+				//	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Output folder " << output_folder << " created." << endl;
 				//}
 	  			break;
 	  			
@@ -141,17 +143,14 @@ int main(int argc, char **argv){
 	  		case 'm':
 				method = optarg;
 	  			break;
-	  		
-	  		case 's':	
-	  			grid_E_random = true;
-	  			grid_sigma_over_kT = atof(optarg);
-	  			break;
 			}
 	}
 	
 	// Check that the charge and the direction of the electric field are specified
-	if (charge.compare("e") == 0 || charge.compare("h") == 0)
-		cout << "[INFO] The charge is: " << charge << endl;
+	if (charge.compare("e") == 0 || charge.compare("h") == 0) {
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] The charge is: " << charge << endl;
+	}
 		
 	else {
 		cerr << "[ERROR] Charge not specified! Please use -c {e,h}. Exiting..." << endl;
@@ -159,11 +158,15 @@ int main(int argc, char **argv){
 		exit(1);
 	}
 	
-	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0)
-		cout << "[INFO] Electric field is along the '" << F_dir << "' direction." << endl;
+	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0) {
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Electric field is along the '" << F_dir << "' direction." << endl;
+	}
 		
-	else if (F_dir.compare("ab") == 0 || F_dir.compare("ac") == 0 || F_dir.compare("bc") == 0)
-		cout << "[INFO] Electric field will probe the anisotropy in the '" << F_dir << "'plane." << endl;
+	else if (F_dir.compare("ab") == 0 || F_dir.compare("ac") == 0 || F_dir.compare("bc") == 0){
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Electric field will probe the anisotropy in the '" << F_dir << "'plane." << endl;
+	}
 		
 	else {
 		cerr << "[ERROR] Direction of the electric field not specified! Please use -d {a,b,c,ab,ac,bc}. Exiting..." << endl;
@@ -190,19 +193,24 @@ int main(int argc, char **argv){
 	
 	// Calculates distances
 	Calcul_Dist(false);
-	
+
 	// Calculate deltaE (if applicable) and build the grid
-	if (grid_E_random) {
-		
-		// In this case, we need to have the full matrix before calculating dE_grid, so we do it later
-		
-		Generate_Gaussian_DOS(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);	// Generate random Energy mapping
-		DeltaE_ZERO(false);													// Set dE to zero because unused
-		Build_Grid(false);
-	}
-	else {
+	if (grid_E_type.compare(0,5,"INPUT") == 0) {
 		Calcul_DeltaE(false);												// Calculate dE
 		Build_Grid(false);
+		Build_Grid_Properties(false);
+	}
+	else {
+		// In this case, we need to have the full matrix before calculating dE_grid, so we do it later
+		Build_Grid(false);
+		if (grid_E_type.compare("GAUSSIAN") == 0) {
+			Generate_Gaussian_DOS(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);// Generate Gaussian DOS
+		}
+		else if (grid_E_type.compare("CORRELATED") == 0) {
+			Generate_Correlated_DOS(grid_sigma_over_kT*K_BOLTZ*T, false);	// Generate Correlated DOS
+		}
+		DeltaE_ZERO(false);													// Set dE to zero because unused
+		Build_Grid_Properties(false);
 	}
 	
 	// Save the triangular matrix
@@ -226,7 +234,7 @@ int main(int argc, char **argv){
 		Full_Matrix();
 		
 		// If the energetic landscape is at the grid level, calculate it here
-		if (grid_E_random) {
+		if (grid_E_type.compare(0,5,"INPUT") != 0) {
 			Calcul_DeltaE_GRID(false);
 		}
 
@@ -264,13 +272,13 @@ int main(int argc, char **argv){
 	Clear_All();
 		
 	// Get stop time
-	t_stop = time(NULL);
-	timeinfo_stop = asctime(localtime(&t_stop));
+	t_stop = time(NULL); timeinfo_stop = asctime(localtime(&t_stop));
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
 
 	// Print final information
-	cout << "[INFO] Start time: " << timeinfo_start;	
-	cout << "[INFO] Stop time: " << timeinfo_stop;
-	cout << "[INFO] Calculation took " << t_stop-t_start << " seconds." << endl << endl;
+	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Start time: " << timeinfo_start;	
+	cout << "[INFO: " << t_info_str << "] Stop time: " << timeinfo_stop;
+	cout << "[INFO: " << t_info_str << "] Calculation took " << t_stop-t_start << " seconds." << endl << endl;
 	cout << "===============================================================================" << endl;
 	cout << "-------------------- Exiting normally, everything was ok! ---------------------" << endl;
 	cout << "===============================================================================\n" << endl;

@@ -164,7 +164,7 @@ double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int>
 	
 	#pragma omp parallel for num_threads(max_thr)
 	
-	for (unsigned int charge_i = 0; charge_i < curr_mol_tmp.size(); charge_i++){
+	for (int charge_i = 0; charge_i < int(curr_mol_tmp.size()); charge_i++){
 		
 		// Variable definition
 		double dist, dist_2;
@@ -172,7 +172,7 @@ double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int>
 		vector<double> CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0);
 		vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
 		
-		if (charge_i != charge_i_tmp){
+		if (charge_i != int(charge_i_tmp)){
 			CM_2_Cart[0] = CM_x[i][curr_mol_tmp[charge_i]];
 			CM_2_Cart[1] = CM_y[i][curr_mol_tmp[charge_i]];
 			CM_2_Cart[2] = CM_z[i][curr_mol_tmp[charge_i]];
