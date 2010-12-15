@@ -208,13 +208,13 @@ int main(int argc, char **argv){
 		
 		// In this case, we need to have the full matrix before calculating dE_grid, so we do it later
 		
-		Generate_E_GDM(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);		// Generate random Energy mapping
-		DeltaE_ZERO(false);												// Set dE to zero because unused
+		Generate_Gaussian_DOS(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);	// Generate random Energy mapping
+		DeltaE_ZERO(false);													// Set dE to zero because unused
 		Find_Layer(false);
 		Build_Grid(false);
 	}
 	else {
-		Calcul_DeltaE(false);											// Calculate dE
+		Calcul_DeltaE(false);												// Calculate dE
 		Find_Layer(false);
 		Build_Grid(false);
 	}

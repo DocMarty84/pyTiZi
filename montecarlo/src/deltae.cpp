@@ -25,19 +25,24 @@
 #include <boost/random.hpp>
 #include <ctime>
 
+// C libraries
+#include <math.h>
+
 // Local libraries
 #include "constants.h"
 #include "variables.h"
+#include "coordinates.h"
 
 using namespace std;
 
-// Generate a random Energy mapping
-void Generate_E_GDM(double mean, double sigma, bool print_results){
+// Generate a Gaussian DOS
+void Generate_Gaussian_DOS(double mean, double sigma, bool print_results){
 	
-	cout << "[INFO] Using a Gaussian Distribution Model for energy, with a value of sigma/kT = " <<\
-																				grid_sigma_over_kT << endl;
+	cout << "[INFO] Using a Gaussian DOS, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
 
 	using namespace boost;
+	
+	// ---------------------------------------------------------------------
 
 	// Create a Mersenne twister random number generator
 	// that is seeded once with #seconds since 1970
@@ -48,6 +53,8 @@ void Generate_E_GDM(double mean, double sigma, bool print_results){
  
 	// Bind random number generator to distribution, forming a function
 	variate_generator<mt19937&, normal_distribution<double> > norm_dist_sampler(rng, norm_dist);
+	
+	// ---------------------------------------------------------------------
 
 	for (int i=0; i<n_frame; i++){
 		E_grid.push_back( vector< vector<double> > ());
@@ -57,10 +64,161 @@ void Generate_E_GDM(double mean, double sigma, bool print_results){
 		
 			for (int ii=0; ii<n_mol; ii++){
 				E_grid[i][x].push_back( norm_dist_sampler() );
+			}
+		}
+	}
+	
+	// Print part
+	if (print_results){
+		
+		for (int i=0; i<n_frame; i++){
+			cout << "frame " << i << endl;
+			for (int x=0; x<n_box; x++){
+				cout << "box " << x << endl;
+				for (int ii=0; ii<n_mol; ii++){
+					cout << "molecule " << mol_label[ii] << " " << E_grid[i][x][ii] << endl;
+
+				}
+			}
+		}
+	}
+}
+
+// Generate a Correlated DOS
+void Generate_Correlated_DOS(double sigma, bool print_results){
+	
+	cout << "[INFO] Using a Correlated DOS, with a value of sigma_p/kT = " << grid_sigma_over_kT << endl;
+
+	using namespace boost;
+
+	// ---------------------------------------------------------------------
+	
+	// Create a Mersenne twister random number generator
+	// that is seeded once with #seconds since 1970
+	static mt19937 rng(static_cast<unsigned> (time(0)));
+ 
+	// Select uniform probability distribution
+	uniform_real<> uni_01_dist(0,1);
+ 
+	// Bind random number generator to distribution, forming a function
+	variate_generator<mt19937&, uniform_real<> > uni_01_sampler(rng, uni_01_dist);
+	
+	// ---------------------------------------------------------------------
+
+	// Calculate average distance
+	double d_av = 0.0;
+	double d_num = 0.0;
+		
+	for (int i=0; i<n_frame; i++){
+		cout << "frame " << i << endl;
+		for (int ii=0; ii<n_mol; ii++){
+			cout << "molecule " << mol_label[ii] << endl;
+			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
+				d_av += sqrt(pow(d_x[i][ii][jj],2) + pow(d_y[i][ii][jj],2) + pow(d_z[i][ii][jj],2));
+				d_num += 1.0;
+			}
+		}
+	}
+	d_av = d_av/d_num;
+
+	// Generate random dipoles
+	
+	vector< vector< vector<double> > > p_grid_x;
+	vector< vector< vector<double> > > p_grid_y;
+	vector< vector< vector<double> > > p_grid_z;
+	double p_norm_tmp, p_norm;
+	
+	// See Phys. Rev. Lett., 1998, 81, 4472 for calculating dipole norm from sigma
+	p_norm = sigma*EPSILON_0*EPSILON_R*pow(d_av, 2)/(2.35);
+	
+	for (int i=0; i<n_frame; i++){
+		p_grid_x.push_back( vector< vector<double> > () );
+		p_grid_y.push_back( vector< vector<double> > () );
+		p_grid_z.push_back( vector< vector<double> > () );
+		
+		for (int x=0; x<n_box; x++){
+			p_grid_x[i].push_back( vector<double> () );
+			p_grid_y[i].push_back( vector<double> () );
+			p_grid_z[i].push_back( vector<double> () );
+		
+			for (int ii=0; ii<n_mol; ii++){
+				p_grid_x[i][x].push_back( uni_01_sampler() );
+				p_grid_y[i][x].push_back( uni_01_sampler() );
+				p_grid_z[i][x].push_back( uni_01_sampler() );
+				
+				p_norm_tmp = sqrt(pow(p_grid_x[i][x].back(), 2) + pow(p_grid_y[i][x].back(), 2) +\
+																			pow(p_grid_z[i][x].back(), 2));
+																			
+				p_grid_x[i][x].back() = (p_grid_x[i][x].back()/p_norm_tmp) * p_norm;
+				p_grid_y[i][x].back() = (p_grid_y[i][x].back()/p_norm_tmp) * p_norm;
+				p_grid_z[i][x].back() = (p_grid_z[i][x].back()/p_norm_tmp) * p_norm;
 				
 			}
 		}
 	}
+	
+	// Fill the energy grid
+	
+	vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0), CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0);
+	vector<double> Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
+	double dist, dist_2;
+	
+	for (int i=0; i<n_frame; i++){
+		E_grid.push_back( vector< vector<double> > ());
+		
+		for (int x=0; x<n_box; x++){
+			E_grid[i].push_back( vector<double> ());
+		
+			for (int ii=0; ii<n_mol; ii++){
+				E_grid[i][x].push_back(0.0);
+				
+				CM_1_Cart[0] = CM_x[i][ii];
+				CM_1_Cart[1] = CM_y[i][ii];
+				CM_1_Cart[2] = CM_z[i][ii];
+				Cartesian_To_Fractional(CM_1_Cart, CM_1_Frac, i);
+				
+				CM_1_Frac[0] += double(box_a[x]);
+				CM_1_Frac[1] += double(box_b[x]);
+				CM_1_Frac[2] += double(box_c[x]);
+				
+				for (int y=0; y<n_box; y++){
+					
+					for (int ll=0; ll<n_mol; ll++){
+						
+						if (y != x && ll != ii) {
+							
+							CM_2_Cart[0] = CM_x[i][ll];
+							CM_2_Cart[1] = CM_y[i][ll];
+							CM_2_Cart[2] = CM_z[i][ll];
+							Cartesian_To_Fractional(CM_2_Cart, CM_2_Frac, i);
+							
+							CM_2_Frac[0] += double(box_a[y]);
+							CM_2_Frac[1] += double(box_b[y]);
+							CM_2_Frac[2] += double(box_c[y]);
+							
+							Dist_Frac[0] = CM_2_Frac[0] - CM_1_Frac[0];
+							Dist_Frac[1] = CM_2_Frac[1] - CM_1_Frac[1];
+							Dist_Frac[2] = CM_2_Frac[2] - CM_1_Frac[2];
+							Fractional_To_Cartesian(Dist_Frac, Dist_Cart, i);
+							
+							dist_2 = pow(Dist_Cart[0],2) + pow(Dist_Cart[1],2) + pow(Dist_Cart[2],2);
+							dist = sqrt(dist_2);
+							
+							E_grid[i][x][ii] += (Dist_Cart[0]*p_grid_x[i][y][ll] +\
+										Dist_Cart[1]*p_grid_y[i][y][ll] +\
+										Dist_Cart[2]*p_grid_z[i][y][ll])/(EPSILON_0*EPSILON_R*pow(dist,3));
+							E_grid[i][x][ii] = - E_grid[i][x][ii];
+						
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	p_grid_x.clear(); p_grid_y.clear(); p_grid_z.clear();
+	CM_1_Cart.clear(); CM_1_Frac.clear();
+	CM_2_Cart.clear(); CM_2_Frac.clear();
 	
 	// Print part
 	if (print_results){

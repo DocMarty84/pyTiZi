@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <math.h>
 
+#include <boost/random.hpp>
 #include <omp.h>
 
 // Local libraries
@@ -49,6 +50,10 @@ using namespace std;
 void MC_FRM_MT(string output_folder){
 	
 	cout << "[INFO] Using the FRM algorithm with multithread." << endl;
+	
+	// Create a Mersenne twister random number generator
+	// that is seeded once with #seconds since 1970
+	static boost::mt19937 rng(static_cast<unsigned> (time(0)));
 	
 	// Average mobility for each frame
 	vector<double> mu_frame (n_frame, 0.0);
@@ -218,7 +223,8 @@ void MC_FRM_MT(string output_folder){
 					// Calculate transfer rate
 					k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE_tmp, J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
 				
-					double random_number = Rand_0_1();
+					//double random_number = Rand_0_1();
+					double random_number = Rand_0_1_boost(rng);
 					k_tmp = -log(random_number)/(k_tmp);
 
 					// Keep the value only if k is larger
@@ -295,7 +301,8 @@ void MC_FRM_MT(string output_folder){
 						// Calculate transfer rate
 						k_tmp = Marcus_Levich_Jortner_rate_electro(i, tmp_mol_index, tmp_neigh_index, tmp_neigh_num, d_x[i][tmp_mol_index][jj], d_y[i][tmp_mol_index][jj], d_z[i][tmp_mol_index][jj], dE_tmp, J_H[i][tmp_mol_index][jj], J_L[i][tmp_mol_index][jj], curr_mol, curr_box, charge_i);
 					
-						double random_number = Rand_0_1();
+						//double random_number = Rand_0_1();
+						double random_number = Rand_0_1_boost(rng);
 						k_tmp = -log(random_number)/(k_tmp);
 				
 						// Keep the value only if k is larger

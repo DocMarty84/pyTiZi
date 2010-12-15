@@ -64,9 +64,12 @@ double Calcul_DeltaV(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_nu
 	CM_1_Neigh_Cart[2] = CM_z[i][neigh_index_tmp];
 	Cartesian_To_Fractional(CM_1_Neigh_Cart, CM_1_Neigh_Frac, i);
 	
-	CM_1_Neigh_Frac[0] += double(box_a[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_a[i][mol_index_tmp][neigh_num_tmp];
-	CM_1_Neigh_Frac[1] += double(box_b[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_b[i][mol_index_tmp][neigh_num_tmp];
-	CM_1_Neigh_Frac[2] += double(box_c[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_c[i][mol_index_tmp][neigh_num_tmp];
+	CM_1_Neigh_Frac[0] += double(box_a[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_a[i][mol_index_tmp]\
+																							[neigh_num_tmp];
+	CM_1_Neigh_Frac[1] += double(box_b[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_b[i][mol_index_tmp]\
+																							[neigh_num_tmp];
+	CM_1_Neigh_Frac[2] += double(box_c[curr_box_tmp[charge_i_tmp]]) + neigh_jump_vec_c[i][mol_index_tmp]\
+																							[neigh_num_tmp];
 	
 	#pragma omp parallel for num_threads(max_thr)
 	
@@ -148,7 +151,7 @@ double Calcul_V(int i, int mol_index_tmp, unsigned int charge_i_tmp, vector<int>
 	double V_mol;
 	vector<double> V_mol_thr(max_thr, 0.0);
 	
-	vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0), CM_2_Cart(3, 0.0), CM_2_Frac(3, 0.0), Dist_Cart(3, 0.0), Dist_Frac(3, 0.0);
+	vector<double> CM_1_Cart(3, 0.0), CM_1_Frac(3, 0.0);
 
 	CM_1_Cart[0] = CM_x[i][mol_index_tmp];
 	CM_1_Cart[1] = CM_y[i][mol_index_tmp];

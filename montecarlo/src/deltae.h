@@ -21,8 +21,8 @@
 #ifndef _DELTAE_H
 #define _DELTAE_H 1
 
-// Generate a random Energy mapping
-void Generate_E_GDM(double mean, double sigma, bool print_results);
+// Generate a Gaussian DOS
+void Generate_Gaussian_DOS(double mean, double sigma, bool print_results);
 
 // Set the variable dE to zero
 void DeltaE_ZERO(bool print_results);

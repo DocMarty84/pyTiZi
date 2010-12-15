@@ -21,12 +21,17 @@
 #ifndef _MATHPLUS_H
 #define _MATHPLUS_H 1
 
+#include <boost/random.hpp>
+
 // =============================================================================
 // ----------------------------- Simple functions ------------------------------
 // =============================================================================
 
 // Return random number between 0 and 1
 double Rand_0_1();
+
+// Return random number between 0 and 1 with Boost library
+double Rand_0_1_boost(boost::mt19937 & rng);
 
 // Calculates n!
 double Facto(int n);

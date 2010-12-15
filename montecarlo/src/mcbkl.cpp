@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <math.h>
 
+#include <boost/random.hpp>
 #include <omp.h>
 
 // Local libraries
@@ -49,6 +50,10 @@ using namespace std;
 void MC_BKL_MT(string output_folder){
 	
 	cout << "[INFO] Using the BKL algorithm with multithreading." << endl;
+	
+	// Create a Mersenne twister random number generator
+	// that is seeded once with #seconds since 1970
+	static boost::mt19937 rng(static_cast<unsigned> (time(0)));
 	
 	// Average mobility for each frame
 	vector<double> mu_frame (n_frame, 0.0);
@@ -238,7 +243,8 @@ void MC_BKL_MT(string output_folder){
 			}
 			
 			// Choose an event randomly
-			double random_k = Rand_0_1() * sum_k;
+			//double random_k = Rand_0_1() * sum_k;
+			double random_k = Rand_0_1_boost(rng) * sum_k;
 			double partial_sum_k = 0.0;
 			
 			// Find this event in the list
@@ -317,7 +323,8 @@ void MC_BKL_MT(string output_folder){
 					else{
 						
 						// Calculate the time for each charge and the total time
-						double k_event = -log(Rand_0_1())/(sum_k);
+						//double k_event = -log(Rand_0_1())/(sum_k);
+						double k_event = -log(Rand_0_1_boost(rng))/(sum_k);
 						chrg_total_time[i][event_charge[event]] += k_event;
 						total_time_try += k_event;
 						

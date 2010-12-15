@@ -21,16 +21,20 @@
 // C++ libraries
 #include <iostream>
 #include <vector>
+#include <ctime>
 
 // C libraries
 #include <math.h>
 #include <stdlib.h>
+
+#include <boost/random.hpp>
 
 // Local libraries
 #include "constants.h"
 #include "clear.h"
 
 using namespace std;
+using namespace boost;
 
 // =============================================================================
 // ----------------------------- Simple functions ------------------------------
@@ -42,6 +46,28 @@ double Rand_0_1(){
 	do {
 		x = rand();
 		x = x/RAND_MAX;
+	}
+	while(x==0);
+	
+	return x;
+}
+
+// Return random number between 0 and 1 with Boost library
+double Rand_0_1_boost(mt19937 & rng){
+	
+	// Create a Mersenne twister random number generator
+	// that is seeded once with #seconds since 1970
+	//static mt19937 rng(static_cast<unsigned> (time(0)));
+ 
+	// Select uniform probability distribution
+	uniform_real<> uni_01_dist(0,1);
+ 
+	// Bind random number generator to distribution, forming a function
+	variate_generator<mt19937&, uniform_real<> > uni_01_sampler(rng, uni_01_dist);
+	
+	double x;
+	do {
+		x = uni_01_sampler();
 	}
 	while(x==0);
 	
