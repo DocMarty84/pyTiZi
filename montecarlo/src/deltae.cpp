@@ -222,13 +222,13 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 							E_grid[i][x][ii] += (Dist_Cart[0]*p_grid_x[i][y][ll] +\
 										Dist_Cart[1]*p_grid_y[i][y][ll] +\
 										Dist_Cart[2]*p_grid_z[i][y][ll])/(EPSILON_0*EPSILON_R*pow(dist,3));
-							E_grid[i][x][ii] = - E_grid[i][x][ii];
-						
 						}
 					}
 				}
+				
+				E_grid[i][x][ii] = - E_grid[i][x][ii];
 			}
-			
+
 			CM_1_Cart.clear(); CM_1_Frac.clear();
 			CM_2_Cart.clear(); CM_2_Frac.clear();
 			Dist_Cart.clear(); Dist_Frac.clear();
