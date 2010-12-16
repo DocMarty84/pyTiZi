@@ -328,6 +328,19 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 			input.close();
 		}
 		
+		else if (tmp.compare("HARD_SPHERE") == 0) {
+			
+			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+			t_info_str.erase(t_info_str.length()-1,1); 
+			cout << "[INFO: " << t_info_str << "] Hard Sphere DOS for the grid will be calculated!" << endl;
+			
+			grid_E_type = tmp;
+			input >> tmp;
+			grid_radius_sphere = atof(tmp.c_str());
+			
+			input.close();
+		}
+		
 		else {
 			
 			cout << "[WARNING] Bad keyword specified in average energy file " << file_e_av.str().c_str() <<\

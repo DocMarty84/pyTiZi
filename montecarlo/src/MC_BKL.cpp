@@ -206,16 +206,21 @@ int main(int argc, char **argv){
 	if (grid_E_type.compare(0,5,"INPUT") == 0) {
 		Calcul_DeltaE(false);												// Calculate dE
 		Build_Grid(false);
+		Build_Grid_Coordinates(false);
 		Build_Grid_Properties(false);
 	}
 	else {
 		// In this case, we need to have the full matrix before calculating dE_grid, so we do it later
 		Build_Grid(false);
+		Build_Grid_Coordinates(false);
 		if (grid_E_type.compare("GAUSSIAN") == 0) {
 			Generate_Gaussian_DOS(0.0, grid_sigma_over_kT*K_BOLTZ*T, false);// Generate Gaussian DOS
 		}
 		else if (grid_E_type.compare("CORRELATED") == 0) {
 			Generate_Correlated_DOS(grid_sigma_over_kT*K_BOLTZ*T, false);	// Generate Correlated DOS
+		}
+		else if (grid_E_type.compare("HARD_SPHERE") == 0) {
+			Generate_Hard_Sphere_DOS(grid_radius_sphere, false);			// GenerateHard Sphere DOS
 		}
 		DeltaE_ZERO(false);													// Set dE to zero because unused
 		Build_Grid_Properties(false);

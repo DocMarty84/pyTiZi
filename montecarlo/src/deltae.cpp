@@ -19,6 +19,7 @@
  */
  
 // C++ libraries
+#include <algorithm>
 #include <ctime>
 #include <iostream>
 #include <vector>
@@ -238,6 +239,82 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 	}
 		
 	p_grid_x.clear(); p_grid_y.clear(); p_grid_z.clear();
+	
+	// Print part
+	if (print_results){
+		
+		for (int i=0; i<n_frame; i++){
+			cout << "frame " << i << endl;
+			for (int x=0; x<n_box; x++){
+				cout << "box " << x << endl;
+				for (int ii=0; ii<n_mol; ii++){
+					cout << "molecule " << mol_label[ii] << " " << E_grid[i][x][ii] << endl;
+
+				}
+			}
+		}
+	}
+}
+
+// Generate a hard sphere DOS
+void Generate_Hard_Sphere_DOS(double radius, bool print_results){
+	
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+	t_info_str.erase(t_info_str.length()-1,1); 
+	cout << "[INFO: " << t_info_str << "] Using a Hard Sphere DOS, with a radius = "\
+																			<< radius << "Angstrom" << endl;
+
+	
+	// Find center of the grid
+	
+	vector< vector<double> > list_x, list_y, list_z;
+	vector<double> median_x, median_y, median_z;
+	
+	for (int i=0; i<n_frame; i++){
+		list_x.push_back(vector<double> ());
+		list_y.push_back(vector<double> ());
+		list_z.push_back(vector<double> ());
+		
+		for (int x=0; x<n_box; x++){
+			
+			for (int ii=0; ii<n_mol; ii++){
+				
+				list_x[i].push_back(grid_x[i][x][ii]);
+				list_y[i].push_back(grid_y[i][x][ii]);
+				list_z[i].push_back(grid_z[i][x][ii]);
+				
+			}
+		}
+
+		sort(list_x[i].begin(), list_x[i].end());
+		sort(list_y[i].begin(), list_y[i].end());
+		sort(list_z[i].begin(), list_z[i].end());
+		
+		median_x.push_back((list_x[i].back() - list_x[i].front())/2.0);
+		median_y.push_back((list_y[i].back() - list_y[i].front())/2.0);
+		median_z.push_back((list_z[i].back() - list_z[i].front())/2.0);
+	}
+	
+
+	for (int i=0; i<n_frame; i++){
+		E_grid.push_back( vector< vector<double> > ());
+		
+		for (int x=0; x<n_box; x++){
+			E_grid[i].push_back( vector<double> ());
+		
+			for (int ii=0; ii<n_mol; ii++){
+				double dist, dist_2;
+				dist_2 = pow(grid_x[i][x][ii]-median_x[i],2) + pow(grid_y[i][x][ii]-median_y[i],2) + pow(grid_z[i][x][ii]-median_z[i],2);
+				
+				if (dist_2 > pow(radius,2)) {
+					E_grid[i][x].push_back( 0.0 );
+				}
+				else {
+					E_grid[i][x].push_back( numeric_limits<double>::max() );
+				}
+			}
+		}
+	}
 	
 	// Print part
 	if (print_results){

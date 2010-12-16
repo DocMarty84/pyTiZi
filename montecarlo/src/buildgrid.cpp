@@ -176,27 +176,21 @@ void Build_Grid(bool print_results) {
 	}
 }
 
-// Build the grid properties: coordinates, probability and energy of each site
-void Build_Grid_Properties(bool print_results) {
+// Build the grid properties: coordinates
+void Build_Grid_Coordinates(bool print_results) {
 	
 	vector<double> CM_Cart(3, 0.0), CM_Frac(3, 0.0);
 	
 	for (int i=0; i<n_frame; i++){
-		grid_probability.push_back( vector< vector< vector<double> > > () );
 		grid_x.push_back( vector< vector<double> > () );
 		grid_y.push_back( vector< vector<double> > () ); 
 		grid_z.push_back( vector< vector<double> > () );
-		grid_E_0.push_back( vector< vector<double> > () );
-		grid_E_1.push_back( vector< vector<double> > () );
 		
 		for (int x=0; x<n_box; x++){
 			
-			grid_probability[i].push_back( vector< vector<double> > () );
 			grid_x[i].push_back( vector<double> () );
 			grid_y[i].push_back( vector<double> () ); 
 			grid_z[i].push_back( vector<double> () );
-			grid_E_0[i].push_back( vector<double> () );
-			grid_E_1[i].push_back( vector<double> () );
 			
 			for (int ii=0; ii<n_mol; ii++){
 				
@@ -210,10 +204,50 @@ void Build_Grid_Properties(bool print_results) {
 				CM_Frac[2] += double(box_c[x]);
 				Fractional_To_Cartesian(CM_Frac, CM_Cart, i);
 		
-				grid_probability[i][x].push_back( vector<double> () );
 				grid_x[i][x].push_back( CM_Cart[0] );
 				grid_y[i][x].push_back( CM_Cart[1] ); 
 				grid_z[i][x].push_back( CM_Cart[2] );
+			}
+		}
+	}
+	
+	CM_Cart.clear();
+	CM_Frac.clear();
+	
+	if (print_results){
+		
+		for (int i=0; i<n_frame; i++){
+			cout << endl << "Frame " << i << endl;
+			cout << "Box Mol X Y Z" << endl;
+			
+			for (int x=0; x<n_box; x++){
+				
+				for (int ii=0; ii<n_mol; ii++){
+					cout << x << " " << ii << " " << grid_x[i][x][ii] << " " <<	grid_y[i][x][ii] << " " <<\
+																					grid_z[i][x][ii] << endl;
+				}
+			}
+		}
+	}
+}
+
+// Build the grid properties: probability and energy of each site
+void Build_Grid_Properties(bool print_results) {
+		
+	for (int i=0; i<n_frame; i++){
+		grid_probability.push_back( vector< vector< vector<double> > > () );
+		grid_E_0.push_back( vector< vector<double> > () );
+		grid_E_1.push_back( vector< vector<double> > () );
+		
+		for (int x=0; x<n_box; x++){
+			
+			grid_probability[i].push_back( vector< vector<double> > () );
+			grid_E_0[i].push_back( vector<double> () );
+			grid_E_1[i].push_back( vector<double> () );
+			
+			for (int ii=0; ii<n_mol; ii++){
+		
+				grid_probability[i][x].push_back( vector<double> () );
 				
 				if (grid_E_type.compare(0,5,"INPUT") == 0) {
 					grid_E_0[i][x].push_back( E_0[0][ii] );
@@ -232,21 +266,17 @@ void Build_Grid_Properties(bool print_results) {
 			}
 		}
 	}
-	
-	CM_Cart.clear();
-	CM_Frac.clear();
-	
+
 	if (print_results){
 		
 		for (int i=0; i<n_frame; i++){
 			cout << endl << "Frame " << i << endl;
-			cout << "Box Mol X Y Z E_0 E_1" << endl;
+			cout << "Box Mol E_0 E_1" << endl;
 			
 			for (int x=0; x<n_box; x++){
 				
 				for (int ii=0; ii<n_mol; ii++){
-					cout << x << " " << ii << " " << grid_x[i][x][ii] << " " <<	grid_y[i][x][ii] << " " <<\
-						grid_z[i][x][ii] << " " << grid_E_0[i][x][ii] << " " << grid_E_1[i][x][ii] << endl;
+					cout << x << " " << ii << " " << grid_E_0[i][x][ii] << " " << grid_E_1[i][x][ii] << endl;
 				}
 			}
 		}
