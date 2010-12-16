@@ -37,6 +37,7 @@
 #include <omp.h>
 
 // Local libraries
+#include "constants.h"
 #include "variables.h"
 #include "clear.h"
 #include "mathplus.h"
@@ -153,21 +154,24 @@ void MC_BKL_MT(string output_folder){
 		for (unsigned int charge_i=0; charge_i<n_charges; charge_i++){
 			chrg_tmp_dist.push_back(0.0);
 			chrg_tmp_jump.push_back(0.0);
-		
-			chrg_E_electrostatic[i].push_back( vector < double > () ); 
-			chrg_E_0[i].push_back( vector < double > () );
-			chrg_E_1[i].push_back( vector < double > () );
-			chrg_E_electrostatic[i][charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box));
+			if (VERB_RECORD) {
+				chrg_E_electrostatic[i].push_back( vector < double > () ); 
+				chrg_E_0[i].push_back( vector < double > () );
+				chrg_E_1[i].push_back( vector < double > () );
+				chrg_E_electrostatic[i][charge_i].push_back(Calcul_V(i, curr_mol[charge_i], charge_i, curr_mol, curr_box));
+			}
 			chrg_total_time[i].push_back(0.0);
 			chrg_total_dist[i].push_back(0.0);
 			
-			if (grid_E_type.compare(0,5,"INPUT") == 0) {
-				chrg_E_0[i][charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
-				chrg_E_1[i][charge_i].push_back(E_1[i][curr_mol[charge_i]]);
-			}
-			else {
-				chrg_E_0[i][charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
-				chrg_E_1[i][charge_i].push_back(0.0);
+			if (VERB_RECORD) {
+				if (grid_E_type.compare(0,5,"INPUT") == 0) {
+					chrg_E_0[i][charge_i].push_back(E_0[i][curr_mol[charge_i]]); 
+					chrg_E_1[i][charge_i].push_back(E_1[i][curr_mol[charge_i]]);
+				}
+				else {
+					chrg_E_0[i][charge_i].push_back(E_grid[i][curr_box[charge_i]][curr_mol[charge_i]]); 
+					chrg_E_1[i][charge_i].push_back(0.0);
+				}
 			}
 		}
 
@@ -406,14 +410,16 @@ void MC_BKL_MT(string output_folder){
 						// Set grid and charge properties if the limit is not reached
 						else{
 							grid_occ[tmp_curr_box][tmp_curr_mol] = true;
-							chrg_E_electrostatic[i][event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
-							if (grid_E_type.compare(0,5,"INPUT") == 0) {
-								chrg_E_0[i][event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
-								chrg_E_1[i][event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
-							}
-							else {
-								chrg_E_0[i][event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
-								chrg_E_1[i][event_charge[event]].push_back(0.0);
+							if (VERB_RECORD) {
+								chrg_E_electrostatic[i][event_charge[event]].push_back(Calcul_V(i, event_neigh_index[event], event_charge[event], curr_mol, curr_box));  
+								if (grid_E_type.compare(0,5,"INPUT") == 0) {
+									chrg_E_0[i][event_charge[event]].push_back(E_0[i][tmp_curr_mol]); 
+									chrg_E_1[i][event_charge[event]].push_back(E_1[i][tmp_curr_mol]);
+								}
+								else {
+									chrg_E_0[i][event_charge[event]].push_back(E_grid[i][tmp_curr_box][tmp_curr_mol]); 
+									chrg_E_1[i][event_charge[event]].push_back(0.0);
+								}
 							}
 						}
 						

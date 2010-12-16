@@ -290,9 +290,9 @@ void Generate_Hard_Sphere_DOS(double radius, bool print_results){
 		sort(list_y[i].begin(), list_y[i].end());
 		sort(list_z[i].begin(), list_z[i].end());
 		
-		median_x.push_back((list_x[i].back() - list_x[i].front())/2.0);
-		median_y.push_back((list_y[i].back() - list_y[i].front())/2.0);
-		median_z.push_back((list_z[i].back() - list_z[i].front())/2.0);
+		median_x.push_back((list_x[i].front() + list_x[i].back())/2.0);
+		median_y.push_back((list_y[i].front() + list_y[i].back())/2.0);
+		median_z.push_back((list_z[i].front() + list_z[i].back())/2.0);
 	}
 	
 
@@ -303,7 +303,7 @@ void Generate_Hard_Sphere_DOS(double radius, bool print_results){
 			E_grid[i].push_back( vector<double> ());
 		
 			for (int ii=0; ii<n_mol; ii++){
-				double dist, dist_2;
+				double dist_2;
 				dist_2 = pow(grid_x[i][x][ii]-median_x[i],2) + pow(grid_y[i][x][ii]-median_y[i],2) + pow(grid_z[i][x][ii]-median_z[i],2);
 				
 				if (dist_2 > pow(radius,2)) {
