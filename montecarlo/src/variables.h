@@ -107,6 +107,7 @@ EXTERN vector<double> max_layer;
 EXTERN vector< vector< vector<int> > > mol_layer;
 EXTERN vector< vector<int> > list_layer;
 
+// Time variables
 EXTERN time_t t_info;
 EXTERN string t_info_str;
 

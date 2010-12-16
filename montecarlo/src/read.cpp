@@ -29,14 +29,11 @@
 // C libraries
 #include <stdlib.h>
 
-#include <boost/filesystem/operations.hpp>
-
 // Local libraries
 #include "clear.h"
 #include "variables.h"
 
 using namespace std;
-namespace bfs = boost::filesystem;
 
 // =============================================================================
 // --------------------------------- Read part ---------------------------------
@@ -70,8 +67,7 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 		
 		input >> n_frame >> n_mol;
 		input >> snap_delay;
-		input >> LAMBDA_I_H >> LAMBDA_I_E >> LAMBDA_S >> T >> H_OMEGA >>\
-															dist_tot >> n_try;
+		input >> LAMBDA_I_H >> LAMBDA_I_E >> LAMBDA_S >> T >> H_OMEGA >> dist_tot >> n_try;
 		//input >> n_box_a >> n_box_b >> n_box_c >> n_charges;
 		input >> n_box_a >> n_box_b >> n_box_c >> tmp;
 		input >> F_norm;
@@ -126,12 +122,11 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 				for (int ii=0; ii<n_mol; ii++){
 					input >> tmp >> mol_label_tmp >> n;
 					mol_label.push_back(mol_label_tmp);
-					cout << "molecule " << mol_label[ii] << " " <<\
-											neigh_label[i][ii].size() << endl;
+					cout << "molecule " << mol_label[ii] << " " << neigh_label[i][ii].size() << endl;
 					
 					for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-						cout << neigh_label[i][ii][jj] << " " <<\
-								J_H[i][ii][jj] << " " << J_L[i][ii][jj] << endl;
+						cout << neigh_label[i][ii][jj] << " " << J_H[i][ii][jj] << " " << J_L[i][ii][jj]\
+																									<< endl;
 					}
 				}
 			}
@@ -149,9 +144,8 @@ void Read_MC(string input_file, string input_folder, bool print_results){
 void Read_CELL(string input_file, string input_folder, bool print_results){
 	double a_tmp, b_tmp, c_tmp;
 	double alpha_deg_tmp, beta_deg_tmp, gamma_deg_tmp, vol_box_tmp;
-	double temp_alpha_cos_tmp, temp_beta_sin_tmp, temp_beta_cos_tmp,\
-										temp_gamma_sin_tmp, temp_gamma_cos_tmp,\
-										temp_beta_term_tmp, temp_gamma_term_tmp;
+	double temp_alpha_cos_tmp, temp_beta_sin_tmp, temp_beta_cos_tmp, temp_gamma_sin_tmp, temp_gamma_cos_tmp,\
+																	temp_beta_term_tmp, temp_gamma_term_tmp;
 
 	string tmp;
 	stringstream file_cell;
@@ -164,12 +158,9 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 		input >> tmp >> tmp;
 		for(int i=0; i<n_frame; i++){
 			input >> tmp >> tmp;
-			input >> a_tmp >> b_tmp >> c_tmp >> alpha_deg_tmp >>\
-								beta_deg_tmp >> gamma_deg_tmp >> vol_box_tmp;
-			input >> temp_alpha_cos_tmp >> temp_beta_sin_tmp >>\
-								temp_beta_cos_tmp >> temp_gamma_sin_tmp >>\
-								temp_gamma_cos_tmp >> temp_beta_term_tmp >>\
-								temp_gamma_term_tmp;
+			input >> a_tmp >> b_tmp >> c_tmp >> alpha_deg_tmp >> beta_deg_tmp >> gamma_deg_tmp >> vol_box_tmp;
+			input >> temp_alpha_cos_tmp >> temp_beta_sin_tmp >> temp_beta_cos_tmp >> temp_gamma_sin_tmp >>\
+											temp_gamma_cos_tmp >> temp_beta_term_tmp >> temp_gamma_term_tmp;
 			
 			a.push_back(a_tmp); 
 			b.push_back(b_tmp); 
@@ -195,13 +186,11 @@ void Read_CELL(string input_file, string input_folder, bool print_results){
 		if (print_results){
 			for(int i=0; i<n_frame; i++){
 				cout << "frame " << i << endl;
-				cout << a[i] << " " << b[i] << " " << c[i] << " " <<\
-										alpha_deg[i] << " " << beta_deg[i] <<\
-										" " << gamma_deg[i] << endl;
-				cout << temp_alpha_cos[i] << " " << temp_beta_sin[i] <<\
-						" " << temp_beta_cos[i] << " " << temp_gamma_sin[i] <<\
-						" " << temp_gamma_cos[i] << " " << temp_beta_term[i] <<\
-						" " << temp_gamma_term[i] << endl;
+				cout << a[i] << " " << b[i] << " " << c[i] << " " << alpha_deg[i] << " " << beta_deg[i] <<\
+																				" " << gamma_deg[i] << endl;
+				cout << temp_alpha_cos[i] << " " << temp_beta_sin[i] << " " << temp_beta_cos[i] << " "\
+												<< temp_gamma_sin[i] << " " << temp_gamma_cos[i] << " "\
+												<< temp_beta_term[i] << " " << temp_gamma_term[i] << endl;
 
 			}
 		}
@@ -279,7 +268,9 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 		if (tmp.compare("INPUT_AVERAGE") == 0) {
 			
 			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Average energy read from file " << file_e_av.str().c_str() << " !" << endl;
+			t_info_str.erase(t_info_str.length()-1,1); 
+			cout << "[INFO: " << t_info_str << "] Average energy read from file "\
+																<< file_e_av.str().c_str() << " !" << endl;
 			
 			grid_E_type = tmp;
 			double E_0_tmp, E_1_tmp;
@@ -314,7 +305,8 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 		else if (tmp.compare("GAUSSIAN") == 0) {
 			
 			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Gaussian DOS for the grid will be calculated!" << endl;
+			t_info_str.erase(t_info_str.length()-1,1); 
+			cout << "[INFO: " << t_info_str << "] Gaussian DOS for the grid will be calculated!" << endl;
 			
 			grid_E_type = tmp;
 			input >> tmp;
@@ -326,7 +318,8 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 		else if (tmp.compare("CORRELATED") == 0) {
 			
 			t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-			cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Correlated DOS for the grid will be calculated!" << endl;
+			t_info_str.erase(t_info_str.length()-1,1); 
+			cout << "[INFO: " << t_info_str << "] Correlated DOS for the grid will be calculated!" << endl;
 			
 			grid_E_type = tmp;
 			input >> tmp;

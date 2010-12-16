@@ -114,19 +114,25 @@ int main(int argc, char **argv){
 	  			
 			case 'o':
 				output_folder = optarg;
+				// Remove existing output folder
 				if (bfs::exists(output_folder)) {
-					cout << "[WARNING] Output folder " << output_folder << " exists and will be deleted."\
-																									<< endl;
+					t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+					t_info_str.erase(t_info_str.length()-1,1); 
+					cout << "[WARNING: " << t_info_str << "] Output folder "\
+												<< output_folder << " exists and will be deleted." << endl;
 					bfs::remove_all(output_folder);
 				}
 				bfs::create_directory(output_folder);
 				t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-				cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Output folder " << output_folder << " created." << endl;
+				t_info_str.erase(t_info_str.length()-1,1); 
+				cout << "[INFO: " << t_info_str << "] Output folder "\
+																	<< output_folder << " created." << endl;
 				//struct stat st_out;
 				//if(stat(output_folder.c_str(), &st_out) != 0){
 				//	mkdir(output_folder.c_str(), 0750);
 				//  t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-				//	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Output folder " << output_folder << " created." << endl;
+				//  t_info_str.erase(t_info_str.length()-1,1); 
+				//	cout << "[INFO: " << t_info_str << "] Output folder " << output_folder << " created." << endl;
 				//}
 	  			break;
 	  			
@@ -155,7 +161,8 @@ int main(int argc, char **argv){
 	// Check that the charge and the direction of the electric field are specified
 	if (charge.compare("e") == 0 || charge.compare("h") == 0) {
 		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] The charge is: " << charge << endl;
+		t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] The charge is: " << charge << endl;
 	}
 		
 	else {
@@ -166,12 +173,14 @@ int main(int argc, char **argv){
 	
 	if (F_dir.compare("a") == 0 || F_dir.compare("b") == 0 || F_dir.compare("c") == 0) {
 		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Electric field is along the '" << F_dir << "' direction." << endl;
+		t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] Electric field is along the '" << F_dir << "' direction." << endl;
 	}
 		
 	else if (F_dir.compare("ab") == 0 || F_dir.compare("ac") == 0 || F_dir.compare("bc") == 0) {
 		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Electric field will probe the anisotropy in the '" << F_dir << "'plane." << endl;
+		t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] Electric field will probe the anisotropy in the '" << F_dir << "'plane." << endl;
 	}
 		
 	else {
@@ -181,8 +190,8 @@ int main(int argc, char **argv){
 	}
 
 	if (layer != std::numeric_limits<int>::max()) {
-		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-		cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] The charges will be set in layer " << layer << endl;
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] The charges will be set in layer " << layer << endl;
 	}
 		
 	else {
@@ -288,10 +297,10 @@ int main(int argc, char **argv){
 	// Get stop time
 	t_stop = time(NULL);
 	timeinfo_stop = asctime(localtime(&t_stop));
-	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); t_info_str.erase(t_info_str.length()-1,1); 
 
 	// Print final information
-	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Start time: " << timeinfo_start;	
+	cout << "[INFO: " << t_info_str << "] Start time: " << timeinfo_start;	
 	cout << "[INFO: " << t_info_str << "] Stop time: " << timeinfo_stop;
 	cout << "[INFO: " << t_info_str << "] Calculation took " << t_stop-t_start << " seconds." << endl << endl;
 	cout << "===============================================================================" << endl;

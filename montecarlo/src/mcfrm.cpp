@@ -51,7 +51,8 @@ using namespace std;
 void MC_FRM_MT(string output_folder){
 
 	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using the FRM algorithm with multithread." << endl;
+	t_info_str.erase(t_info_str.length()-1,1); 
+	cout << "[INFO: " << t_info_str << "] Using the FRM algorithm with multithread." << endl;
 	
 	// Create a Mersenne twister random number generator
 	// that is seeded once with #seconds since 1970
@@ -484,7 +485,8 @@ void MC_FRM_MT(string output_folder){
 					// Print info on standard output
 					if ((charge_try/n_charges) % 10 == 0 && (charge_try/n_charges) == (double(charge_try)/double(n_charges))) {
 						t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-						cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Running Frame " << i+1 << "/" << n_frame << ", Try " << (charge_try/n_charges) << "/" << n_try << endl;
+						t_info_str.erase(t_info_str.length()-1,1); 
+						cout << "[INFO: " << t_info_str << "] Running Frame " << i+1 << "/" << n_frame << ", Try " << (charge_try/n_charges) << "/" << n_try << endl;
 					}
 					
 					charge_try++;

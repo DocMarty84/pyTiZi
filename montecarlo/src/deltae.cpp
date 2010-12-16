@@ -40,7 +40,9 @@ using namespace std;
 void Generate_Gaussian_DOS(double mean, double sigma, bool print_results){
 	
 	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using a Gaussian DOS, with a value of sigma/kT = " << grid_sigma_over_kT << endl;
+	t_info_str.erase(t_info_str.length()-1,1); 
+	cout << "[INFO: " << t_info_str << "] Using a Gaussian DOS, with a value of sigma/kT = "\
+																				<< grid_sigma_over_kT << endl;
 
 	using namespace boost;
 	
@@ -90,7 +92,8 @@ void Generate_Gaussian_DOS(double mean, double sigma, bool print_results){
 void Generate_Correlated_DOS(double sigma, bool print_results){
 	
 	t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
-	cout << "[INFO: " << t_info_str.erase(t_info_str.length()-1,1) << "] Using a Correlated DOS, with a value of sigma_p/kT = " << grid_sigma_over_kT << endl;
+	t_info_str.erase(t_info_str.length()-1,1); 
+	cout << "[INFO: " << t_info_str << "] Using a Correlated DOS, with a value of sigma_p/kT = " << grid_sigma_over_kT << endl;
 
 	using namespace boost;
 
@@ -101,10 +104,10 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 	static mt19937 rng(static_cast<unsigned> (time(0)));
  
 	// Select uniform probability distribution
-	uniform_real<> uni_01_dist(0,1);
+	uniform_real<> uni_11_dist(-1,1);
  
 	// Bind random number generator to distribution, forming a function
-	variate_generator<mt19937&, uniform_real<> > uni_01_sampler(rng, uni_01_dist);
+	variate_generator<mt19937&, uniform_real<> > uni_11_sampler(rng, uni_11_dist);
 	
 	// ---------------------------------------------------------------------
 
@@ -143,9 +146,9 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 			p_grid_z[i].push_back( vector<double> () );
 		
 			for (int ii=0; ii<n_mol; ii++){
-				p_grid_x[i][x].push_back( uni_01_sampler() );
-				p_grid_y[i][x].push_back( uni_01_sampler() );
-				p_grid_z[i][x].push_back( uni_01_sampler() );
+				p_grid_x[i][x].push_back( uni_11_sampler() );
+				p_grid_y[i][x].push_back( uni_11_sampler() );
+				p_grid_z[i][x].push_back( uni_11_sampler() );
 				
 				p_norm_tmp = sqrt(pow(p_grid_x[i][x].back(), 2) + pow(p_grid_y[i][x].back(), 2) +\
 																			pow(p_grid_z[i][x].back(), 2));
