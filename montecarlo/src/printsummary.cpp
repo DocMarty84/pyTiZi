@@ -287,10 +287,11 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 				grid_probability_av += grid_probability[i][x][ii][charge_i];
 			}
 			grid_probability_av /= (double(grid_probability[i][x][ii].size())*grid_probability_norm);
-			
+			if (fabs(grid_z[i][x][ii]) < 2.0) {
 			fprintf(pFile, "%d %d %lf %lf %lf %e %e %e\n", x, ii,\
 												grid_x[i][x][ii], grid_y[i][x][ii], grid_z[i][x][ii],\
 												grid_E_0[i][x][ii], grid_E_1[i][x][ii], grid_probability_av);
+			}
 		}
 	}
 	fclose(pFile);

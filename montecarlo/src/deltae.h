@@ -30,6 +30,9 @@ void Generate_Correlated_DOS(double sigma, bool print_results);
 // Generate a hard sphere DOS
 void Generate_Hard_Sphere_DOS(double radius, bool print_results);
 
+// Generate a exponential sphere DOS
+void Generate_Exponential_Sphere_DOS(double E_max, double E_decrease, bool print_results);
+
 // Set the variable dE to zero
 void DeltaE_ZERO(bool print_results);
 

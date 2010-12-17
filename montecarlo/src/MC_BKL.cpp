@@ -220,7 +220,11 @@ int main(int argc, char **argv){
 			Generate_Correlated_DOS(grid_sigma_over_kT*K_BOLTZ*T, false);	// Generate Correlated DOS
 		}
 		else if (grid_E_type.compare("HARD_SPHERE") == 0) {
-			Generate_Hard_Sphere_DOS(grid_radius_sphere, false);			// GenerateHard Sphere DOS
+			Generate_Hard_Sphere_DOS(grid_radius_sphere, false);			// Generate Hard Sphere DOS
+		}
+		else if (grid_E_type.compare("EXPONENTIAL_SPHERE") == 0) {
+			Generate_Exponential_Sphere_DOS(grid_e_max_sphere, grid_e_decrease_sphere, false);	
+																			// Generate Expo Sphere DOS
 		}
 		DeltaE_ZERO(false);													// Set dE to zero because unused
 		Build_Grid_Properties(false);

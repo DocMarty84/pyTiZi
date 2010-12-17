@@ -79,6 +79,7 @@ EXTERN vector< vector< vector <double> > > grid_E_0, grid_E_1;					// Energy of 
 EXTERN string grid_E_type;
 EXTERN double grid_sigma_over_kT;
 EXTERN double grid_radius_sphere;
+EXTERN double grid_e_max_sphere, grid_e_decrease_sphere;
 
 // Variables for neighbors
 EXTERN vector< vector< vector<int> > > neigh_label;					// Label of neighbors
