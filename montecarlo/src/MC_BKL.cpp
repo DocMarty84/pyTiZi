@@ -155,6 +155,7 @@ int main(int argc, char **argv){
 				break;
 	  			
 	  		case 'v':
+				coulomb_tmp = optarg;
 				if (coulomb_tmp.compare("true") == 0 || coulomb_tmp.compare("1") == 0) {
 					coulomb = true;
 				}

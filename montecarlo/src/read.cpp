@@ -393,6 +393,8 @@ void Read_E_av(string input_file, string input_folder, bool print_results){
 	else {
 		cout << "[WARNING] Average energy file " << file_e_av.str().c_str() <<\
 															" not found!\n[WARNING] E set to zero." << endl;
+															
+		grid_E_type = "INPUT_ZEROS";
 		
 		for (int i=0; i<n_frame; i++) {
 			E_0.push_back( vector<double> (n_mol, 0));
