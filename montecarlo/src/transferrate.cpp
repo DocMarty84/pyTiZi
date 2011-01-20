@@ -131,6 +131,46 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_in
 	
 }
 
+double Miller_Abrahams_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp,\
+																			double J_H_tmp, double J_L_tmp){
+	
+	double dG0 = 0.0;	
+
+	// CHECK SIGN!
+	if (charge.compare("e") == 0)
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	else if (charge.compare("h") == 0)
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+	
+	//printf("%e %e\n", dG0, dV);	
+	
+	dG0 = dG0 + dE_tmp;
+	
+	double g = 2E-7; // Localization constant in cm^{-1}
+	double mu_ref = 0.0;
+	if (charge.compare("e") == 0) // Mobilities in cm^2/Vs
+		mu_ref = 4.212593;
+	
+	else if (charge.compare("h") == 0)
+		mu_ref = 1.587750;
+	
+	double dist_2 = pow(d_x_tmp*1E-8, 2) + pow(d_y_tmp*1E-8, 2) + pow(d_z_tmp*1E-8, 2);
+	double dist = sqrt(dist_2);
+	double k_0 = (6.0*K_BOLTZ*T*mu_ref/dist_2)*exp(2.0*g*dist); // See Nanolett. 2005, 5, 1814.
+	
+	double k_tmp = 0.0;
+	if (dG0 >= 0) {
+		k_tmp = k_0*exp(-2.0*g*dist)*exp(-dG0/(K_BOLTZ*T));
+	}
+	else {
+		k_tmp = k_0*exp(-2.0*g*dist);
+	}
+		
+	return k_tmp;
+	
+}
+
 double Miller_Abrahams_rate_electro(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp,\
 		double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp,\
 		vector<int> curr_mol_tmp, vector<int> curr_box_tmp, unsigned int charge_i_tmp){
@@ -183,6 +223,7 @@ double Miller_Abrahams_rate_electro(int i, int mol_index_tmp, int neigh_index_tm
 void Calcul_k(bool print_results){
 	
 	k.clear();
+	double k_tmp;
 	
 	for (int i=0; i<n_frame; i++){
 		k.push_back( vector< vector<double> > ());
@@ -191,9 +232,16 @@ void Calcul_k(bool print_results){
 			k[i].push_back( vector<double> ());
 			
 			for (unsigned int jj=0; jj<neigh_label[i][ii].size(); jj++){
-				
-				double k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
-															dE_box[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+
+				if(transfer.compare("ma") == 0) {
+					k_tmp = Miller_Abrahams_rate(d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
+														dE_box[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);
+				}
+				else {
+					k_tmp = Marcus_Levich_Jortner_rate(d_x[i][ii][jj],d_y[i][ii][jj], d_z[i][ii][jj],\
+														dE_box[i][ii][jj], J_H[i][ii][jj], J_L[i][ii][jj]);				
+				}
+
 				
 				k[i][ii].push_back(k_tmp);
 				
