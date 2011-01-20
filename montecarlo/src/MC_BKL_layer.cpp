@@ -95,8 +95,9 @@ int main(int argc, char **argv){
 	string input_folder = ".";
 	string output_folder = ".";
 	string method;
+	string coulomb_tmp;
 	
-  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:l:", NULL, NULL)) != -1){
+  	while ((s = getopt_long (argc, argv, "I:i:o:c:d:n:m:t:v:l:", NULL, NULL)) != -1){
       	switch (s){
 			case 'I':
 				input_file = optarg;
@@ -151,6 +152,19 @@ int main(int argc, char **argv){
 	  		case 'm':
 				method = optarg;
 	  			break;
+	  			
+	  		case 't':
+				transfer = optarg;
+				break;
+	  			
+	  		case 'v':
+				if (coulomb_tmp.compare("true") == 0 || coulomb_tmp.compare("1") == 0) {
+					coulomb = true;
+				}
+				else if (coulomb_tmp.compare("false") == 0 || coulomb_tmp.compare("0") == 0) {
+					coulomb = false;
+				}
+	  			break;
 	  		
 			case 'l':
 				layer = atoi(optarg);
@@ -187,6 +201,19 @@ int main(int argc, char **argv){
 		cerr << "[ERROR] Direction of the electric field not specified! Please use -d {a,b,c,ab,ac,bc}. Exiting..." << endl;
 		Clear_All();
 		exit(1);
+	}
+	
+	// Specify if electrostatic interactions will be taken into account
+	if (coulomb) {
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+		t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] Coulombic interactions taken into account." << endl;
+	}
+	
+	else {
+		t_info = time(NULL); t_info_str = asctime(localtime(&t_info)); 
+		t_info_str.erase(t_info_str.length()-1,1); 
+		cout << "[INFO: " << t_info_str << "] Coulombic interactions NOT taken into account." << endl;
 	}
 
 	if (layer != std::numeric_limits<int>::max()) {

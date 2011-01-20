@@ -25,9 +25,8 @@
 void Marcus_Levich_Jortner_CST();
 
 // MLJ rate calculation
-double Marcus_Levich_Jortner_rate(\
-								double d_x_tmp, double d_y_tmp, double d_z_tmp,\
-								double dE_tmp, double J_H_tmp, double J_L_tmp);
+double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp,\
+																			double J_H_tmp, double J_L_tmp);
 
 // MLJ rate with electrostatic interactions calculation
 double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp,\
@@ -36,6 +35,11 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp,\
 						double dE_tmp, double J_H_tmp, double J_L_tmp,\
 						vector<int> curr_mol_tmp, vector<int> curr_box_tmp,\
 						unsigned int charge_i_tmp);
+
+// Miller Abrahams rate with electrostatic interactions calculation					
+double Miller_Abrahams_rate_electro(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp,\
+		double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp,\
+		vector<int> curr_mol_tmp, vector<int> curr_box_tmp, unsigned int charge_i_tmp);
 
 // Calculates transfer rates between molecules
 void Calcul_k(bool print_results);

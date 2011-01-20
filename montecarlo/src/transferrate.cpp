@@ -53,8 +53,8 @@ void Marcus_Levich_Jortner_CST(){
 	}
 }
 
-double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp,\
-				double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp){
+double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp,\
+																			double J_H_tmp, double J_L_tmp){
 	
 	double dG0 = 0.0;	
 	
@@ -69,14 +69,12 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp,\
 	
 	int n = 0;
 	double k_tmp = 0.0;
-	double k_inter = MLJ_CST3[n]*\
-							exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	double k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
 	
 	while (k_inter > numeric_limits<double>::min()) {
 		k_tmp += k_inter;
 		n++;
-		k_inter = MLJ_CST3[n]*\
-							exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+		k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
 	}
 	
 	if (charge.compare("e") == 0)
@@ -89,18 +87,18 @@ double Marcus_Levich_Jortner_rate(double d_x_tmp, double d_y_tmp,\
 	
 }
 
-double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp,\
-		int neigh_index_tmp, int neigh_num_tmp, double d_x_tmp, double d_y_tmp,\
-		double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp,\
-		vector<int> curr_mol_tmp, vector<int> curr_box_tmp,\
-		unsigned int charge_i_tmp){
+double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp,\
+		double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp,\
+		vector<int> curr_mol_tmp, vector<int> curr_box_tmp, unsigned int charge_i_tmp){
 	
 	double dV = 0.0;
 	double dG0 = 0.0;	
 	
 	// Calcul DeltaV
-	dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp,\
-									charge_i_tmp, curr_mol_tmp, curr_box_tmp);
+	if (coulomb) {
+		dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp,\
+																								curr_box_tmp);
+	}
 
 	// CHECK SIGN!
 	if (charge.compare("e") == 0)
@@ -115,14 +113,12 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp,\
 	
 	int n = 0;
 	double k_tmp = 0.0;
-	double k_inter = MLJ_CST3[n]*\
-							exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+	double k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
 	
 	while (k_inter > numeric_limits<double>::min()) {
 		k_tmp += k_inter;
 		n++;
-		k_inter = MLJ_CST3[n]*\
-							exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
+		k_inter = MLJ_CST3[n]*exp(-pow(dG0 + LAMBDA_S + n*H_OMEGA,2)/(MLJ_CST2));
 	}
 	
 	if (charge.compare("e") == 0)
@@ -130,6 +126,54 @@ double Marcus_Levich_Jortner_rate_electro(int i, int mol_index_tmp,\
 	
 	else if (charge.compare("h") == 0)
 		k_tmp = MLJ_CST1 * pow(J_H_tmp,2) * k_tmp;
+		
+	return k_tmp;
+	
+}
+
+double Miller_Abrahams_rate_electro(int i, int mol_index_tmp, int neigh_index_tmp, int neigh_num_tmp,\
+		double d_x_tmp, double d_y_tmp, double d_z_tmp, double dE_tmp, double J_H_tmp, double J_L_tmp,\
+		vector<int> curr_mol_tmp, vector<int> curr_box_tmp, unsigned int charge_i_tmp){
+	
+	double dV = 0.0;
+	double dG0 = 0.0;	
+	
+	// Calcul DeltaV
+	if (coulomb) {
+		dV = Calcul_DeltaV(i, mol_index_tmp, neigh_index_tmp, neigh_num_tmp, charge_i_tmp, curr_mol_tmp,\
+																								curr_box_tmp);
+	}
+
+	// CHECK SIGN!
+	if (charge.compare("e") == 0)
+		dG0 = -(d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+		
+	else if (charge.compare("h") == 0)
+		dG0 = (d_x_tmp * F_x + d_y_tmp * F_y + d_z_tmp * F_z)*1E-8;
+	
+	//printf("%e %e\n", dG0, dV);	
+	
+	dG0 = dG0 + dE_tmp + dV;
+	
+	double g = 2E-7; // Localization constant in cm^{-1}
+	double mu_ref = 0.0;
+	if (charge.compare("e") == 0) // Mobilities in cm^2/Vs
+		mu_ref = 4.212593;
+	
+	else if (charge.compare("h") == 0)
+		mu_ref = 1.587750;
+	
+	double dist_2 = pow(d_x_tmp*1E-8, 2) + pow(d_y_tmp*1E-8, 2) + pow(d_z_tmp*1E-8, 2);
+	double dist = sqrt(dist_2);
+	double k_0 = (6.0*K_BOLTZ*T*mu_ref/dist_2)*exp(2.0*g*dist); // See Nanolett. 2005, 5, 1814.
+	
+	double k_tmp = 0.0;
+	if (dG0 >= 0) {
+		k_tmp = k_0*exp(-2.0*g*dist)*exp(-dG0/(K_BOLTZ*T));
+	}
+	else {
+		k_tmp = k_0*exp(-2.0*g*dist);
+	}
 		
 	return k_tmp;
 	

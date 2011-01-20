@@ -182,8 +182,16 @@ void Print_Summary_Frame(string output_folder, int i, double total_dist_try, dou
 	fprintf(pFile,"Type of Charges             = %s\n", charge.c_str());
 	fprintf(pFile,"Number of Charges           = %d\n", n_charges);
 	fprintf(pFile,"Number of Charges per Site  = %e charges/site\n", double(n_charges)/(n_mol*n_box));
-	fprintf(pFile,"Density of Charges          = %e charges/cm3\n\n", double(n_charges)/(vol_box[i]*n_box*\
+	fprintf(pFile,"Density of Charges          = %e charges/cm3\n", double(n_charges)/(vol_box[i]*n_box*\
 																									1e-24));
+	if (transfer.compare("ma") == 0) {
+		fprintf(pFile,"Transfer rate               = Miller-Abrahams\n");
+	}
+	else {
+		fprintf(pFile,"Transfer rate               = Marcus-Levich-Jortner\n");
+	}
+	fprintf(pFile,"Coulombic interaction       = %d\n\n", coulomb);
+	
 	fprintf(pFile,"Monte-Carlo Results\n");
 	fprintf(pFile,"-------------------\n");																						
 	fprintf(pFile,"Average Time     = %e seconds\n", total_time_try/double(n_try*n_charges));

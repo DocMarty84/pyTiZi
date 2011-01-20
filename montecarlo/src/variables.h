@@ -97,6 +97,10 @@ EXTERN vector<double>  F_x_list, F_y_list, F_z_list, F_angle_list;
 EXTERN double F_x, F_y, F_z, F_angle;
 EXTERN bool anisotropy;
 
+// Variable for calculation of electrostatic interactions and transfer rate
+EXTERN string transfer;
+EXTERN bool coulomb;
+
 // Constants for the MLJ theory
 EXTERN double S, MLJ_CST1, MLJ_CST2; 
 EXTERN vector <double> MLJ_CST3;
