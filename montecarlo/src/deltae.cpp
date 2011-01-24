@@ -135,7 +135,7 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 	
 	// See Phys. Rev. Lett., 1998, 81, 4472 for calculating dipole norm from sigma
 	p_norm = sigma*EPSILON_0*EPSILON_R*pow(d_av, 2)/(2.35);
-	
+		
 	for (int i=0; i<n_frame; i++){
 		p_grid_x.push_back( vector< vector<double> > () );
 		p_grid_y.push_back( vector< vector<double> > () );
@@ -239,6 +239,36 @@ void Generate_Correlated_DOS(double sigma, bool print_results){
 	}
 		
 	p_grid_x.clear(); p_grid_y.clear(); p_grid_z.clear();
+	
+	// Actually, the previous code gives a wrong standard deviation of energy, and I can't find any mistake.
+	// The following routine "normalizes" the energy to obtain the wanted sigma/kT value. 
+	
+	double E_av, E_av_2, sigma_tmp;
+	for (int i=0; i<n_frame; i++){
+		
+		// Calculate sigma of the grid
+		E_av = 0.0;
+		E_av_2 = 0.0;
+	
+		for (int x=0; x<n_box; x++){
+			for (int ii=0; ii<n_mol; ii++){
+				E_av += E_grid[i][x][ii];
+				E_av_2 += pow(E_grid[i][x][ii], 2);
+			}
+		}
+		E_av = E_av/double(n_box*n_mol);
+		E_av_2 = E_av_2/double(n_box*n_mol);
+		sigma_tmp = sqrt(E_av_2-pow(E_av, 2));
+		
+		// Normalize to get the wanted sigma/kT
+		for (int x=0; x<n_box; x++){
+			for (int ii=0; ii<n_mol; ii++){
+				E_grid[i][x][ii] = E_grid[i][x][ii]/sigma_tmp;
+				E_grid[i][x][ii] = E_grid[i][x][ii]*sigma;
+			}
+		}
+		
+	}
 	
 	// Print part
 	if (print_results){
