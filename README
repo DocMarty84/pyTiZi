@@ -1,1 +1,2 @@
 To update on github : git push origin master
+To update from github : git pull git://github.com/nicolasmartinelli/pyTiZi.git master
