@@ -4,7 +4,7 @@ import sys
 import numpy as np
 import time
 import copy
-import os, sys, shutil
+import os, sys, shutil, getopt
 
 sys.path.append("lib")
 import read_input_MD, molecular_system, list_manipulation, write_cluster_files, coord_conversion
@@ -21,7 +21,7 @@ DELTA_E_MAX = K_B*TEMPERATURE
 CHECK = False
 MODE = 40
 
-if __name__ == '__main__':
+def main(argv):
 	""" 
 		This program generates the quantum sampling structures from the
 		eigenvectors of the Hessian matrix.
@@ -29,11 +29,44 @@ if __name__ == '__main__':
 	"""
 	t1 = time.clock()
 	
-	filename_base = "TES_Pn_min"
+	filename_base = "anthracene_UNIT_CELL_MIN"
+	
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "hi:", ["help", "input"])
+	except getopt.GetoptError:
+		usage()
+		sys.exit()
+	for opt, arg in opts:
+		if opt in ("-h", "--help"):
+			usage()
+			sys.exit()
+		elif opt in ("-i", "--input"):
+			try:
+				filename_base = arg
+			except ValueError:
+				print   "Incorrect filename."
+				sys.exit()
+	
 	file_vec = "%s.vec" % (filename_base)
 	file_xyz = "%s.xyz" % (filename_base)
 	file_add = "%s.add" % (filename_base)
 	
+	if not os.path.exists(file_vec):
+		print file_vec, "not found! Exiting..."
+		sys.exit()
+		
+	elif not os.path.exists(file_xyz):
+		print file_xyz, "not found! Exiting..."
+		sys.exit()
+				
+	elif not os.path.exists(file_add):
+		print file_add, "not found! Exiting..."
+		sys.exit()
+	
+	else:
+		print "Analyzing file ", filename_base
+		
+			
 	# Get the cell parameters as well as the number frame, molecules and atoms
 	(n_frame, n_mol, n_atom, a, b, c, alpha, beta, gamma) = read_input_MD.Read_TINKER_add_File(file_add)
 	box = molecular_system.SimulationBox(n_frame, a, b, c, alpha, beta, gamma)
@@ -77,10 +110,10 @@ if __name__ == '__main__':
 	X_ref = copy.copy(qs_eigen.cart_coord_matrix)
 	T_ref = copy.copy(qs_eigen.vec_matrix)
 		
-#	for mode in xrange(0, qs_eigen.n_modes, 1):
-#		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
-#		if qs_eigen.freq[mode] > 1.0:
-	for mode in xrange(3, 4, 1):
+	for mode in xrange(0, qs_eigen.n_modes, 1):
+		print mode+1, "%f %.12e" % (qs_eigen.freq[mode], H_BAR_EV*CM1_TO_HZ*qs_eigen.freq[mode])
+		if qs_eigen.freq[mode] > 1.0:
+#	for mode in xrange(3, 4, 1):
 			# ===============================
 			# Calculation of the reduced mass
 			# ===============================
@@ -150,21 +183,21 @@ if __name__ == '__main__':
 				# Create Tinker file for visualization of the mode
 				if d == d_max:
 					p = True
-				#tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
-				tmp = write_cluster_files.CreateTINKERVisualization_PTCDeriv(X, qs_coord, mode, tmp, filename_base, p, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
+				tmp = write_cluster_files.CreateTINKERVisualization(X, qs_coord, mode, tmp, filename_base, p)
+				#tmp = write_cluster_files.CreateTINKERVisualization_PTCDeriv(X, qs_coord, mode, tmp, filename_base, p, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 				
 				# Create Normal Modes files like Sigi
 #				write_cluster_files.CreateNormalMode(X, qs_coord, mode, d)
 				
 				# Create VBHF input files
-#				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
-				write_cluster_files.CreateVBHFInput_PTCDeriv(X, qs_coord, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
+				write_cluster_files.CreateVBHFInput(X, qs_coord, box, mode, d)
+#				write_cluster_files.CreateVBHFInput_PTCDeriv(X, qs_coord, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 
 				# Create ME input files
 #				write_cluster_files.CreateMEInput(X, qs_coord, box, mode, d)
 
 				# Create YO input files
-#				write_cluster_files.CreateYoInput(X, qs_coord, box, mode, d)
+				write_cluster_files.CreateYoInput(X, qs_coord, box, mode, d)
 #				write_cluster_files.CreateYoInput_PTCDeriv(X, qs_coord, box, mode, d, at_to_mov_1, at_ref_1, at_to_mov_2, at_ref_2)
 
 	# Create a script which will create all the needed pbs
@@ -182,3 +215,14 @@ if __name__ == '__main__':
 	print t2-t1
 	
 	sys.exit(0)
+	
+def usage ():
+    print "\
+    Usage: Quantum_Sampling_Generation.py [options]\n\
+    -h, --help                               Display this help and exit.\n\
+    -i <filename>, --input <filename>        Generate input files for <filename>.\n\n\
+    Examples:\n\
+    Quantum_Sampling_Generation.py -i anthracene_UNIT_CELL_MIN     Generate input files for anthracene_UNIT_CELL_MIN"
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
