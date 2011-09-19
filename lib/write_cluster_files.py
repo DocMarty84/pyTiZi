@@ -1522,7 +1522,7 @@ def CreateYoInput(X, mol, box, mode, d):
 
 	for a in [0, -1, 1]:
 		for b in [0, -1, 1]:
-			for c in [0, 1]:
+			for c in [0, -1, 1]:
 				tmp = '%d\n\n' % (mol.n_atom[0] + mol.n_atom[1])
 				tmp += tmp_ref
 				j = j_ref
@@ -1553,7 +1553,7 @@ def CreateYoInput(X, mol, box, mode, d):
 
 	for a in [0, -1, 1]:
 		for b in [0, -1, 1]:
-			for c in [0, 1]:
+			for c in [0, -1, 1]:
 				if (a==0 and b==0 and c==0):
 					pass
 				else:
