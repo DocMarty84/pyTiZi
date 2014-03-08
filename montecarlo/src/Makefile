@@ -39,7 +39,7 @@ BINDIR = $(MCDIR)/../bin
 ##
 
 CPP = /usr/bin/g++
-LIBS = -lm -lboost_filesystem
+LIBS = -lm -lboost_filesystem -lboost_system
 OMPLIBS = -fopenmp
 CPPFLAGS = -Wall -c
 OPTFLAGS = -O3
